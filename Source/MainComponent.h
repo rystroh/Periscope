@@ -33,6 +33,8 @@ private:
     juce::RecordingThumbnail recordingThumbnail;
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
     juce::File lastRecording;
+    juce::Slider xZoomSlider;
+    juce::Label xZoomLabel;
     juce::Slider levelSlider;
     juce::Label levelLabel;
 
@@ -47,6 +49,11 @@ private:
         if (slider == &levelSlider)
         {
             value = levelSlider.getValue();
+            //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
+        }
+        if (slider == &xZoomSlider)
+        {
+            value = xZoomSlider.getValue();
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
     }

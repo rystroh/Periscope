@@ -12,9 +12,18 @@ MainComponent::MainComponent()
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
 
+    xZoomSlider.setRange(0.0, 1);
+    xZoomSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
+    xZoomLabel.setText("X Zoom", juce::dontSendNotification);
+    xZoomSlider.addListener(this);
+
+    addAndMakeVisible(xZoomSlider);
+    addAndMakeVisible(xZoomLabel);
+
+
     levelSlider.setRange(0.0, 1);
     levelSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
-    levelLabel.setText("X Zoom", juce::dontSendNotification);
+    levelLabel.setText("Y Zoom", juce::dontSendNotification);
     levelSlider.addListener(this);
 
     addAndMakeVisible(levelSlider);
@@ -118,9 +127,12 @@ void MainComponent::resized()
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     //recordButton.setBounds(area.removeFromTop(36).removeFromLeft(140).reduced(8));
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
-    recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
+    //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     recordingThumbnail.setBounds(10,40,getWidth()-40,120);
-    levelLabel.setBounds(10, 170, 90, 20);
-    levelSlider.setBounds(100, 170, getWidth() - 130, 20);
+    xZoomLabel.setBounds(10, 170, 90, 20);
+    xZoomSlider.setBounds(100, 170, getWidth() - 130, 20);
+
+    levelLabel.setBounds(10, 200, 90, 20);
+    levelSlider.setBounds(100, 200, getWidth() - 130, 20);
 
 }
