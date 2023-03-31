@@ -243,7 +243,7 @@ public:
 private:
     AudioFormatManager formatManager;
     AudioThumbnailCache thumbnailCache  { 10 };
-    AudioThumbnail thumbnail            { 512, formatManager, thumbnailCache };
+    AudioThumbnail thumbnail            { 1, formatManager, thumbnailCache };
 
     bool displayFullThumb = false;
     double ThumbYZoom = 1.0f;
