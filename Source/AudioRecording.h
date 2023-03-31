@@ -174,11 +174,16 @@ private:
 
 //==============================================================================
 class RecordingThumbnail  : public Component,
-                            private ChangeListener
+                            private ChangeListener,
+                            private juce::ScrollBar::Listener
 {
 public:
     RecordingThumbnail()
     {
+        addAndMakeVisible(scrollbar);
+        scrollbar.setRangeLimits(visibleRange);
+        scrollbar.setAutoHide(false);
+        scrollbar.addListener(this);
         formatManager.registerBasicFormats();
         thumbnail.addChangeListener (this);
     }
@@ -195,18 +200,35 @@ public:
         displayFullThumb = displayFull;
         repaint();
     }
-    void setDsiplayXZoom(double xZoom)
+    void setDisplayXZoom(double xZoom)
     {
         ThumbXZoom = xZoom;
+            auto toto = jlimit(0.0001, 1.0, xZoom); // use jmap ? map2log10 ? use skew ?
+        ThumbXZoom = toto;
         displayFullThumb = false;
-        repaint();
+     //   repaint();
+        if (thumbnail.getTotalLength() > 0)
+        {
+            auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99, xZoom)));
+            auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
+
+            setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
+        }
+
     }
-    void setDsiplayYZoom(double yZoom)
+    void setDisplayYZoom(double yZoom)
     {
         ThumbYZoom = yZoom;
         repaint();
     }
 
+    void setRange(Range<double> newRange)
+    {
+        visibleRange = newRange;
+        scrollbar.setCurrentRange(visibleRange);
+        //updateCursorPosition();
+        repaint();
+    }
     void paint (Graphics& g) override
     {
         g.fillAll (Colours::black);
@@ -214,14 +236,22 @@ public:
 
         if (thumbnail.getTotalLength() > 0.0)
         {
+         
             double startTime = 0.0f;
             double  endTime = 1.0f;
 
+            auto thumbArea = getLocalBounds();
+            /*
+            thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+            thumbnail.drawChannels(g, thumbArea.reduced(2),
+                visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);*/
 
+            
             if(displayFullThumb)
             { 
                 startTime = 0.0f;
                 endTime = thumbnail.getTotalLength();
+                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
             }
             else
             {
@@ -229,15 +259,23 @@ public:
                 double centerTime = thumbnail.getTotalLength() / 2.0f;
                 startTime = centerTime - ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
                 endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
+
+                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2),visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
             }
-            auto thumbArea = getLocalBounds();
-            thumbnail.drawChannels (g, thumbArea.reduced (2), startTime, endTime, ThumbYZoom);
+            //auto thumbArea = getLocalBounds();
+            
         }
         else
         {
             g.setFont (14.0f);
             //g.drawFittedText ("(No file recorded)", getLocalBounds(), Justification::centred, 2);
         }
+    }
+    void resized() override
+    {
+        scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
     }
 
 private:
@@ -248,6 +286,28 @@ private:
     bool displayFullThumb = false;
     double ThumbYZoom = 1.0f;
     double ThumbXZoom = 1.0f;
+
+    juce::ScrollBar scrollbar{ false };
+    juce::Range<double> visibleRange;
+    float timeToX(const double time) const
+    {
+        if (visibleRange.getLength() <= 0)
+            return 0;
+
+        return (float)getWidth() * (float)((time - visibleRange.getStart()) / visibleRange.getLength());
+    }
+
+    double xToTime(const float x) const
+    {
+        return (x / (float)getWidth()) * (visibleRange.getLength()) + visibleRange.getStart();
+    }
+
+    void scrollBarMoved(juce::ScrollBar* scrollBarThatHasMoved, double newRangeStart) override
+    {
+        if (scrollBarThatHasMoved == &scrollbar)
+            //if (!(isFollowingTransport && transportSource.isPlaying()))
+            setRange(visibleRange.movedToStartAt(newRangeStart));
+    }
 
     void changeListenerCallback (ChangeBroadcaster* source) override
     {

@@ -8,8 +8,9 @@
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::AudioAppComponent,
+class MainComponent  : public juce::AudioAppComponent,                       
                        public juce::Slider::Listener
+                       
 {
 public:
     //==============================================================================
@@ -33,11 +34,12 @@ private:
     juce::RecordingThumbnail recordingThumbnail;
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
     juce::File lastRecording;
-    juce::Slider xZoomSlider;
-    juce::Label xZoomLabel;
     juce::Slider levelSlider;
     juce::Label levelLabel;
 
+    juce::Slider xZoomSlider;
+    juce::Label xZoomLabel;
+    
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
         return deviceManager; 
@@ -49,13 +51,13 @@ private:
         if (slider == &levelSlider)
         {
             value = levelSlider.getValue();
-            recordingThumbnail.setDsiplayYZoom(value);
+            recordingThumbnail.setDisplayYZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
         if (slider == &xZoomSlider)
         {
             value = xZoomSlider.getValue();
-            recordingThumbnail.setDsiplayXZoom(value);
+            recordingThumbnail.setDisplayXZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
     }

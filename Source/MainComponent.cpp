@@ -7,7 +7,8 @@ MainComponent::MainComponent()
     // Make sure you set the size of the component after
     // you add any child components.
     
-    
+
+
     addAndMakeVisible(recordButton);
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
@@ -131,6 +132,9 @@ void MainComponent::resized()
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     recordingThumbnail.setBounds(10,40,getWidth()-40,120);
+    
+    //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
+
     xZoomLabel.setBounds(10, 170, 90, 20);
     xZoomSlider.setBounds(100, 170, getWidth() - 130, 20);
 
