@@ -21,7 +21,8 @@ MainComponent::MainComponent()
     addAndMakeVisible(xZoomLabel);
 
 
-    levelSlider.setRange(0.0, 1);
+    levelSlider.setRange(0.0, 4);
+    levelSlider.setValue(1.0f);
     levelSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
     levelLabel.setText("Y Zoom", juce::dontSendNotification);
     levelSlider.addListener(this);

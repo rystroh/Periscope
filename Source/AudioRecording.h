@@ -87,7 +87,7 @@ public:
                 // Now create a WAV writer object that writes to our output stream...
                 WavAudioFormat wavFormat;
 
-                if (auto writer = wavFormat.createWriterFor (fileStream.get(), sampleRate, 4, 24, {}, 0))
+                if (auto writer = wavFormat.createWriterFor (fileStream.get(), sampleRate, 2, 24, {}, 0))
                 {
                     fileStream.release(); // (passes responsibility for deleting the stream to the writer object that is now using it)
 
@@ -195,6 +195,11 @@ public:
         displayFullThumb = displayFull;
         repaint();
     }
+    void setDsiplayYZoom(double yZoom)
+    {
+        ThumbYZoom = yZoom;
+        repaint();
+    }
 
     void paint (Graphics& g) override
     {
@@ -207,7 +212,7 @@ public:
                                             : jmax (30.0, thumbnail.getTotalLength());
 
             auto thumbArea = getLocalBounds();
-            thumbnail.drawChannels (g, thumbArea.reduced (2), 0.0, endTime, 1.0f);
+            thumbnail.drawChannels (g, thumbArea.reduced (2), 0.0, endTime, ThumbYZoom);
         }
         else
         {
@@ -222,6 +227,7 @@ private:
     AudioThumbnail thumbnail            { 512, formatManager, thumbnailCache };
 
     bool displayFullThumb = false;
+    double ThumbYZoom = 1.0f;
 
     void changeListenerCallback (ChangeBroadcaster* source) override
     {

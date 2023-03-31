@@ -49,6 +49,7 @@ private:
         if (slider == &levelSlider)
         {
             value = levelSlider.getValue();
+            recordingThumbnail.setDsiplayYZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
         if (slider == &xZoomSlider)
