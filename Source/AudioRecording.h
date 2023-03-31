@@ -195,6 +195,12 @@ public:
         displayFullThumb = displayFull;
         repaint();
     }
+    void setDsiplayXZoom(double xZoom)
+    {
+        ThumbXZoom = xZoom;
+        displayFullThumb = false;
+        repaint();
+    }
     void setDsiplayYZoom(double yZoom)
     {
         ThumbYZoom = yZoom;
@@ -208,11 +214,24 @@ public:
 
         if (thumbnail.getTotalLength() > 0.0)
         {
-            auto endTime = displayFullThumb ? thumbnail.getTotalLength()
-                                            : jmax (30.0, thumbnail.getTotalLength());
+            double startTime = 0.0f;
+            double  endTime = 1.0f;
 
+
+            if(displayFullThumb)
+            { 
+                startTime = 0.0f;
+                endTime = thumbnail.getTotalLength();
+            }
+            else
+            {
+               
+                double centerTime = thumbnail.getTotalLength() / 2.0f;
+                startTime = centerTime - ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
+                endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
+            }
             auto thumbArea = getLocalBounds();
-            thumbnail.drawChannels (g, thumbArea.reduced (2), 0.0, endTime, ThumbYZoom);
+            thumbnail.drawChannels (g, thumbArea.reduced (2), startTime, endTime, ThumbYZoom);
         }
         else
         {
@@ -228,6 +247,7 @@ private:
 
     bool displayFullThumb = false;
     double ThumbYZoom = 1.0f;
+    double ThumbXZoom = 1.0f;
 
     void changeListenerCallback (ChangeBroadcaster* source) override
     {

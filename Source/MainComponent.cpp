@@ -13,6 +13,7 @@ MainComponent::MainComponent()
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
 
     xZoomSlider.setRange(0.0, 1);
+    xZoomSlider.setValue(1.0f);
     xZoomSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
     xZoomLabel.setText("X Zoom", juce::dontSendNotification);
     xZoomSlider.addListener(this);

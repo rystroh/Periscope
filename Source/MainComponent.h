@@ -55,6 +55,7 @@ private:
         if (slider == &xZoomSlider)
         {
             value = xZoomSlider.getValue();
+            recordingThumbnail.setDsiplayXZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
     }
