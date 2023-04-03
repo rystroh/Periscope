@@ -190,6 +190,7 @@ public:
 
     ~RecordingThumbnail() override
     {
+        scrollbar.removeListener(this);
         thumbnail.removeChangeListener (this);
     }
 
@@ -198,7 +199,17 @@ public:
     void setDisplayFullThumbnail (bool displayFull)
     {
         displayFullThumb = displayFull;
-        repaint();
+        if (displayFull)
+        {
+            auto thumbnailsize = thumbnail.getTotalLength();
+            Range<double> newRange(0.0, thumbnailsize);
+            scrollbar.setRangeLimits(newRange);
+            setRange(newRange);
+            //repaint();
+        }            
+        else
+            repaint();
+
     }
     void setDisplayXZoom(double xZoom)
     {
@@ -209,7 +220,9 @@ public:
      //   repaint();
         if (thumbnail.getTotalLength() > 0)
         {
-            auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99, xZoom)));
+            auto thumbnailsize = thumbnail.getTotalLength();
+            auto width = getWidth();
+            auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
             auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
 
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
@@ -222,12 +235,52 @@ public:
         repaint();
     }
 
+    void setZoomFactor(double amount)
+    {
+        auto toto = jlimit(0.0001, 0.99, amount);
+
+        if (thumbnail.getTotalLength() > 0)
+        {
+            auto thumbnailsize = thumbnail.getTotalLength();
+            auto width = getWidth();
+
+            auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99, amount)));
+            auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
+
+            setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
+        }
+    }
+
     void setRange(Range<double> newRange)
     {
         visibleRange = newRange;
         scrollbar.setCurrentRange(visibleRange);
         //updateCursorPosition();
         repaint();
+    }
+    void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
+    {
+        int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
+        thumbh = thumbnailBounds.getHeight();
+        newY2 = thumbnailBounds.getCentreY();
+        g.setColour(juce::Colours::grey);
+        g.drawLine(thumbnailBounds.getX(), newY2, thumbnailBounds.getRight(), newY2);
+
+        newY41 = newY2 - thumbh / 4;
+        newY42 = newY2 + thumbh / 4;
+        g.setColour(juce::Colours::darkgrey);
+        g.drawLine(thumbnailBounds.getX(), newY42, thumbnailBounds.getRight(), newY42);
+        g.drawLine(thumbnailBounds.getX(), newY41, thumbnailBounds.getRight(), newY41);
+        newY81 = newY41 - thumbh / 8;
+        newY82 = newY41 + thumbh / 8;
+        newY83 = newY42 - thumbh / 8;
+        newY84 = newY42 + thumbh / 8;
+
+        g.drawLine(thumbnailBounds.getX(), newY81, thumbnailBounds.getRight(), newY81);
+        g.drawLine(thumbnailBounds.getX(), newY82, thumbnailBounds.getRight(), newY82);
+        g.drawLine(thumbnailBounds.getX(), newY83, thumbnailBounds.getRight(), newY83);
+        g.drawLine(thumbnailBounds.getX(), newY84, thumbnailBounds.getRight(), newY84);
+
     }
     void paint (Graphics& g) override
     {
@@ -261,10 +314,11 @@ public:
                 endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
 
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2),visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                thumbnail.drawChannels(g, thumbArea.reduced(2),visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
             }
             //auto thumbArea = getLocalBounds();
+            paintGrid(g, thumbArea);
             
         }
         else

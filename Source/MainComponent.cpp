@@ -14,16 +14,20 @@ MainComponent::MainComponent()
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
 
     xZoomSlider.setRange(0.0, 1);
-    xZoomSlider.setValue(1.0f);
+    xZoomSlider.setValue(0.0f);
+    xZoomSlider.setSkewFactor(4);
+    
+
     xZoomSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
     xZoomLabel.setText("X Zoom", juce::dontSendNotification);
     xZoomSlider.addListener(this);
+    //xZoomSlider.onValueChange = [this] { recordingThumbnail->setZoomFactor(xZoomSlider.getValue()); };
 
     addAndMakeVisible(xZoomSlider);
     addAndMakeVisible(xZoomLabel);
 
 
-    levelSlider.setRange(0.0, 4);
+    levelSlider.setRange(0.0, 8.0);
     levelSlider.setValue(1.0f);
     levelSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
     levelLabel.setText("Y Zoom", juce::dontSendNotification);
@@ -43,6 +47,8 @@ MainComponent::MainComponent()
     };
 
     addAndMakeVisible(recordingThumbnail);
+
+    
 
 
     // Some platforms require permissions to open input channels so request that here
