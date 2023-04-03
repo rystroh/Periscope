@@ -227,7 +227,8 @@ public:
 
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
-
+        else
+            repaint();
     }
     void setDisplayYZoom(double yZoom)
     {
