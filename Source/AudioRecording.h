@@ -315,8 +315,8 @@ public:
                 endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
 
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                thumbnail.drawChannels(g, thumbArea.reduced(2),visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2),visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
             }
             //auto thumbArea = getLocalBounds();
             paintGrid(g, thumbArea);
