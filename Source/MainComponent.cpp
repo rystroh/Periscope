@@ -29,6 +29,7 @@ MainComponent::MainComponent()
 
     levelSlider.setRange(0.0, 8.0);
     levelSlider.setValue(1.0f);
+    levelSlider.setSliderStyle(juce::Slider::LinearVertical);
     levelSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
     levelLabel.setText("Y Zoom", juce::dontSendNotification);
     levelSlider.addListener(this);
@@ -137,14 +138,14 @@ void MainComponent::resized()
     //recordButton.setBounds(area.removeFromTop(36).removeFromLeft(140).reduced(8));
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
-    recordingThumbnail.setBounds(10,40,getWidth()-40,120);
+    recordingThumbnail.setBounds(10,40,getWidth()-50,120);
     
     //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
 
     xZoomLabel.setBounds(10, 170, 90, 20);
     xZoomSlider.setBounds(100, 170, getWidth() - 130, 20);
 
-    levelLabel.setBounds(10, 200, 90, 20);
-    levelSlider.setBounds(100, 200, getWidth() - 130, 20);
-
+    
+    levelSlider.setBounds(getWidth() - 30, 40, 20, 120);
+    levelLabel.setBounds(getWidth() - 70, 10, 70, 20);
 }
