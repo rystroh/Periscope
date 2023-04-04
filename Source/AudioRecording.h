@@ -305,6 +305,7 @@ public:
             { 
                 startTime = 0.0f;
                 endTime = thumbnail.getTotalLength();
+                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
             }
             else

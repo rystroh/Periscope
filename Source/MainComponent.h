@@ -91,7 +91,7 @@ private:
         recordButton.setButtonText("Stop");
         xZoomSlider.setValue(0.0f);
         recordingThumbnail.setDisplayXZoom(0); //beware this function resets displayFullThumb
-        recordingThumbnail.setDisplayFullThumbnail(false);
+        recordingThumbnail.setDisplayFullThumbnail(true);
     }
 
     void stopRecording()
