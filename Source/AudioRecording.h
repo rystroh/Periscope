@@ -211,12 +211,37 @@ public:
             repaint();
 
     }
+
+    void setDisplayThumbnailMode(int displayMode)
+    {
+        displayThumbMode = displayMode;
+        /*
+        switch (displayMode)
+        {
+            case 0: //Full Thumb mode
+                repaint();
+                break;
+            case 1: // recording mode
+                repaint();
+                break;
+            case 2: // zooming mode
+                auto thumbnailsize = thumbnail.getTotalLength();
+                Range<double> newRange(0.0, thumbnailsize);
+                scrollbar.setRangeLimits(newRange);
+                setRange(newRange);
+                break;
+            default:
+                repaint();
+
+        }*/
+    }
     void setDisplayXZoom(double xZoom)
     {
         ThumbXZoom = xZoom;
             auto toto = jlimit(0.0001, 1.0, xZoom); // use jmap ? map2log10 ? use skew ?
         ThumbXZoom = toto;
         displayFullThumb = false;
+        displayThumbMode = 2; //zoom mode
      //   repaint();
         if (thumbnail.getTotalLength() > 0)
         {
@@ -283,7 +308,7 @@ public:
         g.drawLine(thumbnailBounds.getX(), newY84, thumbnailBounds.getRight(), newY84);
 
     }
-    void paint (Graphics& g) override
+    /*void paintit(Graphics& g) override
     {
         g.fillAll (Colours::black);
         g.setColour (Colours::aquamarine);
@@ -295,10 +320,10 @@ public:
             double  endTime = 1.0f;
 
             auto thumbArea = getLocalBounds();
-            /*
-            thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-            thumbnail.drawChannels(g, thumbArea.reduced(2),
-                visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);*/
+            
+            //thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+            //thumbnail.drawChannels(g, thumbArea.reduced(2),
+            //    visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
 
             
             if(displayFullThumb)
@@ -328,7 +353,56 @@ public:
             g.setFont (14.0f);
             //g.drawFittedText ("(No file recorded)", getLocalBounds(), Justification::centred, 2);
         }
+    }*/
+
+    void paint(Graphics& g) override
+    {
+        g.fillAll(Colours::black);
+        g.setColour(Colours::aquamarine);
+
+        if (thumbnail.getTotalLength() > 0.0)
+        {
+            double startTime = 0.0f;
+            double  endTime = 1.0f;
+            auto thumbArea = getLocalBounds();
+            double currentlength = thumbnail.getTotalLength();
+
+            switch (displayThumbMode)
+            {
+            case 0: //Full Thumb mode (expand recording data to window when stopping Recording
+                endTime = thumbnail.getTotalLength();
+                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                break;
+            case 1: // recording mode (scrolling data)                
+                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
+                break;
+            case 2: // zooming mode
+                
+                auto thumbnailsize = thumbnail.getTotalLength();
+                Range<double> newRange(0.0, thumbnailsize);
+                scrollbar.setRangeLimits(newRange);
+                setRange(newRange);
+                /*
+                double centerTime = thumbnail.getTotalLength() / 2.0f;
+                startTime = centerTime - ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
+                endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;*/
+                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                break;
+            }
+
+        }
+        else
+        {
+            g.setFont(14.0f);
+            //g.drawFittedText ("(No file recorded)", getLocalBounds(), Justification::centred, 2);
+        }
     }
+
+
+
     void resized() override
     {
         scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
@@ -340,6 +414,7 @@ private:
     AudioThumbnail thumbnail            { 1, formatManager, thumbnailCache };
 
     bool displayFullThumb = false;
+    int displayThumbMode;
     double ThumbYZoom = 1.0f;
     double ThumbXZoom = 1.0f;
 

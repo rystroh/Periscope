@@ -91,7 +91,8 @@ private:
         recordButton.setButtonText("Stop");
         xZoomSlider.setValue(0.0f);
         recordingThumbnail.setDisplayXZoom(0); //beware this function resets displayFullThumb
-        recordingThumbnail.setDisplayFullThumbnail(true);
+        //recordingThumbnail.setDisplayFullThumbnail(true);
+        recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
     }
 
     void stopRecording()
@@ -119,7 +120,8 @@ private:
 
         lastRecording = juce::File();
         recordButton.setButtonText("Record");
-        recordingThumbnail.setDisplayFullThumbnail(true);
+        //recordingThumbnail.setDisplayFullThumbnail(true);
+        recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
 
     }
 
