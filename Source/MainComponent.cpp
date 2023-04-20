@@ -97,6 +97,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     recorder.audioDeviceAboutToStart(device);
 
 }
+//-------------------------------------------------------------------------------------
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
@@ -108,7 +109,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     // (to prevent the output of random noise)
     bufferToFill.clearActiveBufferRegion();
 }
-
+//-------------------------------------------------------------------------------------
 void MainComponent::releaseResources()
 {
     // This will be called when the audio device stops, or when it is being
@@ -125,7 +126,7 @@ void MainComponent::paint (juce::Graphics& g)
 
     // You can add your drawing code here!
 }
-
+//-------------------------------------------------------------------------------------
 void MainComponent::resized()
 {
     // This is called when the MainContentComponent is resized.

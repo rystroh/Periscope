@@ -1,22 +1,3 @@
-/*
-  ==============================================================================
-
-   This file is part of the JUCE examples.
-   Copyright (c) 2022 - Raw Material Software Limited
-
-   The code included in this file is provided under the terms of the ISC license
-   http://www.isc.org/downloads/software-support-policy/isc-license. Permission
-   To use, copy, modify, and/or distribute this software for any purpose with or
-   without fee is hereby granted provided that the above copyright notice and
-   this permission notice appear in all copies.
-
-   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES,
-   WHETHER EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR
-   PURPOSE, ARE DISCLAIMED.
-
-  ==============================================================================
-*/
-
 /*******************************************************************************
  The block below describes the properties of this PIP. A PIP is a short snippet
  of code that can be read by the Projucer and used to generate a JUCE project.
@@ -106,7 +87,7 @@ public:
             }
         }
     }
-
+ //-------------------------------------------------------------------------------------
     void stop()
     {
         // First, clear this pointer to stop the audio callback from using our writer object..
@@ -120,23 +101,23 @@ public:
         // the audio callback while this happens.
         threadedWriter.reset();
     }
-
+ //-------------------------------------------------------------------------------------
     bool isRecording() const
     {
         return activeWriter.load() != nullptr;
     }
 
-    //==============================================================================
+//==============================================================================
     void audioDeviceAboutToStart(AudioIODevice* device) override
     {
         sampleRate = device->getCurrentSampleRate();
     }
- 
+//-------------------------------------------------------------------------------------
     void audioDeviceStopped() override
     {
         sampleRate = 0;
     }
-
+//-------------------------------------------------------------------------------------
     void audioDeviceIOCallbackWithContext (const float* const* inputChannelData, int numInputChannels,
                                            float* const* outputChannelData, int numOutputChannels,
                                            int numSamples, const AudioIODeviceCallbackContext& context) override
@@ -182,7 +163,7 @@ public:
     {
         addAndMakeVisible(scrollbar);
         scrollbar.setRangeLimits(visibleRange);
-        scrollbar.setAutoHide(false);
+        scrollbar.setAutoHide(true);
         scrollbar.addListener(this);
         formatManager.registerBasicFormats();
         thumbnail.addChangeListener (this);
@@ -195,7 +176,7 @@ public:
     }
 
     AudioThumbnail& getAudioThumbnail()     { return thumbnail; }
-
+//-------------------------------------------------------------------------------------
     void setDisplayFullThumbnail (bool displayFull)
     {
         displayFullThumb = displayFull;
@@ -211,7 +192,7 @@ public:
             repaint();
 
     }
-
+//-------------------------------------------------------------------------------------
     void setDisplayThumbnailMode(int displayMode)
     {
         displayThumbMode = displayMode;
@@ -235,6 +216,7 @@ public:
 
         }*/
     }
+//-------------------------------------------------------------------------------------
     void setDisplayXZoom(double xZoom)
     {
         ThumbXZoom = xZoom;
@@ -249,18 +231,19 @@ public:
             auto width = getWidth();
             auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
             auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
-
+            DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
         else
             repaint();
     }
+ //-------------------------------------------------------------------------------------
     void setDisplayYZoom(double yZoom)
     {
         ThumbYZoom = yZoom;
         repaint();
     }
-
+ //-------------------------------------------------------------------------------------
     void setZoomFactor(double amount)
     {
         auto toto = jlimit(0.0001, 0.99, amount);
@@ -272,11 +255,11 @@ public:
 
             auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99, amount)));
             auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
-
+            DBG("TimeatCenter = " << timeAtCentre);
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
     }
-
+//-------------------------------------------------------------------------------------
     void setRange(Range<double> newRange)
     {
         visibleRange = newRange;
@@ -284,6 +267,7 @@ public:
         //updateCursorPosition();
         repaint();
     }
+//-------------------------------------------------------------------------------------
     void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
     {
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
@@ -308,6 +292,7 @@ public:
         g.drawLine(thumbnailBounds.getX(), newY84, thumbnailBounds.getRight(), newY84);
 
     }
+//-------------------------------------------------------------------------------------
     /*void paintit(Graphics& g) override
     {
         g.fillAll (Colours::black);
@@ -354,7 +339,7 @@ public:
             //g.drawFittedText ("(No file recorded)", getLocalBounds(), Justification::centred, 2);
         }
     }*/
-
+//-------------------------------------------------------------------------------------
     void paint(Graphics& g) override
     {
         g.fillAll(Colours::black);
@@ -364,26 +349,30 @@ public:
         {
             double startTime = 0.0f;
             double  endTime = 1.0f;
+            double  endofrecording = 1.0f;
             auto thumbArea = getLocalBounds();
             double currentlength = thumbnail.getTotalLength();
+            endofrecording = jmax(10.0, currentlength);
 
             switch (displayThumbMode)
             {
             case 0: //Full Thumb mode (expand recording data to window when stopping Recording
                 endTime = thumbnail.getTotalLength();
+                scrollbar.setAutoHide(false);              
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
                 break;
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
                 break;
             case 2: // zooming mode
                 
                 auto thumbnailsize = thumbnail.getTotalLength();
                 Range<double> newRange(0.0, thumbnailsize);
                 scrollbar.setRangeLimits(newRange);
-                setRange(newRange);
+                //setRange(newRange);
                 /*
                 double centerTime = thumbnail.getTotalLength() / 2.0f;
                 startTime = centerTime - ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
@@ -400,9 +389,7 @@ public:
             //g.drawFittedText ("(No file recorded)", getLocalBounds(), Justification::centred, 2);
         }
     }
-
-
-
+//-------------------------------------------------------------------------------------
     void resized() override
     {
         scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
@@ -420,6 +407,8 @@ private:
 
     juce::ScrollBar scrollbar{ false };
     juce::Range<double> visibleRange;
+
+//-------------------------------------------------------------------------------------
     float timeToX(const double time) const
     {
         if (visibleRange.getLength() <= 0)
@@ -427,19 +416,19 @@ private:
 
         return (float)getWidth() * (float)((time - visibleRange.getStart()) / visibleRange.getLength());
     }
-
+//-------------------------------------------------------------------------------------
     double xToTime(const float x) const
     {
         return (x / (float)getWidth()) * (visibleRange.getLength()) + visibleRange.getStart();
     }
-
+//-------------------------------------------------------------------------------------
     void scrollBarMoved(juce::ScrollBar* scrollBarThatHasMoved, double newRangeStart) override
     {
         if (scrollBarThatHasMoved == &scrollbar)
             //if (!(isFollowingTransport && transportSource.isPlaying()))
             setRange(visibleRange.movedToStartAt(newRangeStart));
     }
-
+//-------------------------------------------------------------------------------------
     void changeListenerCallback (ChangeBroadcaster* source) override
     {
         if (source == &thumbnail)

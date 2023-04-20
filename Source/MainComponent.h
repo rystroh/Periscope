@@ -44,7 +44,7 @@ private:
     {
         return deviceManager; 
     }
-
+//-------------------------------------------------------------------------------------
     void sliderValueChanged(juce::Slider* slider) override
     {
         double value;
@@ -61,7 +61,7 @@ private:
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
     }
-
+//-------------------------------------------------------------------------------------
     void startRecording()
     {
         
@@ -94,7 +94,7 @@ private:
         //recordingThumbnail.setDisplayFullThumbnail(true);
         recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
     }
-
+//-------------------------------------------------------------------------------------
     void stopRecording()
     {
         recorder.stop();
