@@ -230,8 +230,12 @@ public:
             auto thumbnailsize = thumbnail.getTotalLength();
             auto width = getWidth();
             auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
+            
             auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
-            DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
+            //timeAtCentre returns (x / (float)getWidth()) * (visibleRange.getLength()) + visibleRange.getStart();
+            // 
+         //   DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
+            DBG("thumbnailsize = " << thumbnailsize << " vRLength = " << visibleRange.getLength() << " vRStart = " << visibleRange.getStart() << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
         else
@@ -255,7 +259,6 @@ public:
 
             auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99, amount)));
             auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
-            DBG("TimeatCenter = " << timeAtCentre);
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
     }
@@ -353,6 +356,8 @@ public:
             auto thumbArea = getLocalBounds();
             double currentlength = thumbnail.getTotalLength();
             endofrecording = jmax(10.0, currentlength);
+            Range<double> newRange;
+            double thumbnailsize;
 
             switch (displayThumbMode)
             {
@@ -361,16 +366,22 @@ public:
                 scrollbar.setAutoHide(false);              
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                newRange.setStart(0.0);
+                newRange.setEnd(endTime);
+                scrollbar.setRangeLimits(newRange);
+                setRange(newRange);
                 break;
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
                 break;
-            case 2: // zooming mode
+
+            case 2: // zooming mode                
+                thumbnailsize = thumbnail.getTotalLength();
+                newRange.setStart(0.0);
+                newRange.setEnd(thumbnailsize);
                 
-                auto thumbnailsize = thumbnail.getTotalLength();
-                Range<double> newRange(0.0, thumbnailsize);
                 scrollbar.setRangeLimits(newRange);
                 //setRange(newRange);
                 /*
@@ -380,7 +391,17 @@ public:
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 break;
+            case 3: //stopping
+                thumbnailsize = thumbnail.getTotalLength();
+                newRange.setStart(0.0);
+                newRange.setEnd(thumbnailsize);
+
+                scrollbar.setRangeLimits(newRange);
+                setRange(newRange);
+                displayThumbMode = 2; // get ready for zooming
+                break;
             }
+
 
         }
         else
