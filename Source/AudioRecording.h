@@ -420,16 +420,26 @@ public:
     {
         if (thumbnail.getTotalLength() > 0.0)
         {
+            if (juce::ModifierKeys::currentModifiers.isCtrlDown())
+                repaint();
+            else if (juce::ModifierKeys::currentModifiers.isAltDown())
+                repaint();
+            else if (juce::ModifierKeys::currentModifiers.isShiftDown())
+                repaint();
+            else
+            {
             auto newStart = visibleRange.getStart() - wheel.deltaY * (visibleRange.getLength()) / 10.0;
             newStart = jlimit(0.0, jmax(0.0, thumbnail.getTotalLength() - (visibleRange.getLength())), newStart);
 
         //    if (canMoveTransport())
                 setRange({ newStart, newStart + visibleRange.getLength() });
+                
 
          //   if (wheel.deltaY != 0.0f)
          //       zoomSlider.setValue(zoomSlider.getValue() - wheel.deltaY);
 
             repaint();
+            }
         }
     }
 
