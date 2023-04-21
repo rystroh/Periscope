@@ -415,6 +415,23 @@ public:
     {
         scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
     }
+    
+    void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
+    {
+        if (thumbnail.getTotalLength() > 0.0)
+        {
+            auto newStart = visibleRange.getStart() - wheel.deltaY * (visibleRange.getLength()) / 10.0;
+            newStart = jlimit(0.0, jmax(0.0, thumbnail.getTotalLength() - (visibleRange.getLength())), newStart);
+
+        //    if (canMoveTransport())
+                setRange({ newStart, newStart + visibleRange.getLength() });
+
+         //   if (wheel.deltaY != 0.0f)
+         //       zoomSlider.setValue(zoomSlider.getValue() - wheel.deltaY);
+
+            repaint();
+        }
+    }
 
 private:
     AudioFormatManager formatManager;
