@@ -30,6 +30,13 @@ private:
     //==============================================================================
     // Your private member variables go here...
     juce::TextButton recordButton{ "Record" };
+
+    juce::TextButton openButton{ "Open File" };
+    std::unique_ptr<juce::FileChooser> chooser;
+
+    juce::AudioFormatManager formatManager;                    // [3]
+    
+
     //juce::AudioDeviceManager audioDeviceManager; //external audioDeviceManager not needed
     juce::RecordingThumbnail recordingThumbnail;
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
@@ -60,6 +67,34 @@ private:
             recordingThumbnail.setDisplayXZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
+    }
+ //-------------------------------------------------------------------------------------
+    void openButtonClicked()
+    {
+        chooser = std::make_unique<juce::FileChooser>("Select a Wave file...",
+                                                       juce::File{},"*.wav");
+        auto chooserFlags = juce::FileBrowserComponent::openMode
+                          | juce::FileBrowserComponent::canSelectFiles;
+
+        chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+            {
+                auto file = fc.getResult();
+
+                if (file != juce::File{})
+                {
+                    auto* reader = formatManager.createReaderFor(file);
+
+                    if (reader != nullptr)
+                    {
+                        auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
+                        //transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
+                        //playButton.setEnabled(true);
+                        recordingThumbnail.setSource(new juce::FileInputSource(file));
+                        recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                        //readerSource.reset(newSource.release());
+                    }
+                }
+            });
     }
 //-------------------------------------------------------------------------------------
     void startRecording()

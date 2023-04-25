@@ -13,6 +13,11 @@ MainComponent::MainComponent()
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
 
+    addAndMakeVisible(openButton);
+    openButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x5c5c5c5c));
+    openButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
+
+
     xZoomSlider.setRange(0.0, 1);
     xZoomSlider.setValue(0.0f);
     xZoomSlider.setSkewFactor(4);
@@ -49,6 +54,7 @@ MainComponent::MainComponent()
 
     addAndMakeVisible(recordingThumbnail);
 
+    openButton.onClick = [this] { openButtonClicked(); };
     
 
 
@@ -69,6 +75,7 @@ MainComponent::MainComponent()
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.addAudioCallback(&recorder);
     setSize(800, 600);
+    formatManager.registerBasicFormats();
 }
 
 MainComponent::~MainComponent()
@@ -138,6 +145,7 @@ void MainComponent::resized()
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     //recordButton.setBounds(area.removeFromTop(36).removeFromLeft(140).reduced(8));
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
+    openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     recordingThumbnail.setBounds(10,40,getWidth()-50,120);
     

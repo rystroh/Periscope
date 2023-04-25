@@ -34,7 +34,8 @@ namespace juce
 
 //#include "DemoUtilities.h"
 //#include "AudioLiveScrollingDisplay.h"
-
+#include <vector>
+#include <algorithm>
 //==============================================================================
 /** A simple class that acts as an AudioIODeviceCallback and writes the
     incoming audio data to a WAV file.
@@ -176,6 +177,8 @@ public:
     }
 
     AudioThumbnail& getAudioThumbnail()     { return thumbnail; }
+    bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
+    
 //-------------------------------------------------------------------------------------
     void setDisplayFullThumbnail (bool displayFull)
     {
@@ -415,7 +418,7 @@ public:
     {
         scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
     }
-    
+//-------------------------------------------------------------------------------------
     void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
     {
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
@@ -442,30 +445,63 @@ public:
                 double SampleSize = totlen * SampleRate;
                 double Ratio = SampleSize / thumbArea.getWidth();
                 double div = Ratio;
+                int it = 0;
                 int iteration = 0;
+                double seed = 1.0;;
+
+                //std::list<double> Divider2,Divider
+                std::vector<double> Divider2, Divider;
+               
                 while (div > 2)
                 {
                     div = div / 2;
                     iteration++;
                 }
+                Divider2.clear();
+                Divider2.push_back(seed);
+                while(it <= iteration)
+                {
+                    seed *= 2;
+                    if(seed< Ratio)
+                        Divider2.push_back(seed);
+                    it++;
+                }
+                for(auto iter = Divider2.cbegin(); iter!= Divider2.cend(); ++iter)
+                {
+                    seed = *iter;
+                    Divider.push_back(seed);
+                    seed *= 3.0;
+                    if (seed < Ratio)
+                        Divider.push_back(seed);
+                }
+                
+                //Divider.sort();
+                std::sort(Divider.begin(), Divider.end());
 
+                if(Ratio > Divider[Divider.size() - 1])
+                    Divider.push_back(Ratio); //if Ratio is not already there, add it 
+                std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
 
                 if(totlen== vrange)
                     XZoomIndex = 0;
 
 
-
-
-
-
                 double NewZoom;
                 if (WheelDelta > 0)
                 {
-                    NewZoom = ThumbXZoom * 1.1;
+                    if (XZoomIndex < Divider.size())
+                    {
+                        XZoomIndex++;
+                        NewZoom = 1.0 / Divider[XZoomIndex];
+                    }                    
                 }
                 else
                 {
-                    NewZoom = ThumbXZoom / 1.1;
+                    if (XZoomIndex > 0)
+                    {
+                        XZoomIndex--;
+                        NewZoom = 1.0 / Divider[XZoomIndex];
+                    }                                     
                 }
                 //ThumbXZoom
                 DBG("OldZoom = " << ThumbXZoom << " NewZoom = " << NewZoom);
@@ -474,6 +510,8 @@ public:
             }
         }
     }
+    //-------------------------------------------------------------------------------------
+ 
 
 private:
     AudioFormatManager formatManager;
