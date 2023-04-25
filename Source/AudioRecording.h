@@ -220,7 +220,7 @@ public:
     void setDisplayXZoom(double xZoom)
     {
         ThumbXZoom = xZoom;
-            auto toto = jlimit(0.0001, 1.0, xZoom); // use jmap ? map2log10 ? use skew ?
+            auto toto = jlimit(0.0000, 1.0, xZoom); // use jmap ? map2log10 ? use skew ?
         ThumbXZoom = toto;
         displayFullThumb = false;
         displayThumbMode = 2; //zoom mode
@@ -418,27 +418,59 @@ public:
     
     void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
     {
+        auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         if (thumbnail.getTotalLength() > 0.0)
         {
-            if (juce::ModifierKeys::currentModifiers.isCtrlDown())
+            if (juce::ModifierKeys::currentModifiers.isCtrlDown()) //Y Zoom
                 repaint();
-            else if (juce::ModifierKeys::currentModifiers.isAltDown())
+            else if (juce::ModifierKeys::currentModifiers.isAltDown())//X Zoom Control
                 repaint();
-            else if (juce::ModifierKeys::currentModifiers.isShiftDown())
-                repaint();
-            else
+            else if (juce::ModifierKeys::currentModifiers.isShiftDown())//X Move
             {
-            auto newStart = visibleRange.getStart() - wheel.deltaY * (visibleRange.getLength()) / 10.0;
-            newStart = jlimit(0.0, jmax(0.0, thumbnail.getTotalLength() - (visibleRange.getLength())), newStart);
-
-        //    if (canMoveTransport())
+                auto newStart = visibleRange.getStart() - wheel.deltaY * (visibleRange.getLength()) / 10.0;
+                newStart = jlimit(0.0, jmax(0.0, thumbnail.getTotalLength() - (visibleRange.getLength())), newStart);     
                 setRange({ newStart, newStart + visibleRange.getLength() });
-                
+                repaint();
+            }
+            else //X Zoom Control
+            {
+                auto vrange = visibleRange.getLength();
+                auto totlen = thumbnail.getTotalLength();
+                auto thumbArea = getLocalBounds();
+                auto WheelDelta = wheel.deltaY;
+                auto SampleRate = 48000;
+                double SampleSize = totlen * SampleRate;
+                double Ratio = SampleSize / thumbArea.getWidth();
+                double div = Ratio;
+                int iteration = 0;
+                while (div > 2)
+                {
+                    div = div / 2;
+                    iteration++;
+                }
 
-         //   if (wheel.deltaY != 0.0f)
-         //       zoomSlider.setValue(zoomSlider.getValue() - wheel.deltaY);
 
-            repaint();
+                if(totlen== vrange)
+                    XZoomIndex = 0;
+
+
+
+
+
+
+                double NewZoom;
+                if (WheelDelta > 0)
+                {
+                    NewZoom = ThumbXZoom * 1.1;
+                }
+                else
+                {
+                    NewZoom = ThumbXZoom / 1.1;
+                }
+                //ThumbXZoom
+                DBG("OldZoom = " << ThumbXZoom << " NewZoom = " << NewZoom);
+                setDisplayXZoom(NewZoom);
+            //repaint(); //no need, already in setDisplay Zoom
             }
         }
     }
@@ -452,6 +484,7 @@ private:
     int displayThumbMode;
     double ThumbYZoom = 1.0f;
     double ThumbXZoom = 1.0f;
+    int XZoomIndex = 0;
 
     juce::ScrollBar scrollbar{ false };
     juce::Range<double> visibleRange;
