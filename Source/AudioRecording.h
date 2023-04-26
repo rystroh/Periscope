@@ -361,6 +361,7 @@ public:
             endofrecording = jmax(10.0, currentlength);
             Range<double> newRange;
             double thumbnailsize;
+            int xzoomticknb;
 
             switch (displayThumbMode)
             {
@@ -373,6 +374,7 @@ public:
                 newRange.setEnd(endTime);
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
+                xzoomticknb = createZoomVector(zoomVector);
                 break;
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
@@ -416,7 +418,62 @@ public:
 //-------------------------------------------------------------------------------------
     void resized() override
     {
+        int xzoomticknb;
         scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
+        xzoomticknb = createZoomVector(zoomVector);
+    }
+//-------------------------------------------------------------------------------------
+    int  createZoomVector(std::vector<double>& Divider)
+    {
+        //auto vrange = visibleRange.getLength();
+        auto totlen = thumbnail.getTotalLength();
+        auto thumbArea = getLocalBounds();
+   
+        auto SampleRate = 48000;
+        double SampleSize = totlen * SampleRate;
+        double Ratio = SampleSize / thumbArea.getWidth();
+        double div = Ratio;
+        int it = 0;
+        int iteration = 0;
+        double seed = 1.0;
+        double sub1Tab[]{ 24.0, 16.0, 12.0, 8.0, 6.0 , 4.0, 3.0 , 2.0 };
+
+        std::vector<double> Divider2;// , Divider;
+        Divider.clear();
+        Divider2.clear();
+        for (double n : sub1Tab)
+        {
+            Divider2.push_back(1.0/n);
+        }
+        while (div > 2)
+        {
+            div = div / 2;
+            iteration++;
+        }
+        Divider2.push_back(seed);
+        while (it < iteration)
+        {
+            seed *= 2;
+            if (seed < Ratio)
+                Divider2.push_back(seed);
+            it++;
+        }
+        for (auto iter = Divider2.cbegin(); iter != Divider2.cend(); ++iter)
+        {
+            seed = *iter;
+            Divider.push_back(seed);
+            seed *= 3.0;
+            if (seed < Ratio)
+                Divider.push_back(seed);
+        }
+
+        std::sort(Divider.begin(), Divider.end());
+
+        if (Ratio > Divider[Divider.size() - 1])
+            Divider.push_back(Ratio); //if Ratio is not already there, add it 
+        std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
+
+        return (Divider.size());
     }
 //-------------------------------------------------------------------------------------
     void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
@@ -439,6 +496,7 @@ public:
             {
                 auto vrange = visibleRange.getLength();
                 auto totlen = thumbnail.getTotalLength();
+
                 auto thumbArea = getLocalBounds();
                 auto WheelDelta = wheel.deltaY;
                 auto SampleRate = 48000;
@@ -447,68 +505,79 @@ public:
                 double div = Ratio;
                 int it = 0;
                 int iteration = 0;
-                double seed = 1.0;;
-
-                //std::list<double> Divider2,Divider
-                std::vector<double> Divider2, Divider;
-               
-                while (div > 2)
-                {
-                    div = div / 2;
-                    iteration++;
-                }
-                Divider2.clear();
-                Divider2.push_back(seed);
-                while(it <= iteration)
-                {
-                    seed *= 2;
-                    if(seed< Ratio)
-                        Divider2.push_back(seed);
-                    it++;
-                }
-                for(auto iter = Divider2.cbegin(); iter!= Divider2.cend(); ++iter)
-                {
-                    seed = *iter;
-                    Divider.push_back(seed);
-                    seed *= 3.0;
-                    if (seed < Ratio)
-                        Divider.push_back(seed);
-                }
-                
-                //Divider.sort();
-                std::sort(Divider.begin(), Divider.end());
-
-                if(Ratio > Divider[Divider.size() - 1])
-                    Divider.push_back(Ratio); //if Ratio is not already there, add it 
-                std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
+                double seed = 1.0;
 
                 if(totlen== vrange)
                     XZoomIndex = 0;
 
-
-                double NewZoom;
+                double NewZoomFactor;
+                DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " << zoomVector.size());
                 if (WheelDelta > 0)
                 {
-                    if (XZoomIndex < Divider.size())
+                    if (XZoomIndex < zoomVector.size()-1)
                     {
                         XZoomIndex++;
-                        NewZoom = 1.0 / Divider[XZoomIndex];
-                    }                    
+                        NewZoomFactor =  zoomVector[XZoomIndex];
+                    }
+                    else
+                        NewZoomFactor = zoomVector[zoomVector.size() - 1];
                 }
                 else
                 {
                     if (XZoomIndex > 0)
                     {
                         XZoomIndex--;
-                        NewZoom = 1.0 / Divider[XZoomIndex];
-                    }                                     
+                        NewZoomFactor = zoomVector[XZoomIndex];
+                    }
+                    else
+                        NewZoomFactor = zoomVector[0];
                 }
                 //ThumbXZoom
-                DBG("OldZoom = " << ThumbXZoom << " NewZoom = " << NewZoom);
-                setDisplayXZoom(NewZoom);
+                DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " << zoomVector.size() << " NewZoom " << NewZoomFactor);
+                //setDisplayXZoom(NewZoom);
+                setDisplayXZone(NewZoomFactor);
             //repaint(); //no need, already in setDisplay Zoom
             }
         }
+    }
+    //-------------------------------------------------------------------------------------
+    void setDisplayXZone(double zoomfactor)
+    {
+        auto vrange = visibleRange.getLength(); // visible zone
+        auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
+        double displaystartTime = 0;
+        double displayendTime;
+
+
+        auto thumbArea = getLocalBounds(); //bounds of display zone
+
+        auto SampleRate = 48000;
+        double SampleSize = totlen * SampleRate; //size  of sample in points
+        double Ratio = SampleSize / thumbArea.getWidth(); 
+
+        
+        
+
+        displayFullThumb = false;
+        displayThumbMode = 2; //zoom mode
+     //   repaint();
+        if (thumbnail.getTotalLength() > 0)
+        {
+            auto thumbnailsize = thumbnail.getTotalLength();
+            auto width = getWidth();
+         //   auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
+
+            auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
+
+            displayendTime = totlen * zoomfactor / Ratio;
+               // 
+         //   DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
+            //DBG("thumbnailsize = " << thumbnailsize << " vRLength = " << visibleRange.getLength() << " vRStart = " << visibleRange.getStart() << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
+            
+            setRange({ displaystartTime, displayendTime });
+        }
+        else
+            repaint();
     }
     //-------------------------------------------------------------------------------------
  
@@ -523,6 +592,7 @@ private:
     double ThumbYZoom = 1.0f;
     double ThumbXZoom = 1.0f;
     int XZoomIndex = 0;
+    std::vector<double> zoomVector;
 
     juce::ScrollBar scrollbar{ false };
     juce::Range<double> visibleRange;

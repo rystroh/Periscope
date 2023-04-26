@@ -91,6 +91,7 @@ private:
                         //playButton.setEnabled(true);
                         recordingThumbnail.setSource(new juce::FileInputSource(file));
                         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                        levelSlider.setValue(1.0); //Reset Volume Slider to 1 upon file change
                         //readerSource.reset(newSource.release());
                     }
                 }

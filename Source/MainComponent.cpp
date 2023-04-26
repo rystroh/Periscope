@@ -74,7 +74,7 @@ MainComponent::MainComponent()
     //audioDeviceManager.addAudioCallback(&recorder);
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.addAudioCallback(&recorder);
-    setSize(800, 600);
+    setSize(850, 600);
     formatManager.registerBasicFormats();
 }
 
