@@ -248,6 +248,9 @@ public:
     void setDisplayYZoom(double yZoom)
     {
         ThumbYZoom = yZoom;
+        if (yZoom == 1.0)
+            YZoomIndex = 0;
+        DBG("Y Zoom = " << ThumbYZoom);
         repaint();
     }
  //-------------------------------------------------------------------------------------
@@ -481,13 +484,36 @@ public:
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         DBG("Mouse.x = " << Posi3.getX());
     }
+//-------------------------------------------------------------------------------------
     void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
     {
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         if (thumbnail.getTotalLength() > 0.0)
         {
             if (juce::ModifierKeys::currentModifiers.isCtrlDown()) //Y Zoom
-                repaint();
+            {
+                auto WheelDelta = wheel.deltaY;
+                if (WheelDelta > 0)
+                {
+                    if (YZoomIndex < 48)
+                    {
+                        YZoomIndex++;
+                        ThumbYZoom = ThumbYZoom * 1.4125354;
+                        repaint();
+                    }
+                }
+                else
+                {
+                    if (YZoomIndex > 0)
+                    {
+                        YZoomIndex--;
+                        ThumbYZoom = ThumbYZoom / 1.4125354;
+                        repaint();
+                    }
+                }
+              
+            }
+                
             else if (juce::ModifierKeys::currentModifiers.isAltDown())//X Zoom Control
                 repaint();
             else if (juce::ModifierKeys::currentModifiers.isShiftDown())//X Move
@@ -575,9 +601,9 @@ public:
 
             displayWidth = totlen * zoomfactor / Ratio;
 
-            displayStartTime = mouseShift * displayWidth / width;
+            //displayStartTime = mouseShift * displayWidth / width;
 
-            //displayStartTime = PosixMove * displayWidth / width;
+            displayStartTime = PosixMove * displayWidth / width;
             displayEndTime = displayStartTime + displayWidth;
                     
             DBG("Mouse.x = " << Posi3.x << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
@@ -601,6 +627,7 @@ private:
     bool displayFullThumb = false;
     int displayThumbMode;
     double ThumbYZoom = 1.0f;
+    int YZoomIndex = 0;
     double ThumbXZoom = 1.0f;
     int XZoomIndex = 0;
     std::vector<double> zoomVector;

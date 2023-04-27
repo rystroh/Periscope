@@ -158,7 +158,7 @@ private:
         recordButton.setButtonText("Record");
         //recordingThumbnail.setDisplayFullThumbnail(true);
         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-
+        levelSlider.setValue(1.0f);
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
