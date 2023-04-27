@@ -476,6 +476,11 @@ public:
         return (Divider.size());
     }
 //-------------------------------------------------------------------------------------
+    void mouseDown(const MouseEvent& event)
+    {
+        auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+        DBG("Mouse.x = " << Posi3.getX());
+    }
     void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
     {
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
@@ -543,41 +548,39 @@ public:
     //-------------------------------------------------------------------------------------
     void setDisplayXZone(double zoomfactor)
     {
-        auto vrange = visibleRange.getLength(); // visible zone
-        auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
-        double displayStartTime = 0;
-        double displayEndTime;
-        double displayWidth;
-
-
-        auto thumbArea = getLocalBounds(); //bounds of display zone
-
-        auto SampleRate = 48000;
-        double SampleSize = totlen * SampleRate; //size  of sample in points
-        double Ratio = SampleSize / thumbArea.getWidth(); 
-
-        auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
-        
-        
-
         displayFullThumb = false;
         displayThumbMode = 2; //zoom mode
+        auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
      //   repaint();
         if (thumbnail.getTotalLength() > 0)
         {
-            auto thumbnailsize = thumbnail.getTotalLength();
-            auto width = getWidth();
-         //   auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
+            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            auto SampleRate = 48000;
+            auto vrange = visibleRange.getLength(); // visible zone
+            auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
+            double displayStartTime, displayEndTime, displayWidth;
+
+            auto thumbArea = getLocalBounds(); //bounds of display zone
+            auto width = getWidth(); // width of Display zone in pixels
+
+            double SampleSize = totlen * SampleRate; //size  of sample in points
+            double Ratio = SampleSize / thumbArea.getWidth();
 
             auto timeAtMousePos = xToTime((float)Posi3.x);
-            auto mouseShift = timeAtMousePos * zoomfactor / Ratio;
-            displayWidth = totlen * zoomfactor / Ratio;
-            double midDisplay = xToTime((float)width / 2.0);
+            auto mouseShift = 100.0*(timeAtMousePos * Ratio / zoomfactor - timeAtMousePos);
 
-            double halfInterval = displayWidth / 2.0;
-            displayStartTime = timeAtMousePos - halfInterval;
-            displayEndTime = timeAtMousePos + halfInterval; //jmin(displaystartTime + displayendWidth, totlen);
-            DBG("Mouse.x = " << Posi3.x << " timeAtMousePos = " << timeAtMousePos << " displayStartTime = " << displayStartTime << " displayEndTime = " << displayEndTime);
+            double PosixMove = (Posi3.x * Ratio / zoomfactor) - Posi3.x;                    
+
+         //   auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
+
+            displayWidth = totlen * zoomfactor / Ratio;
+
+            displayStartTime = mouseShift * displayWidth / width;
+
+            //displayStartTime = PosixMove * displayWidth / width;
+            displayEndTime = displayStartTime + displayWidth;
+                    
+            DBG("Mouse.x = " << Posi3.x << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
                // 
          //   DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
             //DBG("thumbnailsize = " << thumbnailsize << " vRLength = " << visibleRange.getLength() << " vRStart = " << visibleRange.getStart() << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);

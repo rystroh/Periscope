@@ -17,7 +17,7 @@ MainComponent::MainComponent()
     openButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x5c5c5c5c));
     openButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
 
-
+    /*
     xZoomSlider.setRange(0.0, 1);
     xZoomSlider.setValue(0.0f);
     xZoomSlider.setSkewFactor(4);
@@ -25,11 +25,11 @@ MainComponent::MainComponent()
 
     xZoomSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
     xZoomLabel.setText("X Zoom", juce::dontSendNotification);
-    xZoomSlider.addListener(this);
+    xZoomSlider.addListener(this);*/
     //xZoomSlider.onValueChange = [this] { recordingThumbnail->setZoomFactor(xZoomSlider.getValue()); };
 
-    addAndMakeVisible(xZoomSlider);
-    addAndMakeVisible(xZoomLabel);
+    //addAndMakeVisible(xZoomSlider);
+    //addAndMakeVisible(xZoomLabel);
 
 
     levelSlider.setRange(0.0, 8.0);
