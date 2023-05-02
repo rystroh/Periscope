@@ -595,7 +595,9 @@ public:
             auto timeAtMousePos = xToTime((float)Posi3.x);
             auto mouseShift = 100.0*(timeAtMousePos * Ratio / zoomfactor - timeAtMousePos);
 
-            double PosixMove = (Posi3.x * Ratio / zoomfactor) - Posi3.x;                    
+            double PosixMove = (Posi3.x * Ratio / zoomfactor) - Posi3.x;
+            double PosixRatioSec = vrange/ timeAtMousePos;
+            double PosixRatioPix = (double)width / (double) Posi3.x;
 
          //   auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
 
@@ -603,10 +605,13 @@ public:
 
             //displayStartTime = mouseShift * displayWidth / width;
 
-            displayStartTime = PosixMove * displayWidth / width;
+            //displayStartTime = PosixMove * displayWidth / width;
+
+            //displayStartTime = timeAtMousePos -  displayWidth / PosixRatioSec;
+            displayStartTime = timeAtMousePos - displayWidth / PosixRatioPix;
             displayEndTime = displayStartTime + displayWidth;
                     
-            DBG("Mouse.x = " << Posi3.x << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
+            DBG("Mouse.x = " << Posi3.x << " PosixRatio = " << PosixRatioPix << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
                // 
          //   DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
             //DBG("thumbnailsize = " << thumbnailsize << " vRLength = " << visibleRange.getLength() << " vRStart = " << visibleRange.getStart() << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
