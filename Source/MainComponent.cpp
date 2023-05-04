@@ -7,8 +7,6 @@ MainComponent::MainComponent()
     // Make sure you set the size of the component after
     // you add any child components.
     
-
-
     addAndMakeVisible(recordButton);
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
@@ -16,21 +14,6 @@ MainComponent::MainComponent()
     addAndMakeVisible(openButton);
     openButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x5c5c5c5c));
     openButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
-
-    /*
-    xZoomSlider.setRange(0.0, 1);
-    xZoomSlider.setValue(0.0f);
-    xZoomSlider.setSkewFactor(4);
-    
-
-    xZoomSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
-    xZoomLabel.setText("X Zoom", juce::dontSendNotification);
-    xZoomSlider.addListener(this);*/
-    //xZoomSlider.onValueChange = [this] { recordingThumbnail->setZoomFactor(xZoomSlider.getValue()); };
-
-    //addAndMakeVisible(xZoomSlider);
-    //addAndMakeVisible(xZoomLabel);
-
 
     levelSlider.setRange(0.0, 8.0);
     levelSlider.setValue(1.0f);
@@ -42,7 +25,6 @@ MainComponent::MainComponent()
     addAndMakeVisible(levelSlider);
     addAndMakeVisible(levelLabel);
     //transport.addChangeListener(this);
-
 
     recordButton.onClick = [this]
     {
@@ -150,11 +132,7 @@ void MainComponent::resized()
     recordingThumbnail.setBounds(10,40,getWidth()-50,120);
     
     //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
-
-    //xZoomLabel.setBounds(10, 170, 90, 20);
-    //xZoomSlider.setBounds(100, 170, getWidth() - 130, 20);
-
-    
+   
     levelSlider.setBounds(getWidth() - 30, 40, 20, 120);
     levelLabel.setBounds(getWidth() - 70, 10, 70, 20);
 }

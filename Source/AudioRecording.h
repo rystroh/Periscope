@@ -209,51 +209,7 @@ public:
     void setDisplayThumbnailMode(int displayMode)
     {
         displayThumbMode = displayMode;
-        /*
-        switch (displayMode)
-        {
-            case 0: //Full Thumb mode
-                repaint();
-                break;
-            case 1: // recording mode
-                repaint();
-                break;
-            case 2: // zooming mode
-                auto thumbnailsize = thumbnail.getTotalLength();
-                Range<double> newRange(0.0, thumbnailsize);
-                scrollbar.setRangeLimits(newRange);
-                setRange(newRange);
-                break;
-            default:
-                repaint();
-
-        }*/
     }
-//-------------------------------------------------------------------------------------
- /*   void setDisplayXZoom(double xZoom)
-    {
-        ThumbXZoom = xZoom;
-            auto toto = jlimit(0.0000, 1.0, xZoom); // use jmap ? map2log10 ? use skew ?
-        ThumbXZoom = toto;
-        displayFullThumb = false;
-        displayThumbMode = 2; //zoom mode
-     //   repaint();
-        if (thumbnail.getTotalLength() > 0)
-        {
-            auto thumbnailsize = thumbnail.getTotalLength();
-            auto width = getWidth();
-            auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
-            
-            auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
-            //timeAtCentre returns (x / (float)getWidth()) * (visibleRange.getLength()) + visibleRange.getStart();
-            // 
-         //   DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
-            //DBG("thumbnailsize = " << thumbnailsize << " vRLength = " << visibleRange.getLength() << " vRStart = " << visibleRange.getStart() << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
-            setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
-        }
-        else
-            repaint();
-    }*/
  //-------------------------------------------------------------------------------------
     void setDisplayYZoom(double yZoom)
     {
@@ -289,12 +245,37 @@ public:
 //-------------------------------------------------------------------------------------
     void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
     {
+
+        double zoomfactor = 128;
+        auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+        auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
+        double displayStartTime, displayEndTime, displayWidth;
+
+        auto thumbArea = getLocalBounds(); //bounds of display zone
+        auto width = getWidth(); // width of Display zone in pixels
+
+        double SampleSize = totlen * sampleRate; //size  of sample in points
+        double Ratio = SampleSize / thumbArea.getWidth();
+        auto visRangeWidth = visibleRange.getLength();
+        double curRatio = Ratio / totlen * (double)visibleRange.getLength();
+
+
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
+        int newX1, newX2;
+
+        newY41 = 0;
+        newY42 = thumbnailBounds.getHeight();
+
         thumbh = thumbnailBounds.getHeight();
         newY2 = thumbnailBounds.getCentreY();
         g.setColour(juce::Colours::grey);
-        g.drawLine(thumbnailBounds.getX(), newY2, thumbnailBounds.getRight(), newY2);
-
+        int secondNb = (int)totlen;
+        for (int i = 1; i < secondNb; i++)
+        {        
+            newX1 = timeToX((double)i); // get 
+            g.drawLine(newX1, newY41, newX1, newY42);
+        }
+/*
         newY41 = newY2 - thumbh / 4;
         newY42 = newY2 + thumbh / 4;
         g.setColour(juce::Colours::darkgrey);
@@ -308,7 +289,7 @@ public:
         g.drawLine(thumbnailBounds.getX(), newY81, thumbnailBounds.getRight(), newY81);
         g.drawLine(thumbnailBounds.getX(), newY82, thumbnailBounds.getRight(), newY82);
         g.drawLine(thumbnailBounds.getX(), newY83, thumbnailBounds.getRight(), newY83);
-        g.drawLine(thumbnailBounds.getX(), newY84, thumbnailBounds.getRight(), newY84);
+        g.drawLine(thumbnailBounds.getX(), newY84, thumbnailBounds.getRight(), newY84);*/
 
     }
 //-------------------------------------------------------------------------------------
@@ -388,6 +369,7 @@ public:
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
                 xzoomticknb = createZoomVector(zoomVector);
+                paintGrid(g, thumbArea);
                 break;
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
@@ -408,6 +390,7 @@ public:
                 endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;*/
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                paintGrid(g, thumbArea);
                 break;
             case 3: //stopping
                 thumbnailsize = thumbnail.getTotalLength();

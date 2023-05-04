@@ -43,9 +43,6 @@ private:
     juce::File lastRecording;
     juce::Slider levelSlider;
     juce::Label levelLabel;
-
-    //juce::Slider xZoomSlider;
-    //juce::Label xZoomLabel;
     
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
@@ -61,12 +58,7 @@ private:
             recordingThumbnail.setDisplayYZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }
-     /*   if (slider == &xZoomSlider)
-        {
-            value = xZoomSlider.getValue();
-            recordingThumbnail.setDisplayXZoom(value);
-            //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
-        }*/
+
     }
  //-------------------------------------------------------------------------------------
     void openButtonClicked()
@@ -125,9 +117,6 @@ private:
         recordingThumbnail.setSampleRate(recorder.getSampleRate());
         recorder.startRecording(lastRecording);
         recordButton.setButtonText("Stop");
-        //xZoomSlider.setValue(0.0f);
-        //recordingThumbnail.setDisplayXZoom(0); //beware this function resets displayFullThumb
-        //recordingThumbnail.setDisplayFullThumbnail(true);
         recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
     }
 //-------------------------------------------------------------------------------------
