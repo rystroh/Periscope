@@ -113,6 +113,12 @@ public:
     {
         sampleRate = device->getCurrentSampleRate();
     }
+    
+    //---------------------------------
+    double getSampleRate(void)
+    {
+        return(sampleRate);
+    }
 //-------------------------------------------------------------------------------------
     void audioDeviceStopped() override
     {
@@ -179,6 +185,11 @@ public:
     AudioThumbnail& getAudioThumbnail()     { return thumbnail; }
     bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
     
+//-------------------------------------------------------------------------------------
+    void setSampleRate(double smpRate)
+    {
+        sampleRate = smpRate;
+    }
 //-------------------------------------------------------------------------------------
     void setDisplayFullThumbnail (bool displayFull)
     {
@@ -432,8 +443,8 @@ public:
         auto totlen = thumbnail.getTotalLength();
         auto thumbArea = getLocalBounds();
    
-        auto SampleRate = 48000;
-        double SampleSize = totlen * SampleRate;
+    //    auto SampleRate = 48000;
+        double SampleSize = totlen * sampleRate;
         double Ratio = SampleSize / thumbArea.getWidth();
         double div = Ratio;
         int it = 0;
@@ -525,22 +536,11 @@ public:
             }
             else //X Zoom Control
             {
-                auto vrange = visibleRange.getLength();
-                auto totlen = thumbnail.getTotalLength();
-
-                auto thumbArea = getLocalBounds();
                 auto WheelDelta = wheel.deltaY;
-                auto SampleRate = 48000;
-                double SampleSize = totlen * SampleRate;
-                double Ratio = SampleSize / thumbArea.getWidth();
-                double div = Ratio;
-                int it = 0;
-                int iteration = 0;
-                double seed = 1.0;
-
+                auto totlen = thumbnail.getTotalLength();
+                auto vrange = visibleRange.getLength();
                 if(totlen== vrange)
                     XZoomIndex = 0;
-
                 double NewZoomFactor;
                 //DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " << zoomVector.size());
                 if (WheelDelta > 0)
@@ -563,11 +563,9 @@ public:
                     else
                         NewZoomFactor = zoomVector[0];
                 }
-                //ThumbXZoom
                 //DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " << zoomVector.size() << " NewZoom " << NewZoomFactor);
-                //setDisplayXZoom(NewZoom);
                 setDisplayXZone(NewZoomFactor);
-            //repaint(); //no need, already in setDisplay Zoom
+
             }
         }
     }
@@ -579,43 +577,25 @@ public:
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
      //   repaint();
         if (thumbnail.getTotalLength() > 0)
-        {
-            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
-            auto SampleRate = 48000;
-            auto vrange = visibleRange.getLength(); // visible zone
+        {            
+     //       auto SampleRate = 48000;
             auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
             double displayStartTime, displayEndTime, displayWidth;
 
             auto thumbArea = getLocalBounds(); //bounds of display zone
             auto width = getWidth(); // width of Display zone in pixels
 
-            double SampleSize = totlen * SampleRate; //size  of sample in points
+            double SampleSize = totlen * sampleRate; //size  of sample in points
             double Ratio = SampleSize / thumbArea.getWidth();
 
             auto timeAtMousePos = xToTime((float)Posi3.x);
-            auto mouseShift = 100.0*(timeAtMousePos * Ratio / zoomfactor - timeAtMousePos);
 
-            double PosixMove = (Posi3.x * Ratio / zoomfactor) - Posi3.x;
-            double PosixRatioSec = vrange/ timeAtMousePos;
             double PosixRatioPix = (double)width / (double) Posi3.x;
-
-         //   auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99999999, xZoom)));
-
             displayWidth = totlen * zoomfactor / Ratio;
 
-            //displayStartTime = mouseShift * displayWidth / width;
-
-            //displayStartTime = PosixMove * displayWidth / width;
-
-            //displayStartTime = timeAtMousePos -  displayWidth / PosixRatioSec;
             displayStartTime = timeAtMousePos - displayWidth / PosixRatioPix;
             displayEndTime = displayStartTime + displayWidth;
-                    
-            DBG("Mouse.x = " << Posi3.x << " PosixRatio = " << PosixRatioPix << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
-               // 
-         //   DBG("thumbnailsize = " << thumbnailsize << " width = " << width << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
-            //DBG("thumbnailsize = " << thumbnailsize << " vRLength = " << visibleRange.getLength() << " vRStart = " << visibleRange.getStart() << " timeAtCentre = " << timeAtCentre << " NewSc = " << newScale);
-            
+         //   DBG("Mouse.x = " << Posi3.x << " PosixRatio = " << PosixRatioPix << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
             setRange({ displayStartTime, displayEndTime });
         }
         else
@@ -639,6 +619,7 @@ private:
 
     juce::ScrollBar scrollbar{ false };
     juce::Range<double> visibleRange;
+    double sampleRate = 0.0;
 
 //-------------------------------------------------------------------------------------
     float timeToX(const double time) const

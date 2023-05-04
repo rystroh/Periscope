@@ -102,7 +102,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     auto& devManager = MainComponent::getAudioDeviceManager();
     auto device = devManager.getCurrentAudioDevice();
     recorder.audioDeviceAboutToStart(device);
-
+    recordingThumbnail.setSampleRate(device->getCurrentSampleRate());
 }
 //-------------------------------------------------------------------------------------
 

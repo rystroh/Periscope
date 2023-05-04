@@ -90,6 +90,7 @@ private:
                         //transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
                         //playButton.setEnabled(true);
                         recordingThumbnail.setSource(new juce::FileInputSource(file));
+                        recordingThumbnail.setSampleRate(reader->sampleRate);
                         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
                         levelSlider.setValue(1.0); //Reset Volume Slider to 1 upon file change
                         //readerSource.reset(newSource.release());
@@ -121,9 +122,8 @@ private:
 #endif
 
         lastRecording = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-
+        recordingThumbnail.setSampleRate(recorder.getSampleRate());
         recorder.startRecording(lastRecording);
-
         recordButton.setButtonText("Stop");
         xZoomSlider.setValue(0.0f);
         recordingThumbnail.setDisplayXZoom(0); //beware this function resets displayFullThumb
