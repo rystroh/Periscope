@@ -54,7 +54,7 @@ public:
         stop();
     }
 
-    //==============================================================================
+    //==================================================================================
     void startRecording (const File& file)
     {
         stop();
@@ -108,13 +108,12 @@ public:
         return activeWriter.load() != nullptr;
     }
 
-//==============================================================================
+//=====================================================================================
     void audioDeviceAboutToStart(AudioIODevice* device) override
     {
         sampleRate = device->getCurrentSampleRate();
     }
-    
-    //---------------------------------
+//-------------------------------------------------------------------------------------
     double getSampleRate(void)
     {
         return(sampleRate);
@@ -231,7 +230,7 @@ public:
         }*/
     }
 //-------------------------------------------------------------------------------------
-    void setDisplayXZoom(double xZoom)
+ /*   void setDisplayXZoom(double xZoom)
     {
         ThumbXZoom = xZoom;
             auto toto = jlimit(0.0000, 1.0, xZoom); // use jmap ? map2log10 ? use skew ?
@@ -254,7 +253,7 @@ public:
         }
         else
             repaint();
-    }
+    }*/
  //-------------------------------------------------------------------------------------
     void setDisplayYZoom(double yZoom)
     {

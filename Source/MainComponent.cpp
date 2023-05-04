@@ -151,8 +151,8 @@ void MainComponent::resized()
     
     //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
 
-    xZoomLabel.setBounds(10, 170, 90, 20);
-    xZoomSlider.setBounds(100, 170, getWidth() - 130, 20);
+    //xZoomLabel.setBounds(10, 170, 90, 20);
+    //xZoomSlider.setBounds(100, 170, getWidth() - 130, 20);
 
     
     levelSlider.setBounds(getWidth() - 30, 40, 20, 120);
