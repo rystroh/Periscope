@@ -68,8 +68,8 @@ public:
             {
                 // Now create a WAV writer object that writes to our output stream...
                 WavAudioFormat wavFormat;
-
-                if (auto writer = wavFormat.createWriterFor (fileStream.get(), sampleRate, 2, 24, {}, 0))
+               
+                if (auto writer = wavFormat.createWriterFor (fileStream.get(), sampleRate, chanNb, bitDepth, {}, 0))
                 {
                     fileStream.release(); // (passes responsibility for deleting the stream to the writer object that is now using it)
 
@@ -118,6 +118,28 @@ public:
     {
         return(sampleRate);
     }
+    //-------------------------------------------------------------------------------------
+    bool setSampleDepth(int depth)
+    {
+        int possibleDepth[] = { 8, 16, 24 };
+        int n = sizeof(possibleDepth) / sizeof(*possibleDepth);
+        bool exists = std::find(possibleDepth, possibleDepth + n, depth) != possibleDepth + n;
+        if (exists) {
+            bitDepth = depth;
+        }
+        return(exists);
+    }
+    //-------------------------------------------------------------------------------------
+    bool setSampleChanNb(int chNb)
+    {
+        if ((chNb == 1) || (chNb == 2))
+        {
+            chanNb = chNb;
+            return(true);
+        }
+        else
+            return(false);
+    }
 //-------------------------------------------------------------------------------------
     void audioDeviceStopped() override
     {
@@ -153,6 +175,8 @@ private:
     TimeSliceThread backgroundThread { "Audio Recorder Thread" }; // the thread that will write our audio data to disk
     std::unique_ptr<AudioFormatWriter::ThreadedWriter> threadedWriter; // the FIFO used to buffer the incoming data
     double sampleRate = 0.0;
+    int chanNb = 1;
+    int bitDepth = 24;
     int64 nextSampleNum = 0;
 
     CriticalSection writerLock;
@@ -268,29 +292,38 @@ public:
 
         thumbh = thumbnailBounds.getHeight();
         newY2 = thumbnailBounds.getCentreY();
-        g.setColour(juce::Colours::grey);
+        g.setOpacity(0.25);
+        g.setColour(juce::Colours::darkgrey);
+
         int secondNb = (int)totlen;
         for (int i = 1; i < secondNb; i++)
         {        
             newX1 = timeToX((double)i); // get 
-            g.drawLine(newX1, newY41, newX1, newY42);
+            //g.drawLine(newX1, newY41, newX1, newY42);
+            g.fillRect(newX1, 0.0, 1.0, thumbh); // using fillRect method instead of drawline for finer results
         }
-/*
-        newY41 = newY2 - thumbh / 4;
-        newY42 = newY2 + thumbh / 4;
+        // Y Level lines
+        g.setColour(juce::Colours::red);        
+        g.fillRect(thumbnailBounds.getX(), newY2, thumbnailBounds.getWidth(), 1.0);
+
+        double yRatio = (double)thumbh * ThumbYZoom;
+
+        newY41 = newY2 - yRatio / 2;
+        newY42 = newY2 + yRatio / 2;
         g.setColour(juce::Colours::darkgrey);
-        g.drawLine(thumbnailBounds.getX(), newY42, thumbnailBounds.getRight(), newY42);
-        g.drawLine(thumbnailBounds.getX(), newY41, thumbnailBounds.getRight(), newY41);
-        newY81 = newY41 - thumbh / 8;
-        newY82 = newY41 + thumbh / 8;
-        newY83 = newY42 - thumbh / 8;
-        newY84 = newY42 + thumbh / 8;
+        g.fillRect(thumbnailBounds.getX(), newY42, thumbnailBounds.getWidth(), 1.0);
+        g.fillRect(thumbnailBounds.getX(), newY41, thumbnailBounds.getWidth(), 1.0);
 
-        g.drawLine(thumbnailBounds.getX(), newY81, thumbnailBounds.getRight(), newY81);
-        g.drawLine(thumbnailBounds.getX(), newY82, thumbnailBounds.getRight(), newY82);
-        g.drawLine(thumbnailBounds.getX(), newY83, thumbnailBounds.getRight(), newY83);
-        g.drawLine(thumbnailBounds.getX(), newY84, thumbnailBounds.getRight(), newY84);*/
+        newY81 = newY2 - yRatio / 4;
+        newY82 = newY2 + yRatio / 4;
+        newY83 = newY2 - yRatio / 4;
+        newY84 = newY2 + yRatio / 4;
 
+        g.fillRect(thumbnailBounds.getX(), newY81, thumbnailBounds.getWidth(), 1.0);
+        g.fillRect(thumbnailBounds.getX(), newY84, thumbnailBounds.getWidth(), 1.0);
+        //g.fillRect(thumbnailBounds.getX(), newY42, thumbnailBounds.getWidth(), 1.0);
+        //g.fillRect(thumbnailBounds.getX(), newY41, thumbnailBounds.getWidth(), 1.0);
+         
     }
 //-------------------------------------------------------------------------------------
     /*void paintit(Graphics& g) override

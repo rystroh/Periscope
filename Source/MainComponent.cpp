@@ -112,6 +112,8 @@ void MainComponent::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.setColour(juce::Colours::orange);
+    g.drawRect(diRect);
 
     // You can add your drawing code here!
 }
@@ -122,17 +124,23 @@ void MainComponent::resized()
     // If you add any child components, this is where you should
     // update their positions.
     auto area = getLocalBounds();
+    juce::Rectangle<int>ThumbnailZone;
+
 
     //liveAudioScroller.setBounds(area.removeFromTop(80).reduced(8));
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     //recordButton.setBounds(area.removeFromTop(36).removeFromLeft(140).reduced(8));
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+
     //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
-    recordingThumbnail.setBounds(10,40,getWidth()-50,120);
+    ThumbnailZone = area;// .withTrimmedTop(20);
+    diRect = ThumbnailZone;
+
+    recordingThumbnail.setBounds(10,40,getWidth()-50, ThumbnailZone.getHeight() / 4);
     
     //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
    
-    levelSlider.setBounds(getWidth() - 30, 40, 20, 120);
-    levelLabel.setBounds(getWidth() - 70, 10, 70, 20);
+    levelSlider.setBounds(getWidth() - 30, area.getY(), 20, ThumbnailZone.getHeight() / 4);
+    levelLabel.setBounds(getWidth() - 150, 10, 150, 20);
 }
