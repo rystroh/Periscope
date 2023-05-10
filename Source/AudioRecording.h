@@ -283,7 +283,14 @@ public:
         auto visRangeWidth = visibleRange.getLength();
         double curRatio = Ratio / totlen * (double)visibleRange.getLength();
 
-
+        double stepSize;
+    /*    stepSize = getTimeStepSize(1126, (double)4.0);
+        stepSize = getTimeStepSize(900, (double)8.0);
+        stepSize = getTimeStepSize(895, (double)8.0);
+        stepSize = getTimeStepSize(452, (double)8.0);
+        stepSize = getTimeStepSize(447, (double)8.0);      */
+        stepSize = getTimeStepSize(width, (double) visRangeWidth);
+        DBG("paintGrid::stepSize = " << stepSize);
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
         int newX1, newX2;
 
@@ -296,9 +303,12 @@ public:
         g.setColour(juce::Colours::darkgrey);
 
         int secondNb = (int)totlen;
-        for (int i = 1; i < secondNb; i++)
+        double vBarNb = (double)totlen / stepSize;
+
+
+        for (int i = 1; i < vBarNb; i++)
         {        
-            newX1 = timeToX((double)i); // get 
+            newX1 = timeToX((double)i* stepSize); // get 
             //g.drawLine(newX1, newY41, newX1, newY42);
             g.fillRect(newX1, 0.0, 1.0, thumbh); // using fillRect method instead of drawline for finer results
         }
@@ -616,9 +626,53 @@ public:
         else
             repaint();
     }
-    //-------------------------------------------------------------------------------------
- 
+//---------------------------------------------------------------------------------
+    double  getTimeStepSize(int displayWidthPix,double wavDurationToDisplaySec)
+    {
+        std::vector<float>NiceTimeRatios { 1.0 , 2.0 , 5.0 , 10.0};
+        const double minRectWidth{ 56.0 };
+        // first pass determin the magnitude range
+        DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
+        double NextRatio = wavDurationToDisplaySec * minRectWidth / (double) displayWidthPix;
+        int i {0};
+        double mag {1};
+        DBG("getTimeStepSize::NextRatio = " << NextRatio);
+        if (NextRatio >= 1.0)
+        {
+            while (NextRatio > mag * NiceTimeRatios[i])
+            {
+                i++;
+                if (i == 4)
+                {
+                    i = 0;
+                    mag *= 10.0;
+                }
+            }
+            return((double)mag * NiceTimeRatios[i-1]);
+        }
+        else //(NextRatio < 1)
+        {
+            mag = 0.1;
+            while (NextRatio > mag * NiceTimeRatios[i])
+            {
+                i++;
+                if (i == 4)
+                {
+                    i = 0;
+                    mag /= 10.0;
+                }
+            }
+            return((double)mag * NiceTimeRatios[i-1]);
 
+        }
+ }
+//---------------------------------------------------------------------------------
+    std::vector<float>  getTimeLabels()
+    {
+
+    }
+
+//-------------------------------------------------------------------------------------
 private:
     AudioFormatManager formatManager;
     AudioThumbnailCache thumbnailCache  { 10 };
