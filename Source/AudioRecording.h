@@ -636,10 +636,19 @@ public:
         double NextRatio = wavDurationToDisplaySec * minRectWidth / (double) displayWidthPix;
         int i {0};
         double mag {1};
+        double magceil, magfloor;
+        double magRatio = log10(NextRatio);
+
         DBG("getTimeStepSize::NextRatio = " << NextRatio);
+        magceil = ceil(magRatio);
+        magfloor = floor(magRatio);
+        mag = exp(log(10.0) * -1.0 * magceil);
+        mag = exp(log(10.0) * -1.0 * magfloor);
+        NextRatio *= mag;
+
         if (NextRatio >= 1.0)
         {
-            while (NextRatio > mag * NiceTimeRatios[i])
+            while (NextRatio > NiceTimeRatios[i])
             {
                 i++;
                 if (i == 4)
@@ -648,7 +657,7 @@ public:
                     mag *= 10.0;
                 }
             }
-            return((double)mag * NiceTimeRatios[i-1]);
+            return( NiceTimeRatios[i-1] / mag);
         }
         else //(NextRatio < 1)
         {
