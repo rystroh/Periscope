@@ -276,28 +276,16 @@ public:
         double NextRatio = wavDurationToDisplaySec * minRectWidth / (double)displayWidthPix;
         int i{ 0 };
         double mag{ 1 };
-        //double magceil;
         double magfloor;
         double magRatio = log10(NextRatio);
-
-        DBG("getTimeStepSize::NextRatio = " << NextRatio);
-        //   magceil = ceil(magRatio);
-           //mag = exp(log(10.0) * -1.0 * magceil);
+        //DBG("getTimeStepSize::NextRatio = " << NextRatio);
         magfloor = floor(magRatio);
         mag = exp(log(10.0) * -1.0 * magfloor);
         NextRatio *= mag;
-
         if (NextRatio >= 1.0)
         {
             while (NextRatio > NiceTimeRatios[i])
-            {
-                i++;
-                if (i == 4)
-                {
-                    i = 0;
-                    mag *= 10.0;
-                }
-            }
+                i++;            
             return(NiceTimeRatios[i - 1] / mag);
         }
         else
@@ -370,13 +358,36 @@ public:
     //-------------------------------------------------------------------------------------
     void drawLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
+        g.setColour(juce::Colours::lightgrey);
+        const int fontHeight = 10;
+        g.setFont(fontHeight);
+        auto textArea = getRenderZone(bounds);
+        auto left = textArea.getX();
+        auto top = textArea.getY();
+        auto timeZoneStart = visibleRange.getStart();
+        auto timeZoneLen = visibleRange.getEnd();
+        
 
+    }
+//-------------------------------------------------------------------------------------
+    juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
+    {
+        bounds.removeFromTop(12);
+        bounds.removeFromBottom(scrollbar.getHeight() + 4);
+        return bounds;
+    }
+    //-------------------------------------------------------------------------------------
+    juce::Rectangle<int> getWaveZone(juce::Rectangle<int> bounds)
+    {
+        bounds = getRenderZone(bounds);
+        bounds.removeFromTop(4);
+        bounds.removeFromBottom(4);
+        return bounds;
     }
 //-------------------------------------------------------------------------------------
     void paint(Graphics& g) override
     {
-        g.fillAll(Colours::black);
-        
+        g.fillAll(Colours::black);        
 
         if (thumbnail.getTotalLength() > 0.0)
         {
@@ -389,16 +400,24 @@ public:
             Range<double> newRange;
             double thumbnailsize;
             int xzoomticknb;
-
+            juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
+            juce::Rectangle<int> extZone = getRenderZone(thumbArea);
+            g.setColour(juce::Colours::lightpink);
+            g.drawRect(wavZone, 1.0);
+            g.setColour(juce::Colours::aliceblue);
+            g.drawRect(extZone, 1.0);
             switch (displayThumbMode)
             {
             case 0: //Full Thumb mode (expand recording data to window when stopping Recording
                 endTime = thumbnail.getTotalLength();
                 scrollbar.setAutoHide(false);              
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                paintGrid(g, thumbArea);
+                //paintGrid(g, thumbArea);
+                paintGrid(g, wavZone);
                 g.setColour(Colours::aquamarine);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+
                 newRange.setStart(0.0);
                 newRange.setEnd(endTime);
                 scrollbar.setRangeLimits(newRange);
@@ -410,7 +429,9 @@ public:
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
                 g.setColour(Colours::aquamarine);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
+                thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+
                 break;
 
             case 2: // zooming mode                
@@ -419,9 +440,12 @@ public:
                 newRange.setEnd(thumbnailsize);             
                 scrollbar.setRangeLimits(newRange);
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                paintGrid(g, thumbArea);
+                //paintGrid(g, thumbArea);
+                paintGrid(g, wavZone);
                 g.setColour(Colours::aquamarine);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                
                 break;
 
             case 3: //stopping
