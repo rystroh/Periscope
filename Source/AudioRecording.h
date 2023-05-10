@@ -184,9 +184,9 @@ private:
 };
 
 //==============================================================================
-class RecordingThumbnail  : public Component,
-                            private ChangeListener,
-                            private juce::ScrollBar::Listener
+class RecordingThumbnail : public Component,
+    private ChangeListener,
+    private juce::ScrollBar::Listener
 {
 public:
     RecordingThumbnail()
@@ -196,25 +196,25 @@ public:
         scrollbar.setAutoHide(true);
         scrollbar.addListener(this);
         formatManager.registerBasicFormats();
-        thumbnail.addChangeListener (this);
+        thumbnail.addChangeListener(this);
     }
 
     ~RecordingThumbnail() override
     {
         scrollbar.removeListener(this);
-        thumbnail.removeChangeListener (this);
+        thumbnail.removeChangeListener(this);
     }
 
-    AudioThumbnail& getAudioThumbnail()     { return thumbnail; }
+    AudioThumbnail& getAudioThumbnail() { return thumbnail; }
     bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
-    
-//-------------------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------------------
     void setSampleRate(double smpRate)
     {
         sampleRate = smpRate;
     }
-//-------------------------------------------------------------------------------------
-    void setDisplayFullThumbnail (bool displayFull)
+    //-------------------------------------------------------------------------------------
+    void setDisplayFullThumbnail(bool displayFull)
     {
         displayFullThumb = displayFull;
         if (displayFull)
@@ -224,17 +224,17 @@ public:
             scrollbar.setRangeLimits(newRange);
             setRange(newRange);
             //repaint();
-        }            
+        }
         else
             repaint();
 
     }
-//-------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------
     void setDisplayThumbnailMode(int displayMode)
     {
         displayThumbMode = displayMode;
     }
- //-------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------
     void setDisplayYZoom(double yZoom)
     {
         ThumbYZoom = yZoom;
@@ -243,7 +243,7 @@ public:
         DBG("Y Zoom = " << ThumbYZoom);
         repaint();
     }
- //-------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------
     void setZoomFactor(double amount)
     {
         auto toto = jlimit(0.0001, 0.99, amount);
@@ -258,7 +258,7 @@ public:
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
     }
-//-------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------
     void setRange(Range<double> newRange)
     {
         visibleRange = newRange;
@@ -266,127 +266,117 @@ public:
         //updateCursorPosition();
         repaint();
     }
-//-------------------------------------------------------------------------------------
-    void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds)
+    //---------------------------------------------------------------------------------
+    double  getTimeStepSize(int displayWidthPix, double wavDurationToDisplaySec)
+    {
+        std::vector<float>NiceTimeRatios{ 1.0 , 2.0 , 5.0 , 10.0 };
+        const double minRectWidth{ 56.0 };
+        // first pass determin the magnitude range
+       // DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
+        double NextRatio = wavDurationToDisplaySec * minRectWidth / (double)displayWidthPix;
+        int i{ 0 };
+        double mag{ 1 };
+        //double magceil;
+        double magfloor;
+        double magRatio = log10(NextRatio);
+
+        DBG("getTimeStepSize::NextRatio = " << NextRatio);
+        //   magceil = ceil(magRatio);
+           //mag = exp(log(10.0) * -1.0 * magceil);
+        magfloor = floor(magRatio);
+        mag = exp(log(10.0) * -1.0 * magfloor);
+        NextRatio *= mag;
+
+        if (NextRatio >= 1.0)
+        {
+            while (NextRatio > NiceTimeRatios[i])
+            {
+                i++;
+                if (i == 4)
+                {
+                    i = 0;
+                    mag *= 10.0;
+                }
+            }
+            return(NiceTimeRatios[i - 1] / mag);
+        }
+        else
+            return(1);//should never happen
+    }
+    //---------------------------------------------------------------------------------
+    std::vector<float>  getTimeLabels()
     {
 
+    }
+
+    //-------------------------------------------------------------------------------------
+    void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+    {
         double zoomfactor = 128;
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
         double displayStartTime, displayEndTime, displayWidth;
 
-        auto thumbArea = getLocalBounds(); //bounds of display zone
-        auto width = getWidth(); // width of Display zone in pixels
+        auto renderArea = bounds;
+        auto top = renderArea.getY();
+        auto bottom = renderArea.getBottom();
+        auto left = renderArea.getX();
+        auto right = renderArea.getRight();
+        auto width = renderArea.getWidth(); // width of Display zone in pixels
 
         double SampleSize = totlen * sampleRate; //size  of sample in points
-        double Ratio = SampleSize / thumbArea.getWidth();
+        double Ratio = SampleSize / (double)width;
         auto visRangeWidth = visibleRange.getLength();
         double curRatio = Ratio / totlen * (double)visibleRange.getLength();
 
-        double stepSize;
-    /*    stepSize = getTimeStepSize(1126, (double)4.0);
-        stepSize = getTimeStepSize(900, (double)8.0);
-        stepSize = getTimeStepSize(895, (double)8.0);
-        stepSize = getTimeStepSize(452, (double)8.0);
-        stepSize = getTimeStepSize(447, (double)8.0);      */
-        stepSize = getTimeStepSize(width, (double) visRangeWidth);
-        DBG("paintGrid::stepSize = " << stepSize);
-        int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
-        int newX1, newX2;
-
-        newY41 = 0;
-        newY42 = thumbnailBounds.getHeight();
-
-        thumbh = thumbnailBounds.getHeight();
-        newY2 = thumbnailBounds.getCentreY();
-        g.setOpacity(0.25);
-        g.setColour(juce::Colours::darkgrey);
-
-        int secondNb = (int)totlen;
+        double stepSize = getTimeStepSize(width, (double)visRangeWidth);
+        DBG("paintGrid::stepSize = " << stepSize);       
+        int newX1;
         double vBarNb = (double)totlen / stepSize;
 
-
+        // draw vertical time lines
+        g.setOpacity(0.25);
+        g.setColour(juce::Colours::darkgrey);
         for (int i = 1; i < vBarNb; i++)
-        {        
-            newX1 = timeToX((double)i* stepSize); // get 
-            //g.drawLine(newX1, newY41, newX1, newY42);
-            g.fillRect(newX1, 0.0, 1.0, thumbh); // using fillRect method instead of drawline for finer results
+        {
+            newX1 = timeToX((double)i * stepSize); // get 
+            g.drawVerticalLine(newX1, top, bottom);
         }
-        // Y Level lines
-        g.setColour(juce::Colours::red);        
-        g.fillRect(thumbnailBounds.getX(), newY2, thumbnailBounds.getWidth(), 1.0);
+
+        // draw horizontal Level lines
+        int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
+        thumbh = bounds.getHeight();
+        newY2 = bounds.getCentreY();
+        g.setColour(juce::Colours::red);
+        g.drawHorizontalLine(newY2, left, right);
 
         double yRatio = (double)thumbh * ThumbYZoom;
-
         newY41 = newY2 - yRatio / 2;
         newY42 = newY2 + yRatio / 2;
         g.setColour(juce::Colours::darkgrey);
-        g.fillRect(thumbnailBounds.getX(), newY42, thumbnailBounds.getWidth(), 1.0);
-        g.fillRect(thumbnailBounds.getX(), newY41, thumbnailBounds.getWidth(), 1.0);
+        g.drawHorizontalLine(newY41, left, right);
+        g.drawHorizontalLine(newY42, left, right);
 
         newY81 = newY2 - yRatio / 4;
         newY82 = newY2 + yRatio / 4;
         newY83 = newY2 - yRatio / 4;
         newY84 = newY2 + yRatio / 4;
 
-        g.fillRect(thumbnailBounds.getX(), newY81, thumbnailBounds.getWidth(), 1.0);
-        g.fillRect(thumbnailBounds.getX(), newY84, thumbnailBounds.getWidth(), 1.0);
-        //g.fillRect(thumbnailBounds.getX(), newY42, thumbnailBounds.getWidth(), 1.0);
-        //g.fillRect(thumbnailBounds.getX(), newY41, thumbnailBounds.getWidth(), 1.0);
-         
+        g.drawHorizontalLine(newY81, left, right);
+        g.drawHorizontalLine(newY84, left, right);
+
+        g.setOpacity(1.0); //restore opacity to max
     }
-//-------------------------------------------------------------------------------------
-    /*void paintit(Graphics& g) override
+    //-------------------------------------------------------------------------------------
+    void drawLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
-        g.fillAll (Colours::black);
-        g.setColour (Colours::aquamarine);
 
-        if (thumbnail.getTotalLength() > 0.0)
-        {
-         
-            double startTime = 0.0f;
-            double  endTime = 1.0f;
-
-            auto thumbArea = getLocalBounds();
-            
-            //thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-            //thumbnail.drawChannels(g, thumbArea.reduced(2),
-            //    visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-
-            
-            if(displayFullThumb)
-            { 
-                startTime = 0.0f;
-                endTime = thumbnail.getTotalLength();
-                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
-            }
-            else
-            {
-               
-                double centerTime = thumbnail.getTotalLength() / 2.0f;
-                startTime = centerTime - ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
-                endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
-
-                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                thumbnail.drawChannels(g, thumbArea.reduced(2),visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
-            }
-            //auto thumbArea = getLocalBounds();
-            //paintGrid(g, thumbArea);
-            
-        }
-        else
-        {
-            g.setFont (14.0f);
-            //g.drawFittedText ("(No file recorded)", getLocalBounds(), Justification::centred, 2);
-        }
-    }*/
+    }
 //-------------------------------------------------------------------------------------
     void paint(Graphics& g) override
     {
         g.fillAll(Colours::black);
-        g.setColour(Colours::aquamarine);
+        
 
         if (thumbnail.getTotalLength() > 0.0)
         {
@@ -406,35 +396,34 @@ public:
                 endTime = thumbnail.getTotalLength();
                 scrollbar.setAutoHide(false);              
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                paintGrid(g, thumbArea);
+                g.setColour(Colours::aquamarine);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
                 newRange.setStart(0.0);
                 newRange.setEnd(endTime);
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
                 xzoomticknb = createZoomVector(zoomVector);
-                paintGrid(g, thumbArea);
                 break;
+
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
+                g.setColour(Colours::aquamarine);
                 thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
                 break;
 
             case 2: // zooming mode                
                 thumbnailsize = thumbnail.getTotalLength();
                 newRange.setStart(0.0);
-                newRange.setEnd(thumbnailsize);
-                
+                newRange.setEnd(thumbnailsize);             
                 scrollbar.setRangeLimits(newRange);
-                //setRange(newRange);
-                /*
-                double centerTime = thumbnail.getTotalLength() / 2.0f;
-                startTime = centerTime - ThumbXZoom * thumbnail.getTotalLength() / 2.0f;
-                endTime = centerTime + ThumbXZoom * thumbnail.getTotalLength() / 2.0f;*/
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 paintGrid(g, thumbArea);
+                g.setColour(Colours::aquamarine);
+                thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 break;
+
             case 3: //stopping
                 thumbnailsize = thumbnail.getTotalLength();
                 newRange.setStart(0.0);
@@ -625,60 +614,6 @@ public:
         }
         else
             repaint();
-    }
-//---------------------------------------------------------------------------------
-    double  getTimeStepSize(int displayWidthPix,double wavDurationToDisplaySec)
-    {
-        std::vector<float>NiceTimeRatios { 1.0 , 2.0 , 5.0 , 10.0};
-        const double minRectWidth{ 56.0 };
-        // first pass determin the magnitude range
-        DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
-        double NextRatio = wavDurationToDisplaySec * minRectWidth / (double) displayWidthPix;
-        int i {0};
-        double mag {1};
-        double magceil, magfloor;
-        double magRatio = log10(NextRatio);
-
-        DBG("getTimeStepSize::NextRatio = " << NextRatio);
-        magceil = ceil(magRatio);
-        magfloor = floor(magRatio);
-        mag = exp(log(10.0) * -1.0 * magceil);
-        mag = exp(log(10.0) * -1.0 * magfloor);
-        NextRatio *= mag;
-
-        if (NextRatio >= 1.0)
-        {
-            while (NextRatio > NiceTimeRatios[i])
-            {
-                i++;
-                if (i == 4)
-                {
-                    i = 0;
-                    mag *= 10.0;
-                }
-            }
-            return( NiceTimeRatios[i-1] / mag);
-        }
-        else //(NextRatio < 1)
-        {
-            mag = 0.1;
-            while (NextRatio > mag * NiceTimeRatios[i])
-            {
-                i++;
-                if (i == 4)
-                {
-                    i = 0;
-                    mag /= 10.0;
-                }
-            }
-            return((double)mag * NiceTimeRatios[i-1]);
-
-        }
- }
-//---------------------------------------------------------------------------------
-    std::vector<float>  getTimeLabels()
-    {
-
     }
 
 //-------------------------------------------------------------------------------------
