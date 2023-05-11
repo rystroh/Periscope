@@ -619,7 +619,7 @@ public:
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         if (thumbnail.getTotalLength() > 0.0)
         {
-            if (juce::ModifierKeys::currentModifiers.isCtrlDown()) //Y Zoom
+            if ((juce::ModifierKeys::currentModifiers.isCtrlDown())|| (juce::ModifierKeys::currentModifiers.isAltDown())) //Y Zoom
             {
                 auto WheelDelta = wheel.deltaY;
                 if (WheelDelta > 0)
@@ -642,9 +642,9 @@ public:
                 }
               
             }
-                
+            /*
             else if (juce::ModifierKeys::currentModifiers.isAltDown())//X Zoom Control
-                repaint();
+                repaint();*/
             else if (juce::ModifierKeys::currentModifiers.isShiftDown())//X Move
             {
                 auto newStart = visibleRange.getStart() - wheel.deltaY * (visibleRange.getLength()) / 10.0;
