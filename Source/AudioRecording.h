@@ -358,18 +358,20 @@ public:
         newY42 = newY2 + yRatio / 2;
         g.setColour(juce::Colours::darkgrey);
         g.setOpacity(opa);
-        g.drawHorizontalLine(newY41, left, right);
-        g.drawHorizontalLine(newY42, left, right);
+        if (newY41 >= top)
+            g.drawHorizontalLine(newY41, left, right);
+        if (newY42 <= bottom)
+            g.drawHorizontalLine(newY42, left, right);
 
         newY81 = newY2 - yRatio / 4;
         newY82 = newY2 + yRatio / 4;
         newY83 = newY2 - yRatio / 4;
         newY84 = newY2 + yRatio / 4;
 
-        g.drawHorizontalLine(newY81, left, right);
-        g.drawHorizontalLine(newY84, left, right);
-
-        g.setOpacity(1.0); //restore opacity to max
+        if (newY81 >= top)
+            g.drawHorizontalLine(newY81, left, right);
+        if (newY84 <= bottom)
+            g.drawHorizontalLine(newY84, left, right);
     }
     //-------------------------------------------------------------------------------------
     void drawLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
