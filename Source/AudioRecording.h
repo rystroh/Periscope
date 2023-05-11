@@ -270,7 +270,7 @@ public:
     double  getTimeStepSize(int displayWidthPix, double wavDurationToDisplaySec)
     {
         std::vector<float>NiceTimeRatios{ 1.0 , 2.0 , 5.0 , 10.0 };
-        const double minRectWidth{ 56.0 };
+        const double minRectWidth{ 128.0 };
         // first pass determin the magnitude range
        // DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
         double NextRatio = wavDurationToDisplaySec * minRectWidth / (double)displayWidthPix;
@@ -292,6 +292,11 @@ public:
             return(1);//should never happen
     }
     //---------------------------------------------------------------------------------
+    std::vector<double> getTimeLineX()
+    {
+
+    }
+    //---------------------------------------------------------------------------------
     std::vector<float>  getTimeLabels()
     {
 
@@ -301,6 +306,7 @@ public:
     void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
         double zoomfactor = 128;
+        double opa = 0.5; //grid opacity
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
         double displayStartTime, displayEndTime, displayWidth;
@@ -318,35 +324,40 @@ public:
         double curRatio = Ratio / totlen * (double)visibleRange.getLength();
 
         double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
+
         if (stepSize != newstepSize)
         {
             stepSize = newstepSize;
             DBG("paintGrid::stepSize = " << stepSize);
         }
+        std::vector<double> xs = getXs();
             
         int newX1;
         double vBarNb = (double)totlen / stepSize;
 
         // draw vertical time lines
-        g.setOpacity(0.25);
+
         g.setColour(juce::Colours::darkgrey);
-        for (int i = 1; i < vBarNb; i++)
+        g.setOpacity(opa);
+        for (auto x : xs)
         {
-            newX1 = timeToX((double)i * stepSize); // get 
+            newX1 = timeToX(x); // get 
             g.drawVerticalLine(newX1, top, bottom);
         }
-
+        
         // draw horizontal Level lines
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
         thumbh = bounds.getHeight();
         newY2 = bounds.getCentreY();
         g.setColour(juce::Colours::red);
+        g.setOpacity(opa);
         g.drawHorizontalLine(newY2, left, right);
 
         double yRatio = (double)thumbh * ThumbYZoom;
         newY41 = newY2 - yRatio / 2;
         newY42 = newY2 + yRatio / 2;
         g.setColour(juce::Colours::darkgrey);
+        g.setOpacity(opa);
         g.drawHorizontalLine(newY41, left, right);
         g.drawHorizontalLine(newY42, left, right);
 
@@ -363,22 +374,40 @@ public:
     //-------------------------------------------------------------------------------------
     void drawLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
-        g.setColour(juce::Colours::lightgrey);
+        g.setColour(juce::Colours::grey);
+        g.setOpacity(1.0);
         const int fontHeight = 10;
         g.setFont(fontHeight);
-        auto textArea = getRenderZone(bounds);
+        auto textArea = getHTextZone(bounds);// getRenderZone(bounds);
         auto left = textArea.getX();
         auto top = textArea.getY();
-        auto xval = getXs();
+        auto right = left + textArea.getWidth();
+
+        std::vector<double> xs = getXs();
+        int newX1;
+        for (auto x : xs)
+        {
+            String str;
+            newX1 = timeToX(x); // get
+            str << x;
+            str.toDecimalStringWithSignificantFigures(x, 2);
+            Rectangle<int> r;
+            auto textWidth = g.getCurrentFont().getStringWidth(str);
+            r.setSize(textWidth, fontHeight);
+            if (newX1 + (double)textWidth/2.0 > right)
+                r.setCentre(static_cast<int>((newX1)- (double)textWidth / 2.0), 0);
+            else
+                r.setCentre(static_cast<int>(newX1), 0);
+           
+            r.setY(textArea.getY());
+            g.drawFittedText(str, r, juce::Justification::centred, 1);
+        }
     }
     //-------------------------------------------------------------------------------------
     double round_fl(double x, int num_decimal_precision_digits)
     {
         double power_of_10 = std::pow(10, num_decimal_precision_digits);
-        //int powi = (int)power_of_10;
         double xr = std::round(x * power_of_10);
-        //int xri = (int)xr;
-        //double xr2 = (double)xri / (double)powi;
         xr = xr / power_of_10;
         return xr;
     }
@@ -419,6 +448,14 @@ public:
         return bounds;
     }
     //-------------------------------------------------------------------------------------
+    juce::Rectangle<int> getHTextZone(juce::Rectangle<int> bounds)
+    {
+        auto wavRect = getWaveZone(bounds);
+        bounds.removeFromTop(4);
+        bounds.removeFromBottom(wavRect.getHeight() + 2);
+        return bounds;
+    }
+    //-------------------------------------------------------------------------------------
     juce::Rectangle<int> getWaveZone(juce::Rectangle<int> bounds)
     {
         bounds = getRenderZone(bounds);
@@ -444,10 +481,10 @@ public:
             int xzoomticknb;
             juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
             juce::Rectangle<int> extZone = getRenderZone(thumbArea);
-            g.setColour(juce::Colours::lightpink);
-            g.drawRect(wavZone, 1.0);
-            g.setColour(juce::Colours::aliceblue);
-            g.drawRect(extZone, 1.0);
+            //g.setColour(juce::Colours::yellow);
+            //g.drawRect(wavZone, 1.0);
+            //g.setColour(juce::Colours::red);
+            //g.drawRect(extZone, 1.0);
             switch (displayThumbMode)
             {
             case 0: //Full Thumb mode (expand recording data to window when stopping Recording
@@ -465,7 +502,7 @@ public:
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
                 xzoomticknb = createZoomVector(zoomVector);
-                drawLabels(g, wavZone);
+                drawLabels(g, thumbArea);
                 break;
 
             case 1: // recording mode (scrolling data)                
@@ -488,7 +525,7 @@ public:
                 g.setColour(Colours::aquamarine);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-                drawLabels(g, wavZone);
+                drawLabels(g, thumbArea);
                 break;
 
             case 3: //stopping
