@@ -317,8 +317,13 @@ public:
         auto visRangeWidth = visibleRange.getLength();
         double curRatio = Ratio / totlen * (double)visibleRange.getLength();
 
-        double stepSize = getTimeStepSize(width, (double)visRangeWidth);
-        DBG("paintGrid::stepSize = " << stepSize);       
+        double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
+        if (stepSize != newstepSize)
+        {
+            stepSize = newstepSize;
+            DBG("paintGrid::stepSize = " << stepSize);
+        }
+            
         int newX1;
         double vBarNb = (double)totlen / stepSize;
 
@@ -364,10 +369,47 @@ public:
         auto textArea = getRenderZone(bounds);
         auto left = textArea.getX();
         auto top = textArea.getY();
+        auto xval = getXs();
+    }
+    //-------------------------------------------------------------------------------------
+    double round_fl(double x, int num_decimal_precision_digits)
+    {
+        double power_of_10 = std::pow(10, num_decimal_precision_digits);
+        //int powi = (int)power_of_10;
+        double xr = std::round(x * power_of_10);
+        //int xri = (int)xr;
+        //double xr2 = (double)xri / (double)powi;
+        xr = xr / power_of_10;
+        return xr;
+    }
+    //-------------------------------------------------------------------------------------
+    std::vector<double> getXs()
+    {
         auto timeZoneStart = visibleRange.getStart();
         auto timeZoneLen = visibleRange.getEnd();
-        
+        std::vector<double> xs;
+        double x1;
+        double digits;
+        double mag{ 1 };
+        double magfloor;
+        int precision;
+        double magRatio = log10(stepSize);
 
+        //DBG("getTimeStepSize::NextRatio = " << NextRatio);
+        magfloor = floor(magRatio);
+        precision = abs(magfloor);
+        stepSize = round_fl(stepSize, precision);
+        //mag = exp(log(10.0) * -1.0 * magfloor);
+
+        x1 = floor(timeZoneStart / stepSize) * stepSize + stepSize;
+        x1 = round_fl(x1, precision);
+        while (x1 <= timeZoneLen)
+        {
+            xs.push_back(x1);
+            x1 += stepSize;
+            x1 = round_fl(x1, precision);
+        }
+     return(xs);
     }
 //-------------------------------------------------------------------------------------
     juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
@@ -423,6 +465,7 @@ public:
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
                 xzoomticknb = createZoomVector(zoomVector);
+                drawLabels(g, wavZone);
                 break;
 
             case 1: // recording mode (scrolling data)                
@@ -445,7 +488,7 @@ public:
                 g.setColour(Colours::aquamarine);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-                
+                drawLabels(g, wavZone);
                 break;
 
             case 3: //stopping
@@ -652,6 +695,7 @@ private:
     int YZoomIndex = 0;
     double ThumbXZoom = 1.0f;
     int XZoomIndex = 0;
+    double stepSize = 0; //stores the graduation step size (usually in s)
     std::vector<double> zoomVector;
 
     juce::ScrollBar scrollbar{ false };
