@@ -85,6 +85,7 @@ private:
                         recordingThumbnail.setSource(new juce::FileInputSource(file));
                         recordingThumbnail.setSampleRate(reader->sampleRate);
                         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                        recordingThumbnail.setDisplayYZoom(1.0);
                         levelSlider.setValue(1.0); //Reset Volume Slider to 1 upon file change
                         //readerSource.reset(newSource.release());
                     }

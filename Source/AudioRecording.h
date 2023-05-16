@@ -207,7 +207,6 @@ public:
 
     AudioThumbnail& getAudioThumbnail() { return thumbnail; }
     bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
-
     //-------------------------------------------------------------------------------------
     void setSampleRate(double smpRate)
     {
@@ -223,11 +222,9 @@ public:
             Range<double> newRange(0.0, thumbnailsize);
             scrollbar.setRangeLimits(newRange);
             setRange(newRange);
-            //repaint();
         }
         else
             repaint();
-
     }
     //-------------------------------------------------------------------------------------
     void setDisplayThumbnailMode(int displayMode)
@@ -235,7 +232,7 @@ public:
         displayThumbMode = displayMode;
     }
     //-------------------------------------------------------------------------------------
-    void setDisplayYZoom(double yZoom)
+    void setDisplayYZoom(double yZoom) // called by SliderValueChanged in MainComponent.h
     {
         ThumbYZoom = yZoom;
         if (yZoom == 1.0)
@@ -244,7 +241,7 @@ public:
         repaint();
     }
     //-------------------------------------------------------------------------------------
-    void setZoomFactor(double amount)
+ /*   void setZoomFactor(double amount)
     {
         auto toto = jlimit(0.0001, 0.99, amount);
 
@@ -257,13 +254,12 @@ public:
             auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
             setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
         }
-    }
+    }*/
     //-------------------------------------------------------------------------------------
     void setRange(Range<double> newRange)
     {
         visibleRange = newRange;
         scrollbar.setCurrentRange(visibleRange);
-        //updateCursorPosition();
         repaint();
     }
     //---------------------------------------------------------------------------------
@@ -328,12 +324,11 @@ public:
         if (stepSize != newstepSize)
         {
             stepSize = newstepSize;
-            DBG("paintGrid::stepSize = " << stepSize);
+            //DBG("paintGrid::stepSize = " << stepSize);
         }
-        std::vector<double> xs = getXs();
-            
+        std::vector<double> xs = getXs(); //create vector with nice positions for vert
+      
         int newX1;
-        double vBarNb = (double)totlen / stepSize;
 
         // draw vertical time lines
 
@@ -346,6 +341,8 @@ public:
         }
         
         // draw horizontal Level lines
+        std::vector<int> niceGains = getNiceGainVect(bounds.getHeight());
+
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
         thumbh = bounds.getHeight();
         newY2 = bounds.getCentreY();
@@ -374,7 +371,7 @@ public:
             g.drawHorizontalLine(newY84, left, right);
     }
     //-------------------------------------------------------------------------------------
-    void drawLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+    void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
         g.setColour(juce::Colours::grey);
         g.setOpacity(1.0);
@@ -443,6 +440,69 @@ public:
      return(xs);
     }
 //-------------------------------------------------------------------------------------
+    std::vector<int> getGains()//called by std::vector<int>getNiceGainVect
+// creates vector of gains in dB between +12 and -144 - step = 1dB
+    {
+        std::vector<int> gaindB;
+        for (int x = 12; x > -144; x--)
+            gaindB.push_back(x); // xs.push_back(x1);
+        return(gaindB);
+    }
+//-------------------------------------------------------------------------------------
+    std::vector<long double> getZoomGainVect()
+// creates vector of gains in dB between + 12 and -144 - step = 1dB
+    {
+        std::vector<long double> gainZdB;
+        const long double dBStep = 1.5;
+        for (int x = 0; x > 104; x++)
+            gainZdB.push_back(pow(10,(long double)(x-8)*(long double)1.5/(long double)20.0));
+        return(gainZdB);
+    }
+//-------------------------------------------------------------------------------------
+    long double getZoomMult(int index)
+    // return gain factor 
+    //    index = 0  -> gain = +12 dB 
+    //    index = 8  -> gain = 0 dB
+    //    + 1 index  -> gain -1.5dB
+    {
+        long double gainMult;
+        const long double dBStep = 1.5;
+        gainMult = pow(10, (long double)(index - 8) * (long double)dBStep / (long double)20.0);
+        return(gainMult);
+    }
+ //-------------------------------------------------------------------------------------
+    std::vector<int>getNiceGainVect(int displayHeightPix)
+    {
+        const double minRectHeight{ 15.0 }; //nb of pixel min between horizontal lines
+        std::vector<int> gaindB = getGains();
+        std::vector<long double> gainMult = getZoomGainVect();
+        std::vector<int> NiceGainVect;
+        double previousYdB = 0;
+        double previousYpix = 0;
+        auto curYZoom = ThumbYZoom;
+        int curYZoomIndex  = YZoomIndex;
+/*
+        // first pass determin the magnitude range
+       // DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
+        double NextRatio = wavDurationToDisplaySec * minRectWidth / (double)displayWidthPix;
+        int i{ 0 };
+        double mag{ 1 };
+        double magfloor;
+        double magRatio = log10(NextRatio);
+        //DBG("getTimeStepSize::NextRatio = " << NextRatio);
+        magfloor = floor(magRatio);
+        mag = exp(log(10.0) * -1.0 * magfloor);
+        NextRatio *= mag;
+        if (NextRatio >= 1.0)
+        {
+            while (NextRatio > NiceTimeRatios[i])
+                i++;
+            return(NiceTimeRatios[i - 1] / mag);
+        }
+        else */
+            return(gaindB);//should never happen
+    }
+//-------------------------------------------------------------------------------------
     juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
     {
         bounds.removeFromTop(12);
@@ -504,7 +564,7 @@ public:
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
                 xzoomticknb = createZoomVector(zoomVector);
-                drawLabels(g, thumbArea);
+                drawXLabels(g, thumbArea);
                 break;
 
             case 1: // recording mode (scrolling data)                
@@ -513,7 +573,6 @@ public:
                 g.setColour(Colours::aquamarine);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-
                 break;
 
             case 2: // zooming mode                
@@ -527,7 +586,7 @@ public:
                 g.setColour(Colours::aquamarine);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-                drawLabels(g, thumbArea);
+                drawXLabels(g, thumbArea);
                 break;
 
             case 3: //stopping
@@ -540,8 +599,6 @@ public:
                 displayThumbMode = 2; // get ready for zooming
                 break;
             }
-
-
         }
         else
         {
@@ -626,10 +683,11 @@ public:
                 auto WheelDelta = wheel.deltaY;
                 if (WheelDelta > 0)
                 {
-                    if (YZoomIndex < 48)
+                    if (YZoomIndex < 96)
                     {
                         YZoomIndex++;
-                        ThumbYZoom = ThumbYZoom * 1.4125354;
+                        ThumbYZoom = getZoomMult(YZoomIndex);
+                        
                         repaint();
                     }
                 }
@@ -638,15 +696,12 @@ public:
                     if (YZoomIndex > 0)
                     {
                         YZoomIndex--;
-                        ThumbYZoom = ThumbYZoom / 1.4125354;
+                        ThumbYZoom = getZoomMult(YZoomIndex);
                         repaint();
                     }
                 }
-              
+                DBG("mouseWh:YZoomIndex = " << YZoomIndex << " ThumbYZoom = " << ThumbYZoom);
             }
-            /*
-            else if (juce::ModifierKeys::currentModifiers.isAltDown())//X Zoom Control
-                repaint();*/
             else if (juce::ModifierKeys::currentModifiers.isShiftDown())//X Move
             {
                 auto newStart = visibleRange.getStart() - wheel.deltaY * (visibleRange.getLength()) / 10.0;
@@ -721,17 +776,26 @@ public:
         else
             repaint();
     }
+//-------------------------------------------------------------------------------------
+    double AmpdBGainToMultFactor(double AmpGaindB)
+// called at init
+    {
+        double fact;
+        fact = pow(10, AmpGaindB / 20.0);
+        return fact;
 
+    }
 //-------------------------------------------------------------------------------------
 private:
     AudioFormatManager formatManager;
     AudioThumbnailCache thumbnailCache  { 10 };
     AudioThumbnail thumbnail            { 1, formatManager, thumbnailCache };
 
+    double sampleRate = 0.0;
+
     bool displayFullThumb = false;
     int displayThumbMode;
-    double ThumbYZoom = 1.0f;
-    int YZoomIndex = 0;
+
     double ThumbXZoom = 1.0f;
     int XZoomIndex = 0;
     double stepSize = 0; //stores the graduation step size (usually in s)
@@ -739,9 +803,13 @@ private:
 
     juce::ScrollBar scrollbar{ false };
     juce::Range<double> visibleRange;
-    double sampleRate = 0.0;
 
-//-------------------------------------------------------------------------------------
+    double ThumbYZoom = 1.0f;
+    int YZoomIndex = 0;
+    const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click
+    double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
+
+ //-------------------------------------------------------------------------------------
     float timeToX(const double time) const
     {
         if (visibleRange.getLength() <= 0)
