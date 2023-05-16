@@ -236,7 +236,7 @@ public:
     {
         ThumbYZoom = yZoom;
         if (yZoom == 1.0)
-            YZoomIndex = 0;
+            YZoomIndex = 8; // YZoomIndex = 0 <-> gain =+12dB // YZoomIndex= 8 <-> gain = 0dB
         DBG("Y Zoom = " << ThumbYZoom);
         repaint();
     }
