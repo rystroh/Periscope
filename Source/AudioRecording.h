@@ -454,7 +454,7 @@ public:
     {
         std::vector<long double> gainZdB;
         const long double dBStep = 1.5;
-        for (int x = 0; x > 104; x++)
+        for (int x = 0; x < 104; x++)
             gainZdB.push_back(pow(10,(long double)(x-8)*(long double)1.5/(long double)20.0));
         return(gainZdB);
     }
@@ -481,6 +481,16 @@ public:
         double previousYpix = 0;
         auto curYZoom = ThumbYZoom;
         int curYZoomIndex  = YZoomIndex;
+        double halfHeightPix = floor((double)displayHeightPix / 2.0);
+
+        double topGdB = gaindB[curYZoomIndex];
+        NiceGainVect.push_back(topGdB);
+
+        for (int idx = 1; idx < 132; idx++)
+        {
+
+
+        }
 /*
         // first pass determin the magnitude range
        // DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
