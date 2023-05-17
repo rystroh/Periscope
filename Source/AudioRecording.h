@@ -341,7 +341,9 @@ public:
         }
         
         // draw horizontal Level lines
-        std::vector<int> niceGains = getNiceGainVect(bounds.getHeight());
+        std::vector<int> NiceGainVect;
+        std::vector<int> NiceGainY;
+        int ret = getNiceGainVect(bounds.getHeight(), NiceGainVect, NiceGainY);
 
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
         thumbh = bounds.getHeight();
@@ -471,46 +473,40 @@ public:
         return(gainMult);
     }
  //-------------------------------------------------------------------------------------
-    std::vector<int>getNiceGainVect(int displayHeightPix)
+    int getNiceGainVect(int displayHeightPix, std::vector<int>& NiceGainVect, std::vector<int>& NiceGainY)
     {
         const double minRectHeight{ 15.0 }; //nb of pixel min between horizontal lines
-        std::vector<int> gaindB = getGains();
-        std::vector<long double> gainMult = getZoomGainVect();
-        std::vector<int> NiceGainVect;
-        double previousYdB = 0;
-        double previousYpix = 0;
-        auto curYZoom = ThumbYZoom;
+        //std::vector<int> gaindB = getGains();
+        //std::vector<long double> gainMult = getZoomGainVect();
+        //std::vector<int> NiceGainVect;
+        //std::vector<int> NiceGainY;
+        //double previousYdB = 0;
+        //double previousYpix = 0;
+        //auto curYZoom = ThumbYZoom;
         int curYZoomIndex  = YZoomIndex;
+        const long double dBStep = 1.5;
+        double topGdB = 12.0 - curYZoomIndex * dBStep;
+
         double halfHeightPix = floor((double)displayHeightPix / 2.0);
+        double curY = halfHeightPix;
+        double ratio;
+        double gain;
+        double NiceY;
 
-        double topGdB = gaindB[curYZoomIndex];
-        NiceGainVect.push_back(topGdB);
-
-        for (int idx = 1; idx < 132; idx++)
+        while (curY > 0)
         {
-
-
+            ratio = curY / halfHeightPix;
+            gain = 20.0 * log10(ratio);
+            gain = round(gain);
+            NiceGainVect.push_back(gain + topGdB);
+            ratio = pow(10.0, gain / 20);
+            NiceY = halfHeightPix * ratio;
+            NiceY = round(NiceY);
+            NiceGainY.push_back((int)NiceY);
+            curY -= minRectHeight;
         }
-/*
-        // first pass determin the magnitude range
-       // DBG("getTimeStepSize::displayWidthPix = " << wavDurationToDisplaySec << " displayWidthPix = " << displayWidthPix);
-        double NextRatio = wavDurationToDisplaySec * minRectWidth / (double)displayWidthPix;
-        int i{ 0 };
-        double mag{ 1 };
-        double magfloor;
-        double magRatio = log10(NextRatio);
-        //DBG("getTimeStepSize::NextRatio = " << NextRatio);
-        magfloor = floor(magRatio);
-        mag = exp(log(10.0) * -1.0 * magfloor);
-        NextRatio *= mag;
-        if (NextRatio >= 1.0)
-        {
-            while (NextRatio > NiceTimeRatios[i])
-                i++;
-            return(NiceTimeRatios[i - 1] / mag);
-        }
-        else */
-            return(gaindB);//should never happen
+   
+            return(0);//should never happen
     }
 //-------------------------------------------------------------------------------------
     juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
