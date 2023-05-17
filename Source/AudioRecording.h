@@ -352,11 +352,20 @@ public:
         g.setOpacity(opa);
         g.drawHorizontalLine(newY2, left, right);
 
-        double yRatio = (double)thumbh * ThumbYZoom;
-        newY41 = newY2 - yRatio / 2;
-        newY42 = newY2 + yRatio / 2;
+ 
+
         g.setColour(juce::Colours::darkgrey);
         g.setOpacity(opa);
+        
+        for (auto y : NiceGainY)
+        {
+            newY41 = newY2 - y;
+            g.drawHorizontalLine(newY41, left, right);
+            newY42 = newY2 + y;
+            g.drawHorizontalLine(newY42, left, right);
+        }
+/*
+        
         if (newY41 >= top)
             g.drawHorizontalLine(newY41, left, right);
         if (newY42 <= bottom)
@@ -370,7 +379,7 @@ public:
         if (newY81 >= top)
             g.drawHorizontalLine(newY81, left, right);
         if (newY84 <= bottom)
-            g.drawHorizontalLine(newY84, left, right);
+            g.drawHorizontalLine(newY84, left, right);*/
     }
     //-------------------------------------------------------------------------------------
     void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
