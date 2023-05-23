@@ -41,7 +41,7 @@ private:
     juce::RecordingThumbnail recordingThumbnail;
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
     juce::File lastRecording;
-    juce::Slider levelSlider;
+    //juce::Slider levelSlider;
     juce::Label levelLabel;
     juce::Rectangle<int> diRect;
     
@@ -53,12 +53,12 @@ private:
     void sliderValueChanged(juce::Slider* slider) override
     {
         double value;
-        if (slider == &levelSlider)
+     /*   if (slider == &levelSlider)
         {
             value = levelSlider.getValue();
             recordingThumbnail.setDisplayYZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
-        }
+        }*/
 
     }
  //-------------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ private:
                         recordingThumbnail.setSampleRate(reader->sampleRate);
                         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
                         recordingThumbnail.setDisplayYZoom(1.0);
-                        levelSlider.setValue(1.0); //Reset Volume Slider to 1 upon file change
+                        //levelSlider.setValue(1.0); //Reset Volume Slider to 1 upon file change
                         //readerSource.reset(newSource.release());
                     }
                 }
@@ -149,7 +149,8 @@ private:
         recordButton.setButtonText("Record");
         //recordingThumbnail.setDisplayFullThumbnail(true);
         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        levelSlider.setValue(1.0f);
+        recordingThumbnail.setDisplayYZoom(1.0);
+        //levelSlider.setValue(1.0f);
     }
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

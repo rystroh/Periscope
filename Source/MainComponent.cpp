@@ -14,7 +14,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(openButton);
     openButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x5c5c5c5c));
     openButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
-
+/*
     levelSlider.setRange(0.0, 8.0);
     levelSlider.setValue(1.0f);
     levelSlider.setSliderStyle(juce::Slider::LinearVertical);
@@ -23,7 +23,7 @@ MainComponent::MainComponent()
     levelSlider.addListener(this);
 
     addAndMakeVisible(levelSlider);
-    addAndMakeVisible(levelLabel);
+    addAndMakeVisible(levelLabel);*/
     //transport.addChangeListener(this);
 
     recordButton.onClick = [this]
@@ -137,10 +137,10 @@ void MainComponent::resized()
     ThumbnailZone = area;// .withTrimmedTop(20);
     diRect = ThumbnailZone;
 
-    recordingThumbnail.setBounds(10,40,getWidth()-50, ThumbnailZone.getHeight() / 4);
+    recordingThumbnail.setBounds(10,40,getWidth(), ThumbnailZone.getHeight() / 4);
     
     //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
    
-    levelSlider.setBounds(getWidth() - 30, area.getY(), 20, ThumbnailZone.getHeight() / 4);
-    levelLabel.setBounds(getWidth() - 150, 10, 150, 20);
+    //levelSlider.setBounds(getWidth() - 30, area.getY(), 20, ThumbnailZone.getHeight() / 4);
+    //levelLabel.setBounds(getWidth() - 150, 10, 150, 20);
 }

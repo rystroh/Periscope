@@ -350,19 +350,22 @@ public:
         newY2 = bounds.getCentreY();
         g.setColour(juce::Colours::red);
         g.setOpacity(opa);
-        g.drawHorizontalLine(newY2, left, right);
 
+        g.drawHorizontalLine(newY2, left, right);
+        DBG("paintGrid:: Y2 = " << newY2);
  
 
         g.setColour(juce::Colours::darkgrey);
         g.setOpacity(opa);
-        
+
+                
         for (auto y : NiceGainY)
         {
             newY41 = newY2 - y;
             g.drawHorizontalLine(newY41, left, right);
             newY42 = newY2 + y;
             g.drawHorizontalLine(newY42, left, right);
+            DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
         }
 /*
         
@@ -394,6 +397,7 @@ public:
         auto right = left + textArea.getWidth();
 
         std::vector<double> xs = getXs();
+
         int newX1;
         for (auto x : xs)
         {
@@ -411,6 +415,50 @@ public:
            
             r.setY(textArea.getY());
             g.drawFittedText(str, r, juce::Justification::centred, 1);
+        }
+    }
+    //-------------------------------------------------------------------------------------
+    void drawYLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+    {
+        g.setColour(juce::Colours::grey);
+        g.setOpacity(1.0);
+        const int fontHeight = 10;
+        g.setFont(fontHeight);
+        auto textArea = getVTextZone(bounds);// getRenderZone(bounds);
+        juce::Rectangle<int> wavZone = getWaveZone(bounds);
+
+        auto left = textArea.getX();
+        auto top = wavZone.getTopRight().getY();
+        auto right = left + textArea.getWidth();
+
+        //std::vector<double> xs = getXs();
+
+        std::vector<int> NiceGainVect;
+        std::vector<int> NiceGainY;
+        int ret = getNiceGainVect(wavZone.getHeight(), NiceGainVect, NiceGainY);
+        int newY2, newY41, newY42;
+        int newY1, newGain;
+        newY2 = wavZone.getCentreY();
+
+
+        for (int idx = 0 ;  idx < NiceGainY.size(); idx++)
+        {
+            String str;
+            newY1 = newY2 - NiceGainY[idx] - fontHeight / 2.0;
+            newGain = NiceGainVect[idx]; // get
+            str << newGain << " dB";
+            str.toDecimalStringWithSignificantFigures(newGain, 2);
+            Rectangle<int> r;
+            auto textWidth = g.getCurrentFont().getStringWidth(str);
+            int left, top, right, butt;
+            left =  textArea.getTopLeft().getX();
+            
+            r.setLeft(left);
+            r.setY(newY1);
+            r.setSize(textWidth, fontHeight);
+ //            r.setY(textArea.getY());
+            g.drawFittedText(str, r, juce::Justification::centredLeft, 1);
+            DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
         }
     }
     //-------------------------------------------------------------------------------------
@@ -530,14 +578,27 @@ public:
         auto wavRect = getWaveZone(bounds);
         bounds.removeFromTop(4);
         bounds.removeFromBottom(wavRect.getHeight() + 2);
+        bounds.setRight(wavRect.getRight());
         return bounds;
+    }
+    //-------------------------------------------------------------------------------------
+    juce::Rectangle<int> getVTextZone(juce::Rectangle<int> bounds)
+    {
+        juce::Rectangle<int> boundsTxt;
+        auto wavRect = getWaveZone(bounds);
+        boundsTxt.setLeft(wavRect.getRight() + 4);
+        boundsTxt.setTop(wavRect.getTopLeft().getY());
+        boundsTxt.setBottom(wavRect.getBottomLeft().getY());
+        boundsTxt.setRight(wavRect.getRight() + 100);
+        return boundsTxt;
     }
     //-------------------------------------------------------------------------------------
     juce::Rectangle<int> getWaveZone(juce::Rectangle<int> bounds)
     {
         bounds = getRenderZone(bounds);
         bounds.removeFromTop(4);
-        bounds.removeFromBottom(4);
+        bounds.removeFromBottom(4); 
+        bounds.removeFromRight(50);
         return bounds;
     }
 //-------------------------------------------------------------------------------------
@@ -580,6 +641,7 @@ public:
                 setRange(newRange);
                 xzoomticknb = createZoomVector(zoomVector);
                 drawXLabels(g, thumbArea);
+                drawYLabels(g, thumbArea);
                 break;
 
             case 1: // recording mode (scrolling data)                
@@ -602,6 +664,7 @@ public:
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 drawXLabels(g, thumbArea);
+                drawYLabels(g, thumbArea);
                 break;
 
             case 3: //stopping
