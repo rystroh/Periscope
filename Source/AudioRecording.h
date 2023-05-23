@@ -178,7 +178,6 @@ private:
     int chanNb = 1;
     int bitDepth = 24;
     int64 nextSampleNum = 0;
-
     CriticalSection writerLock;
     std::atomic<AudioFormatWriter::ThreadedWriter*> activeWriter { nullptr };
 };
@@ -206,6 +205,15 @@ public:
     }
 
     AudioThumbnail& getAudioThumbnail() { return thumbnail; }
+    juce::Colour wavBackgroundColour = juce::Colours::black;
+    //juce::Colour wavFormColour = juce::Colours::aquamarine;
+    juce::Colour wavFormColour = juce::Colour(0xff43d996);
+    juce::Colour digitPanelColour = juce::Colour(0xff232323);
+    juce::Colour digitColour = juce::Colour(0xff8a8a8a);
+    juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
+
+
+
     bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
     //-------------------------------------------------------------------------------------
     void setSampleRate(double smpRate)
@@ -604,7 +612,7 @@ public:
 //-------------------------------------------------------------------------------------
     void paint(Graphics& g) override
     {
-        g.fillAll(Colours::black);        
+        g.fillAll(Colours::dimgrey);        
 
         if (thumbnail.getTotalLength() > 0.0)
         {
@@ -617,8 +625,15 @@ public:
             Range<double> newRange;
             double thumbnailsize;
             int xzoomticknb;
-            juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
             juce::Rectangle<int> extZone = getRenderZone(thumbArea);
+            
+            g.setColour(digitPanelColour);
+            g.fillRect(extZone);
+            juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
+            g.setColour(juce::Colours::black);
+
+            g.fillRect(wavZone);
+
             //g.setColour(juce::Colours::yellow);
             //g.drawRect(wavZone, 1.0);
             //g.setColour(juce::Colours::red);
@@ -631,7 +646,8 @@ public:
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //paintGrid(g, thumbArea);
                 paintGrid(g, wavZone);
-                g.setColour(Colours::aquamarine);
+                //g.setColour(Colours::aquamarine);
+                g.setColour(wavFormColour);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
 
@@ -647,7 +663,8 @@ public:
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
-                g.setColour(Colours::aquamarine);
+                g.setColour(wavFormColour);
+                //g.setColour(Colours::aquamarine);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 break;
@@ -660,7 +677,8 @@ public:
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //paintGrid(g, thumbArea);
                 paintGrid(g, wavZone);
-                g.setColour(Colours::aquamarine);
+                //g.setColour(Colours::aquamarine);
+                g.setColour(wavFormColour);
                 //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 drawXLabels(g, thumbArea);

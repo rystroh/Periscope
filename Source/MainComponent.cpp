@@ -137,7 +137,7 @@ void MainComponent::resized()
     ThumbnailZone = area;// .withTrimmedTop(20);
     diRect = ThumbnailZone;
 
-    recordingThumbnail.setBounds(10,40,getWidth(), ThumbnailZone.getHeight() / 4);
+    recordingThumbnail.setBounds(10,40,getWidth()-20, ThumbnailZone.getHeight() / 4);
     
     //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
    
