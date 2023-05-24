@@ -56,7 +56,7 @@ MainComponent::MainComponent()
     //audioDeviceManager.addAudioCallback(&recorder);
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.addAudioCallback(&recorder);
-    setSize(850, 600);
+    setSize(870, 600);
     formatManager.registerBasicFormats();
 }
 
@@ -112,10 +112,6 @@ void MainComponent::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-    g.setColour(juce::Colours::orange);
-    g.drawRect(diRect);
-
-    // You can add your drawing code here!
 }
 //-------------------------------------------------------------------------------------
 void MainComponent::resized()

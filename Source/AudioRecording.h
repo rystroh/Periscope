@@ -205,14 +205,16 @@ public:
     }
 
     AudioThumbnail& getAudioThumbnail() { return thumbnail; }
-    juce::Colour wavBackgroundColour = juce::Colours::black;
+
     //juce::Colour wavFormColour = juce::Colours::aquamarine;
     juce::Colour wavFormColour = juce::Colour(0xff43d996);
+    juce::Colour wavBackgroundColour = juce::Colours::black;
     juce::Colour digitPanelColour = juce::Colour(0xff232323);
     juce::Colour digitColour = juce::Colour(0xff8a8a8a);
+    juce::Colour gridColour = juce::Colour(0xff8a8a8a);
+    juce::Colour gridHorizontalCenterColour = juce::Colours::red;
     juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
-
-
+    double gridOpacity = 0.5; //grid opacity
 
     bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
     //-------------------------------------------------------------------------------------
@@ -310,7 +312,7 @@ public:
     void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
         double zoomfactor = 128;
-        double opa = 0.5; //grid opacity
+        
         auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
         auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
         double displayStartTime, displayEndTime, displayWidth;
@@ -340,8 +342,8 @@ public:
 
         // draw vertical time lines
 
-        g.setColour(juce::Colours::darkgrey);
-        g.setOpacity(opa);
+        g.setColour(gridColour);
+        g.setOpacity(gridOpacity);
         for (auto x : xs)
         {
             newX1 = timeToX(x); // get 
@@ -356,15 +358,15 @@ public:
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
         thumbh = bounds.getHeight();
         newY2 = bounds.getCentreY();
-        g.setColour(juce::Colours::red);
-        g.setOpacity(opa);
+        g.setColour(gridHorizontalCenterColour);
+        g.setOpacity(gridOpacity);
 
         g.drawHorizontalLine(newY2, left, right);
-        DBG("paintGrid:: Y2 = " << newY2);
+        //DBG("paintGrid:: Y2 = " << newY2);
  
 
-        g.setColour(juce::Colours::darkgrey);
-        g.setOpacity(opa);
+        g.setColour(gridColour);
+        g.setOpacity(gridOpacity);
 
                 
         for (auto y : NiceGainY)
@@ -373,7 +375,7 @@ public:
             g.drawHorizontalLine(newY41, left, right);
             newY42 = newY2 + y;
             g.drawHorizontalLine(newY42, left, right);
-            DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
+            //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
         }
 /*
         
@@ -395,7 +397,7 @@ public:
     //-------------------------------------------------------------------------------------
     void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
-        g.setColour(juce::Colours::grey);
+        g.setColour(gridColour);
         g.setOpacity(1.0);
         const int fontHeight = 10;
         g.setFont(fontHeight);
@@ -428,7 +430,7 @@ public:
     //-------------------------------------------------------------------------------------
     void drawYLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
-        g.setColour(juce::Colours::grey);
+        g.setColour(gridColour);
         g.setOpacity(1.0);
         const int fontHeight = 10;
         g.setFont(fontHeight);
@@ -466,7 +468,7 @@ public:
             r.setSize(textWidth, fontHeight);
  //            r.setY(textArea.getY());
             g.drawFittedText(str, r, juce::Justification::centredLeft, 1);
-            DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
+ //           DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
         }
     }
     //-------------------------------------------------------------------------------------
@@ -576,7 +578,7 @@ public:
 //-------------------------------------------------------------------------------------
     juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
     {
-        bounds.removeFromTop(12);
+        //bounds.removeFromTop(12);
         bounds.removeFromBottom(scrollbar.getHeight() + 4);
         return bounds;
     }
@@ -604,7 +606,8 @@ public:
     juce::Rectangle<int> getWaveZone(juce::Rectangle<int> bounds)
     {
         bounds = getRenderZone(bounds);
-        bounds.removeFromTop(4);
+        //bounds.removeFromTop(4);
+        bounds.removeFromTop(16);//make space for time labels
         bounds.removeFromBottom(4); 
         bounds.removeFromRight(50);
         return bounds;
@@ -612,27 +615,26 @@ public:
 //-------------------------------------------------------------------------------------
     void paint(Graphics& g) override
     {
-        g.fillAll(Colours::dimgrey);        
+        //g.fillAll(Colours::dimgrey);
+        auto thumbArea = getLocalBounds();
+        juce::Rectangle<int> extZone = getRenderZone(thumbArea);
+        g.setColour(digitPanelColour);
+        g.fillRect(extZone);
+        //juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
+        wavZone = getWaveZone(thumbArea);
+        g.setColour(wavBackgroundColour);
+        g.fillRect(wavZone);
 
         if (thumbnail.getTotalLength() > 0.0)
         {
             double startTime = 0.0f;
             double  endTime = 1.0f;
-            double  endofrecording = 1.0f;
-            auto thumbArea = getLocalBounds();
+            double  endofrecording = 1.0f;            
             double currentlength = thumbnail.getTotalLength();
             endofrecording = jmax(10.0, currentlength);
             Range<double> newRange;
             double thumbnailsize;
-            int xzoomticknb;
-            juce::Rectangle<int> extZone = getRenderZone(thumbArea);
-            
-            g.setColour(digitPanelColour);
-            g.fillRect(extZone);
-            juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
-            g.setColour(juce::Colours::black);
-
-            g.fillRect(wavZone);
+            int xzoomticknb;           
 
             //g.setColour(juce::Colours::yellow);
             //g.drawRect(wavZone, 1.0);
@@ -706,7 +708,15 @@ public:
     void resized() override
     {
         int xzoomticknb;
-        scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
+        auto thumbArea = getLocalBounds();
+        wavZone = getWaveZone(thumbArea);
+
+        //scrollbar.setBounds(getLocalBounds().removeFromBottom(14).removeFromRight(50).reduced(2));
+        auto bounds = getLocalBounds().removeFromBottom(14).removeFromRight(50).reduced(2);
+        bounds = getLocalBounds().removeFromBottom(14).reduced(2);
+        bounds.setWidth(wavZone.getWidth());
+        //scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
+        scrollbar.setBounds(bounds);
         xzoomticknb = createZoomVector(zoomVector);
     }
 //-------------------------------------------------------------------------------------
@@ -715,10 +725,12 @@ public:
         //auto vrange = visibleRange.getLength();
         auto totlen = thumbnail.getTotalLength();
         auto thumbArea = getLocalBounds();
+        auto wavWindowWidth = wavZone.getWidth();
    
     //    auto SampleRate = 48000;
         double SampleSize = totlen * sampleRate;
         double Ratio = SampleSize / thumbArea.getWidth();
+        Ratio = (double)SampleSize / (double)wavWindowWidth;
         double div = Ratio;
         int it = 0;
         int iteration = 0;
@@ -850,6 +862,9 @@ public:
         if (thumbnail.getTotalLength() > 0)
         {            
      //       auto SampleRate = 48000;
+            auto wavWindowWidth = wavZone.getWidth();
+            //    auto SampleRate = 48000;
+            
             auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
             double displayStartTime, displayEndTime, displayWidth;
 
@@ -858,10 +873,13 @@ public:
 
             double SampleSize = totlen * sampleRate; //size  of sample in points
             double Ratio = SampleSize / thumbArea.getWidth();
+            Ratio = (double)SampleSize / (double)wavWindowWidth;
 
             auto timeAtMousePos = xToTime((float)Posi3.x);
 
-            double PosixRatioPix = (double)width / (double) Posi3.x;
+            //double PosixRatioPix = (double)width / (double) Posi3.x;
+            double PosixRatioPix = (double)wavWindowWidth / (double)Posi3.x;            
+
             displayWidth = totlen * zoomfactor / Ratio;
 
             displayStartTime = timeAtMousePos - displayWidth / PosixRatioPix;
@@ -904,19 +922,24 @@ private:
     int YZoomIndex = 0;
     const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click
     double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
+    juce::Rectangle<int> wavZone;
 
  //-------------------------------------------------------------------------------------
     float timeToX(const double time) const
     {
         if (visibleRange.getLength() <= 0)
             return 0;
+        //auto width = getWidth();
+        auto width = wavZone.getWidth();
 
-        return (float)getWidth() * (float)((time - visibleRange.getStart()) / visibleRange.getLength());
+        return (float)width * (float)((time - visibleRange.getStart()) / visibleRange.getLength());
     }
 //-------------------------------------------------------------------------------------
     double xToTime(const float x) const
     {
-        return (x / (float)getWidth()) * (visibleRange.getLength()) + visibleRange.getStart();
+        //auto width = getWidth();
+        auto width = wavZone.getWidth();
+        return (x / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
     }
 //-------------------------------------------------------------------------------------
     void scrollBarMoved(juce::ScrollBar* scrollBarThatHasMoved, double newRangeStart) override
