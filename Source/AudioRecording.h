@@ -251,21 +251,6 @@ public:
         repaint();
     }
     //-------------------------------------------------------------------------------------
- /*   void setZoomFactor(double amount)
-    {
-        auto toto = jlimit(0.0001, 0.99, amount);
-
-        if (thumbnail.getTotalLength() > 0)
-        {
-            auto thumbnailsize = thumbnail.getTotalLength();
-            auto width = getWidth();
-
-            auto newScale = jmax(0.001, thumbnail.getTotalLength() * (1.0 - jlimit(0.0, 0.99, amount)));
-            auto timeAtCentre = xToTime((float)getWidth() / 2.0f);
-            setRange({ timeAtCentre - newScale * 0.5, timeAtCentre + newScale * 0.5 });
-        }
-    }*/
-    //-------------------------------------------------------------------------------------
     void setRange(Range<double> newRange)
     {
         visibleRange = newRange;
@@ -341,7 +326,6 @@ public:
         int newX1;
 
         // draw vertical time lines
-
         g.setColour(gridColour);
         g.setOpacity(gridOpacity);
         for (auto x : xs)
@@ -358,17 +342,13 @@ public:
         int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
         thumbh = bounds.getHeight();
         newY2 = bounds.getCentreY();
-        g.setColour(gridHorizontalCenterColour);
+        g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
         g.setOpacity(gridOpacity);
-
         g.drawHorizontalLine(newY2, left, right);
-        //DBG("paintGrid:: Y2 = " << newY2);
- 
-
+        //DBG("paintGrid:: Y2 = " << newY2); 
+        // draw all other horizontal lines
         g.setColour(gridColour);
-        g.setOpacity(gridOpacity);
-
-                
+        g.setOpacity(gridOpacity);                
         for (auto y : NiceGainY)
         {
             newY41 = newY2 - y;
@@ -377,22 +357,6 @@ public:
             g.drawHorizontalLine(newY42, left, right);
             //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
         }
-/*
-        
-        if (newY41 >= top)
-            g.drawHorizontalLine(newY41, left, right);
-        if (newY42 <= bottom)
-            g.drawHorizontalLine(newY42, left, right);
-
-        newY81 = newY2 - yRatio / 4;
-        newY82 = newY2 + yRatio / 4;
-        newY83 = newY2 - yRatio / 4;
-        newY84 = newY2 + yRatio / 4;
-
-        if (newY81 >= top)
-            g.drawHorizontalLine(newY81, left, right);
-        if (newY84 <= bottom)
-            g.drawHorizontalLine(newY84, left, right);*/
     }
     //-------------------------------------------------------------------------------------
     void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -557,22 +521,30 @@ public:
         double halfHeightPix = floor((double)displayHeightPix / 2.0);
         double curY = halfHeightPix;
         double ratio;
-        double gain;
+        double gain,gain3;
         double NiceY;
 
         while (curY > 0)
         {
             ratio = curY / halfHeightPix;
             gain = 20.0 * log10(ratio);
-            gain = round(gain);
+            
+            if (round(gain) < -3.0)
+            {
+                gain3 = floor(gain / 3.0);
+                gain = gain3 * 3.0;
+            }
+            else
+            {
+                gain = round(gain); //round to the next dB 
+            }
             NiceGainVect.push_back(gain + topGdB);
             ratio = pow(10.0, gain / 20);
             NiceY = halfHeightPix * ratio;
             NiceY = round(NiceY);
             NiceGainY.push_back((int)NiceY);
             curY -= minRectHeight;
-        }
-   
+        }   
             return(0);//should never happen
     }
 //-------------------------------------------------------------------------------------
@@ -620,6 +592,8 @@ public:
         juce::Rectangle<int> extZone = getRenderZone(thumbArea);
         g.setColour(digitPanelColour);
         g.fillRect(extZone);
+        g.setColour(juce::Colours::black);
+        g.drawRect(extZone, 1.0);
         //juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
         wavZone = getWaveZone(thumbArea);
         g.setColour(wavBackgroundColour);
@@ -646,17 +620,15 @@ public:
                 endTime = thumbnail.getTotalLength();
                 scrollbar.setAutoHide(false);              
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                //paintGrid(g, thumbArea);
-                paintGrid(g, wavZone);
-                //g.setColour(Colours::aquamarine);
-                g.setColour(wavFormColour);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
-                thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
-
                 newRange.setStart(0.0);
                 newRange.setEnd(endTime);
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
+                wavZone = getWaveZone(thumbArea);
+                paintGrid(g, wavZone);
+                g.setColour(wavFormColour);
+                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
+                thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 xzoomticknb = createZoomVector(zoomVector);
                 drawXLabels(g, thumbArea);
                 drawYLabels(g, thumbArea);
