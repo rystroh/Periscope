@@ -215,6 +215,7 @@ public:
     juce::Colour gridHorizontalCenterColour = juce::Colours::red;
     juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
     double gridOpacity = 0.5; //grid opacity
+    int yScaleZoneWidth = 50;
 
     bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
     //-------------------------------------------------------------------------------------
@@ -398,12 +399,19 @@ public:
         g.setOpacity(1.0);
         const int fontHeight = 10;
         g.setFont(fontHeight);
-        auto textArea = getVTextZone(bounds);// getRenderZone(bounds);
+        auto textArea = getVTextZone(bounds);// getRenderZone(bounds);// there is a mistake here TBD
         juce::Rectangle<int> wavZone = getWaveZone(bounds);
 
-        auto left = textArea.getX();
+        auto left = textArea.getX()+10;
         auto top = wavZone.getTopRight().getY();
+        auto maxright = textArea.getRight();
         auto right = left + textArea.getWidth();
+
+        Rectangle<int> rTxt;
+        String strTxt;
+        strTxt << "-144 dB";
+        auto txtWidth = g.getCurrentFont().getStringWidth(strTxt);
+        rTxt.setSize(txtWidth, fontHeight);
 
         //std::vector<double> xs = getXs();
 
@@ -412,6 +420,8 @@ public:
         int ret = getNiceGainVect(wavZone.getHeight(), NiceGainVect, NiceGainY);
         int newY2, newY41, newY42;
         int newY1, newGain;
+
+
         newY2 = wavZone.getCentreY();
 
 
@@ -425,15 +435,19 @@ public:
             Rectangle<int> r;
             auto textWidth = g.getCurrentFont().getStringWidth(str);
             int left, top, right, butt;
-            left =  textArea.getTopLeft().getX();
+           
+            left = maxright - textWidth - 10;
             
             r.setLeft(left);
             r.setY(newY1);
             r.setSize(textWidth, fontHeight);
  //            r.setY(textArea.getY());
             g.drawFittedText(str, r, juce::Justification::centredLeft, 1);
+            newY1 = newY2 - NiceGainY[idx];
+            left = textArea.getTopLeft().getX();
+            g.drawHorizontalLine(newY1, left-3, left);
  //           DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
-        }
+        } 
     }
     //-------------------------------------------------------------------------------------
     double round_fl(double x, int num_decimal_precision_digits)
@@ -571,7 +585,7 @@ public:
         boundsTxt.setLeft(wavRect.getRight() + 4);
         boundsTxt.setTop(wavRect.getTopLeft().getY());
         boundsTxt.setBottom(wavRect.getBottomLeft().getY());
-        boundsTxt.setRight(wavRect.getRight() + 100);
+        boundsTxt.setRight(wavRect.getRight() + yScaleZoneWidth);
         return boundsTxt;
     }
     //-------------------------------------------------------------------------------------
@@ -581,7 +595,7 @@ public:
         //bounds.removeFromTop(4);
         bounds.removeFromTop(16);//make space for time labels
         bounds.removeFromBottom(4); 
-        bounds.removeFromRight(50);
+        bounds.removeFromRight(yScaleZoneWidth);
         return bounds;
     }
 //-------------------------------------------------------------------------------------
@@ -650,6 +664,7 @@ public:
                 scrollbar.setRangeLimits(newRange);
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                 //paintGrid(g, thumbArea);
+                wavZone = getWaveZone(thumbArea);
                 paintGrid(g, wavZone);
                 //g.setColour(Colours::aquamarine);
                 g.setColour(wavFormColour);
