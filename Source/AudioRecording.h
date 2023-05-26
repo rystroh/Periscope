@@ -26,17 +26,12 @@
  END_JUCE_PIP_METADATA
 
 *******************************************************************************/
-
 #pragma once
 namespace juce
 {
-
-
-//#include "DemoUtilities.h"
-//#include "AudioLiveScrollingDisplay.h"
 #include <vector>
 #include <algorithm>
-//==============================================================================
+//=======================================================================================================
 /** A simple class that acts as an AudioIODeviceCallback and writes the
     incoming audio data to a WAV file.
 */
@@ -54,7 +49,7 @@ public:
         stop();
     }
 
-    //==================================================================================
+//==================================================================================
     void startRecording (const File& file)
     {
         stop();
@@ -88,7 +83,7 @@ public:
             }
         }
     }
- //-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
     void stop()
     {
         // First, clear this pointer to stop the audio callback from using our writer object..
@@ -102,13 +97,12 @@ public:
         // the audio callback while this happens.
         threadedWriter.reset();
     }
- //-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
     bool isRecording() const
     {
         return activeWriter.load() != nullptr;
     }
-
-//=====================================================================================
+//-------------------------------------------------------------------------------------
     void audioDeviceAboutToStart(AudioIODevice* device) override
     {
         sampleRate = device->getCurrentSampleRate();
@@ -118,7 +112,7 @@ public:
     {
         return(sampleRate);
     }
-    //-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
     bool setSampleDepth(int depth)
     {
         int possibleDepth[] = { 8, 16, 24 };
@@ -129,7 +123,7 @@ public:
         }
         return(exists);
     }
-    //-------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------
     bool setSampleChanNb(int chNb)
     {
         if ((chNb == 1) || (chNb == 2))
@@ -169,7 +163,7 @@ public:
             if (outputChannelData[i] != nullptr)
                 FloatVectorOperations::clear (outputChannelData[i], numSamples);
     }
-
+//-------------------------------------------------------------------------------------
 private:
     AudioThumbnail& thumbnail;
     TimeSliceThread backgroundThread { "Audio Recorder Thread" }; // the thread that will write our audio data to disk
@@ -181,8 +175,7 @@ private:
     CriticalSection writerLock;
     std::atomic<AudioFormatWriter::ThreadedWriter*> activeWriter { nullptr };
 };
-
-//==============================================================================
+//=======================================================================================================
 class RecordingThumbnail : public Component,
     private ChangeListener,
     private juce::ScrollBar::Listener
@@ -293,7 +286,6 @@ public:
     {
 
     }
-
     //-------------------------------------------------------------------------------------
     void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
     {
@@ -592,7 +584,6 @@ public:
     juce::Rectangle<int> getWaveZone(juce::Rectangle<int> bounds)
     {
         bounds = getRenderZone(bounds);
-        //bounds.removeFromTop(4);
         bounds.removeFromTop(16);//make space for time labels
         bounds.removeFromBottom(4); 
         bounds.removeFromRight(yScaleZoneWidth);
@@ -624,10 +615,6 @@ public:
             double thumbnailsize;
             int xzoomticknb;           
 
-            //g.setColour(juce::Colours::yellow);
-            //g.drawRect(wavZone, 1.0);
-            //g.setColour(juce::Colours::red);
-            //g.drawRect(extZone, 1.0);
             switch (displayThumbMode)
             {
             case 0: //Full Thumb mode (expand recording data to window when stopping Recording
@@ -641,7 +628,6 @@ public:
                 wavZone = getWaveZone(thumbArea);
                 paintGrid(g, wavZone);
                 g.setColour(wavFormColour);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endTime, ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 xzoomticknb = createZoomVector(zoomVector);
                 drawXLabels(g, thumbArea);
@@ -650,11 +636,8 @@ public:
 
             case 1: // recording mode (scrolling data)                
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, jmin(1.0,endTime), ThumbYZoom);
                 g.setColour(wavFormColour);
-                //g.setColour(Colours::aquamarine);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), startTime, endofrecording, ThumbYZoom);
-                thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                thumbnail.drawChannels(g, wavZone.reduced(2), startTime, endofrecording, ThumbYZoom);
                 break;
 
             case 2: // zooming mode                
@@ -663,25 +646,21 @@ public:
                 newRange.setEnd(thumbnailsize);             
                 scrollbar.setRangeLimits(newRange);
                 thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
-                //paintGrid(g, thumbArea);
                 wavZone = getWaveZone(thumbArea);
                 paintGrid(g, wavZone);
-                //g.setColour(Colours::aquamarine);
                 g.setColour(wavFormColour);
-                //thumbnail.drawChannels(g, thumbArea.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
                 drawXLabels(g, thumbArea);
                 drawYLabels(g, thumbArea);
                 break;
 
-            case 3: //stopping
-                thumbnailsize = thumbnail.getTotalLength();
-                newRange.setStart(0.0);
-                newRange.setEnd(thumbnailsize);
-
-                scrollbar.setRangeLimits(newRange);
-                setRange(newRange);
-                displayThumbMode = 2; // get ready for zooming
+            case 3: //oscilloscope dancing view
+                if(currentlength>0.05)
+                { 
+                thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                g.setColour(wavFormColour);
+                thumbnail.drawChannels(g, wavZone.reduced(2), currentlength-0.05, currentlength, ThumbYZoom);
+                }
                 break;
             }
         }

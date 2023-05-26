@@ -14,17 +14,6 @@ MainComponent::MainComponent()
     addAndMakeVisible(openButton);
     openButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x5c5c5c5c));
     openButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
-/*
-    levelSlider.setRange(0.0, 8.0);
-    levelSlider.setValue(1.0f);
-    levelSlider.setSliderStyle(juce::Slider::LinearVertical);
-    levelSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
-    levelLabel.setText("Y Zoom", juce::dontSendNotification);
-    levelSlider.addListener(this);
-
-    addAndMakeVisible(levelSlider);
-    addAndMakeVisible(levelLabel);*/
-    //transport.addChangeListener(this);
 
     recordButton.onClick = [this]
     {
@@ -38,8 +27,6 @@ MainComponent::MainComponent()
 
     openButton.onClick = [this] { openButtonClicked(); };
     
-
-
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
         && ! juce::RuntimePermissions::isGranted (juce::RuntimePermissions::recordAudio))
@@ -53,7 +40,6 @@ MainComponent::MainComponent()
         setAudioChannels (2, 2);
     }
 
-    //audioDeviceManager.addAudioCallback(&recorder);
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.addAudioCallback(&recorder);
     setSize(870, 600);
@@ -64,11 +50,9 @@ MainComponent::~MainComponent()
 {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
-    //audioDeviceManager.removeAudioCallback(&recorder);
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.removeAudioCallback(&recorder);
 }
-
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
@@ -87,7 +71,6 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     recordingThumbnail.setSampleRate(device->getCurrentSampleRate());
 }
 //-------------------------------------------------------------------------------------
-
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
     // Your audio-processing code goes here!
@@ -122,21 +105,12 @@ void MainComponent::resized()
     auto area = getLocalBounds();
     juce::Rectangle<int>ThumbnailZone;
 
-
-    //liveAudioScroller.setBounds(area.removeFromTop(80).reduced(8));
-    //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
-    //recordButton.setBounds(area.removeFromTop(36).removeFromLeft(140).reduced(8));
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
 
-    //recordingThumbnail.setBounds(area.removeFromTop(80).reduced(8));
     ThumbnailZone = area;// .withTrimmedTop(20);
     diRect = ThumbnailZone;
 
     recordingThumbnail.setBounds(10,40,getWidth()-20, ThumbnailZone.getHeight() / 4);
-    
-    //scrollbar.setBounds(recordingThumbnail.getBounds().removeFromBottom(14).reduced(2));
-   
-    //levelSlider.setBounds(getWidth() - 30, area.getY(), 20, ThumbnailZone.getHeight() / 4);
-    //levelLabel.setBounds(getWidth() - 150, 10, 150, 20);
+
 }

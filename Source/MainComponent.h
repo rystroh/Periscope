@@ -34,8 +34,7 @@ private:
     juce::TextButton openButton{ "Open File" };
     std::unique_ptr<juce::FileChooser> chooser;
 
-    juce::AudioFormatManager formatManager;                    // [3]
-    
+    juce::AudioFormatManager formatManager;                    // [3]    
 
     //juce::AudioDeviceManager audioDeviceManager; //external audioDeviceManager not needed
     juce::RecordingThumbnail recordingThumbnail;
@@ -59,7 +58,6 @@ private:
             recordingThumbnail.setDisplayYZoom(value);
             //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
         }*/
-
     }
  //-------------------------------------------------------------------------------------
     void openButtonClicked()
@@ -80,14 +78,11 @@ private:
                     if (reader != nullptr)
                     {
                         auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                        //transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-                        //playButton.setEnabled(true);
+
                         recordingThumbnail.setSource(new juce::FileInputSource(file));
                         recordingThumbnail.setSampleRate(reader->sampleRate);
                         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
                         recordingThumbnail.setDisplayYZoom(1.0);
-                        //levelSlider.setValue(1.0); //Reset Volume Slider to 1 upon file change
-                        //readerSource.reset(newSource.release());
                     }
                 }
             });
@@ -119,7 +114,8 @@ private:
         recordingThumbnail.setSampleRate(recorder.getSampleRate());
         recorder.startRecording(lastRecording);
         recordButton.setButtonText("Stop");
-        recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
+        //recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
+        recordingThumbnail.setDisplayThumbnailMode(3); // in record mode oscilloscope display
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
@@ -147,11 +143,8 @@ private:
 
         lastRecording = juce::File();
         recordButton.setButtonText("Record");
-        //recordingThumbnail.setDisplayFullThumbnail(true);
         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
         recordingThumbnail.setDisplayYZoom(1.0);
-        //levelSlider.setValue(1.0f);
     }
-
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
