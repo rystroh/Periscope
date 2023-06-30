@@ -109,7 +109,7 @@ void MainComponent::resized()
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
 
     ThumbnailZone = area;// .withTrimmedTop(20);
-    diRect = ThumbnailZone;
+    //diRect = ThumbnailZone;
 
     recordingThumbnail.setBounds(10,40,getWidth()-20, ThumbnailZone.getHeight() / 4);
 

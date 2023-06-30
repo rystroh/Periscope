@@ -41,8 +41,8 @@ private:
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
     juce::File lastRecording;
     //juce::Slider levelSlider;
-    juce::Label levelLabel;
-    juce::Rectangle<int> diRect;
+    //juce::Label levelLabel;
+    //juce::Rectangle<int> diRect;
     
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
