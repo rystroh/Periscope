@@ -1,16 +1,15 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "AudioRecording.h"
+//#include "AudioRecording.h"
+#include "eScope.h"
 
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::AudioAppComponent,                       
-                       public juce::Slider::Listener
-                       
+class MainComponent  : public juce::AudioAppComponent                                                                  
 {
 public:
     //==============================================================================
@@ -30,34 +29,18 @@ private:
     //==============================================================================
     // Your private member variables go here...
     juce::TextButton recordButton{ "Record" };
-
     juce::TextButton openButton{ "Open File" };
     std::unique_ptr<juce::FileChooser> chooser;
 
     juce::AudioFormatManager formatManager;                    // [3]    
 
-    //juce::AudioDeviceManager audioDeviceManager; //external audioDeviceManager not needed
     juce::RecordingThumbnail recordingThumbnail;
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
     juce::File lastRecording;
-    //juce::Slider levelSlider;
-    //juce::Label levelLabel;
-    //juce::Rectangle<int> diRect;
-    
+ //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
         return deviceManager; 
-    }
-//-------------------------------------------------------------------------------------
-    void sliderValueChanged(juce::Slider* slider) override
-    {
-        double value;
-     /*   if (slider == &levelSlider)
-        {
-            value = levelSlider.getValue();
-            recordingThumbnail.setDisplayYZoom(value);
-            //recordingThumbnail.getAudioThumbnail().drawChannels(g, area, start, end, vzoom);
-        }*/
     }
  //-------------------------------------------------------------------------------------
     void openButtonClicked()
@@ -90,7 +73,6 @@ private:
 //-------------------------------------------------------------------------------------
     void startRecording()
     {
-        
         if (!juce::RuntimePermissions::isGranted(juce::RuntimePermissions::writeExternalStorage))
         {
             SafePointer<MainComponent> safeThis(this);
@@ -103,13 +85,11 @@ private:
                 });
             return;
         }
-
 #if (JUCE_ANDROID || JUCE_IOS)
         auto parentDir = File::getSpecialLocation(File::tempDirectory);
 #else
         auto parentDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
 #endif
-
         lastRecording = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
         recordingThumbnail.setSampleRate(recorder.getSampleRate());
         recorder.startRecording(lastRecording);
@@ -121,7 +101,6 @@ private:
     void stopRecording()
     {
         recorder.stop();
-
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
         File fileToShare = lastRecording;
@@ -140,7 +119,6 @@ private:
                         nullptr);
             });
 #endif
-
         lastRecording = juce::File();
         recordButton.setButtonText("Record");
         recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone

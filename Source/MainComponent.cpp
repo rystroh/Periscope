@@ -89,7 +89,6 @@ void MainComponent::releaseResources()
 
     // For more details, see the help for AudioProcessor::releaseResources()
 }
-
 //==============================================================================
 void MainComponent::paint (juce::Graphics& g)
 {
@@ -103,14 +102,10 @@ void MainComponent::resized()
     // If you add any child components, this is where you should
     // update their positions.
     auto area = getLocalBounds();
-    juce::Rectangle<int>ThumbnailZone;
 
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
 
-    ThumbnailZone = area;// .withTrimmedTop(20);
-    //diRect = ThumbnailZone;
-
-    recordingThumbnail.setBounds(10,40,getWidth()-20, ThumbnailZone.getHeight() / 4);
+    recordingThumbnail.setBounds(10,40,getWidth()-20, area.getHeight() / 4);
 
 }
