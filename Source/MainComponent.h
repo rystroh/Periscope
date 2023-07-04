@@ -3,7 +3,6 @@
 #include <JuceHeader.h>
 //#include "AudioRecording.h"
 #include "eScope.h"
-
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -37,6 +36,7 @@ private:
     juce::RecordingThumbnail recordingThumbnail;
     juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
     juce::File lastRecording;
+    //juce::EScope eScope;
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
