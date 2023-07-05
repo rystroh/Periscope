@@ -17,7 +17,7 @@ namespace juce
         {
             stop();
         }
-        //------------------------------------------------------------------------------------
+        //---------------------------------------------------------------------------------
         void startRecording(const File& file)
         {
             stop();
@@ -53,7 +53,7 @@ namespace juce
                 }
             }
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void stop()
         {
             // 1st, clear this pter to stop the audio callback from using our writer object..
@@ -66,22 +66,22 @@ namespace juce
             // so it's best to avoid blocking the audio callback while this happens.
             threadedWriter.reset();
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         bool isRecording() const
         {
             return activeWriter.load() != nullptr;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void audioDeviceAboutToStart(AudioIODevice* device) override
         {
             sampleRate = device->getCurrentSampleRate();
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         double getSampleRate(void)
         {
             return(sampleRate);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         bool setSampleDepth(int depth)
         {
             int possibleDepth[] = { 8, 16, 24 };
@@ -93,7 +93,7 @@ namespace juce
             }
             return(exists);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         bool setSampleChanNb(int chNb)
         {
             if ((chNb == 1) || (chNb == 2))
@@ -104,12 +104,12 @@ namespace juce
             else
                 return(false);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void audioDeviceStopped() override
         {
             sampleRate = 0;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void audioDeviceIOCallbackWithContext(const float* const* inputChannelData,
             int numInputChannels,
             float* const* outputChannelData,
@@ -137,7 +137,7 @@ namespace juce
                 if (outputChannelData[i] != nullptr)
                     FloatVectorOperations::clear(outputChannelData[i], numSamples);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
     private:
         AudioThumbnail& thumbnail;
         // the thread that will write our audio data to disk

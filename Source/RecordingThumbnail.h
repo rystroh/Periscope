@@ -36,14 +36,14 @@ namespace juce
         juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
         double gridOpacity = 0.5; //grid opacity
         int yScaleZoneWidth = 50;
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void setSampleRate(double smpRate)
         {
             sampleRate = smpRate;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void setDisplayFullThumbnail(bool displayFull)
         {
             displayFullThumb = displayFull;
@@ -57,12 +57,12 @@ namespace juce
             else
                 repaint();
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void setDisplayThumbnailMode(int displayMode)
         {
             displayThumbMode = displayMode;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void setDisplayYZoom(double yZoom) // called by SliderValueChanged in MainComponent.h
         {
             ThumbYZoom = yZoom;
@@ -72,14 +72,14 @@ namespace juce
             DBG("Y Zoom = " << ThumbYZoom);
             repaint();
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void setRange(Range<double> newRange)
         {
             visibleRange = newRange;
             scrollbar.setCurrentRange(visibleRange);
             repaint();
         }
-        //---------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------
         double  getTimeStepSize(int displayWidthPix, double wavDurationToDisplaySec)
         {
             std::vector<float>NiceTimeRatios{ 1.0 , 2.0 , 5.0 , 10.0 };
@@ -105,17 +105,17 @@ namespace juce
             else
                 return(1);//should never happen
         }
-        //---------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------
         std::vector<double> getTimeLineX()
         {
 
         }
-        //---------------------------------------------------------------------------------
+        //------------------------------------------------------------------------------
         std::vector<float>  getTimeLabels()
         {
 
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
             double zoomfactor = 128;
@@ -180,7 +180,7 @@ namespace juce
                 //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
             }
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
             g.setColour(gridColour);
@@ -213,7 +213,7 @@ namespace juce
                 g.drawFittedText(str, r, juce::Justification::centred, 1);
             }
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void drawYLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
             g.setColour(gridColour);
@@ -268,7 +268,7 @@ namespace juce
                 //           DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
             }
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         double round_fl(double x, int num_decimal_precision_digits)
         {
             double power_of_10 = std::pow(10, num_decimal_precision_digits);
@@ -276,7 +276,7 @@ namespace juce
             xr = xr / power_of_10;
             return xr;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         std::vector<double> getXs()
         {
             auto timeZoneStart = visibleRange.getStart();
@@ -305,7 +305,7 @@ namespace juce
             }
             return(xs);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         std::vector<int> getGains()//called by std::vector<int>getNiceGainVect
     // creates vector of gains in dB between +12 and -144 - step = 1dB
         {
@@ -314,7 +314,7 @@ namespace juce
                 gaindB.push_back(x); // xs.push_back(x1);
             return(gaindB);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         std::vector<long double> getZoomGainVect()
             // creates vector of gains in dB between + 12 and -144 - step = 1dB
         {
@@ -324,7 +324,7 @@ namespace juce
                 gainZdB.push_back(pow(10, (long double)(x - 8) * (long double)1.5 / (long double)20.0));
             return(gainZdB);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         long double getZoomMult(int index)
             // return gain factor 
             //    index = 0  -> gain = +12 dB 
@@ -336,7 +336,7 @@ namespace juce
             gainMult = pow(10, (long double)(index - 8) * (long double)dBStep / (long double)20.0);
             return(gainMult);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         int getNiceGainVect(int displayHeightPix, std::vector<int>& NiceGainVect,
             std::vector<int>& NiceGainY)
         {
@@ -381,14 +381,14 @@ namespace juce
             }
             return(0);//should never happen
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
         {
             //bounds.removeFromTop(12);
             bounds.removeFromBottom(scrollbar.getHeight() + 4);
             return bounds;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         juce::Rectangle<int> getHTextZone(juce::Rectangle<int> bounds)
         {
             auto wavRect = getWaveZone(bounds);
@@ -397,7 +397,7 @@ namespace juce
             bounds.setRight(wavRect.getRight());
             return bounds;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         juce::Rectangle<int> getVTextZone(juce::Rectangle<int> bounds)
         {
             juce::Rectangle<int> boundsTxt;
@@ -408,7 +408,7 @@ namespace juce
             boundsTxt.setRight(wavRect.getRight() + yScaleZoneWidth);
             return boundsTxt;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         juce::Rectangle<int> getWaveZone(juce::Rectangle<int> bounds)
         {
             bounds = getRenderZone(bounds);
@@ -417,7 +417,7 @@ namespace juce
             bounds.removeFromRight(yScaleZoneWidth);
             return bounds;
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void paint(Graphics& g) override
         {
             //g.fillAll(Colours::dimgrey);
@@ -499,7 +499,7 @@ namespace juce
                 //Justification::centred, 2);
             }
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void resized() override
         {
             int xzoomticknb;
@@ -515,7 +515,7 @@ namespace juce
             scrollbar.setBounds(bounds);
             xzoomticknb = createZoomVector(zoomVector);
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         int  createZoomVector(std::vector<double>& Divider)
         {
             //auto vrange = visibleRange.getLength();
@@ -570,13 +570,13 @@ namespace juce
 
             return (Divider.size());
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void mouseDown(const MouseEvent& event)
         {
             auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             DBG("Mouse.x = " << Posi3.getX());
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
         {
             auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
@@ -653,7 +653,7 @@ namespace juce
                 }
             }
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void setDisplayXZone(double zoomfactor)
         {
             displayFullThumb = false;
@@ -691,7 +691,7 @@ namespace juce
             else
                 repaint();
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         double AmpdBGainToMultFactor(double AmpGaindB)
             // called at init
         {
@@ -700,7 +700,7 @@ namespace juce
             return fact;
 
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
     private:
         AudioFormatManager formatManager;
         AudioThumbnailCache thumbnailCache{ 10 };
@@ -725,7 +725,7 @@ namespace juce
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
 
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         float timeToX(const double time) const
         {
             if (visibleRange.getLength() <= 0)
@@ -736,14 +736,14 @@ namespace juce
             return (float)width * (float)((time - visibleRange.getStart()) /
                 visibleRange.getLength());
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         double xToTime(const float x) const
         {
             //auto width = getWidth();
             auto width = wavZone.getWidth();
             return (x / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void scrollBarMoved(juce::ScrollBar* scrollBarThatHasMoved, double newRangeStart)
             override
         {
@@ -751,7 +751,7 @@ namespace juce
                 //if (!(isFollowingTransport && transportSource.isPlaying()))
                 setRange(visibleRange.movedToStartAt(newRangeStart));
         }
-        //-------------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
         void changeListenerCallback(ChangeBroadcaster* source) override
         {
             if (source == &thumbnail)

@@ -32,11 +32,9 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
 
     juce::AudioFormatManager formatManager;                    // [3]    
-
-    juce::RecordingThumbnail recordingThumbnail;
-    juce::AudioRecorder recorder{ recordingThumbnail.getAudioThumbnail() };
+  
     juce::File lastRecording;
-    //juce::EScope eScope;
+    juce::EScope eScope;
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
@@ -61,11 +59,10 @@ private:
                     if (reader != nullptr)
                     {
                         auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-
-                        recordingThumbnail.setSource(new juce::FileInputSource(file));
-                        recordingThumbnail.setSampleRate(reader->sampleRate);
-                        recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                        recordingThumbnail.setDisplayYZoom(1.0);
+                        eScope.recThumbnail.setSource(new juce::FileInputSource(file));
+                        eScope.recThumbnail.setSampleRate(reader->sampleRate);
+                        eScope.recThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                        eScope.recThumbnail.setDisplayYZoom(1.0);                        
                     }
                 }
             });
@@ -91,16 +88,16 @@ private:
         auto parentDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
 #endif
         lastRecording = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-        recordingThumbnail.setSampleRate(recorder.getSampleRate());
-        recorder.startRecording(lastRecording);
+        eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate());
+        eScope.rec.startRecording(lastRecording);
         recordButton.setButtonText("Stop");
         //recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
-        recordingThumbnail.setDisplayThumbnailMode(3); // in record mode oscilloscope display
+        eScope.recThumbnail.setDisplayThumbnailMode(3);
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
     {
-        recorder.stop();
+        eScope.rec.stop();
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
         File fileToShare = lastRecording;
@@ -121,8 +118,9 @@ private:
 #endif
         lastRecording = juce::File();
         recordButton.setButtonText("Record");
-        recordingThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        recordingThumbnail.setDisplayYZoom(1.0);
+
+        eScope.recThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+        eScope.recThumbnail.setDisplayYZoom(1.0);
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

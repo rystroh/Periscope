@@ -7,9 +7,8 @@
 namespace juce
 {
     //=====================================================================================
-    /*
-    class  EScope : public AudioRecorder,
-        public RecordingThumbnail
+    
+    class  EScope 
     {
     public:
         EScope()
@@ -20,7 +19,11 @@ namespace juce
         {
 
         }
+        juce::RecordingThumbnail recThumbnail;
+        juce::AudioRecorder rec{ recThumbnail.getAudioThumbnail() };
     private:
+
+
 
     };
     //==============================================================================*/

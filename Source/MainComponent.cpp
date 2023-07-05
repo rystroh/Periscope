@@ -14,12 +14,13 @@ MainComponent::MainComponent()
 
     recordButton.onClick = [this]
     {
-        if (recorder.isRecording())
+          if (eScope.rec.isRecording())
             stopRecording();
         else
             startRecording();
     };
-    addAndMakeVisible(recordingThumbnail);
+
+    addAndMakeVisible(eScope.recThumbnail);
     openButton.onClick = [this] { openButtonClicked(); };
     
     // Some platforms require permissions to open input channels so request that here
@@ -35,7 +36,7 @@ MainComponent::MainComponent()
         setAudioChannels (2, 2);
     }
     auto& devManager = MainComponent::getAudioDeviceManager();
-    devManager.addAudioCallback(&recorder);
+    devManager.addAudioCallback(&eScope.rec);
     setSize(870, 600);
     formatManager.registerBasicFormats();
 }
@@ -45,15 +46,15 @@ MainComponent::~MainComponent()
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
     auto& devManager = MainComponent::getAudioDeviceManager();
-    devManager.removeAudioCallback(&recorder);
+    devManager.removeAudioCallback(&eScope.rec);
 }
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
     auto& devManager = MainComponent::getAudioDeviceManager();
     auto device = devManager.getCurrentAudioDevice();
-    recorder.audioDeviceAboutToStart(device);
-    recordingThumbnail.setSampleRate(device->getCurrentSampleRate());
+    eScope.rec.audioDeviceAboutToStart(device);
+    eScope.recThumbnail.setSampleRate(device->getCurrentSampleRate());
 }
 //-------------------------------------------------------------------------------------
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
@@ -75,5 +76,5 @@ void MainComponent::resized()
     auto area = getLocalBounds();
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    recordingThumbnail.setBounds(10,40,getWidth()-20, area.getHeight() / 4);
+    eScope.recThumbnail.setBounds(10,40,getWidth()-20, area.getHeight() / 4);
 }
