@@ -77,6 +77,11 @@ namespace juce
             sampleRate = device->getCurrentSampleRate();
         }
         //----------------------------------------------------------------------------------
+        void setSampleRate(double smpRate) 
+        {
+            sampleRate = smpRate;
+        }
+        //----------------------------------------------------------------------------------
         double getSampleRate(void)
         {
             return(sampleRate);

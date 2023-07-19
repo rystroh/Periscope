@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-//#include "AudioRecording.h"
 #include "eScope.h"
 //==============================================================================
 /*
@@ -59,10 +58,10 @@ private:
                     if (reader != nullptr)
                     {
                         auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                        eScope.recThumbnail.setSource(new juce::FileInputSource(file));
-                        eScope.recThumbnail.setSampleRate(reader->sampleRate);
-                        eScope.recThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                        eScope.recThumbnail.setDisplayYZoom(1.0);                        
+                        eScope.setSource(new juce::FileInputSource(file));
+                        eScope.setSampleRate(reader->sampleRate);
+                        eScope.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                        eScope.setDisplayYZoom(1.0);
                     }
                 }
             });
@@ -88,11 +87,11 @@ private:
         auto parentDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
 #endif
         lastRecording = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-        eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate());
-        eScope.rec.startRecording(lastRecording);
+        //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
+
+        eScope.startRecording(lastRecording);
         recordButton.setButtonText("Stop");
-        //recordingThumbnail.setDisplayThumbnailMode(1); // in record mode scrolling display
-        eScope.recThumbnail.setDisplayThumbnailMode(3);
+        eScope.setDisplayThumbnailMode(3);
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
@@ -118,9 +117,12 @@ private:
 #endif
         lastRecording = juce::File();
         recordButton.setButtonText("Record");
-
+        /*
         eScope.recThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        eScope.recThumbnail.setDisplayYZoom(1.0);
+        eScope.recThumbnail.setDisplayYZoom(1.0);*/
+
+        eScope.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+        eScope.setDisplayYZoom(1.0);
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
