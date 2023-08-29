@@ -4,6 +4,7 @@
 #include <algorithm>
 #include "AudioRecorder.h"
 #include "RecordingThumbnail.h"
+#define option 1
 namespace juce
 {
     //=====================================================================================
@@ -22,30 +23,29 @@ namespace juce
         juce::RecordingThumbnail recThumbnail;
         juce::AudioRecorder rec{ recThumbnail.getAudioThumbnail() };
 
-        
+#if option == 2   
         void EScope::paint(juce::Graphics& g) override
         {
+            /*
             g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
             g.setColour(juce::Colours::grey);
             g.drawRect(getLocalBounds(), 1);
+            */
+            recThumbnail.paint(g);
         }
 
         void EScope::resized()
         {
-            recThumbnail.setBounds(10, 10, 100, 30);
+            auto area = getLocalBounds();
+            recThumbnail.setBounds(area); //this triggers a recThumbnail.resized();
         }
-        
-        void EScope::addAndMakeVisible(Component& child, int zOrder)
+#endif        
+#if option == 1
+        void setBounds(int x, int y, int width, int height)
         {
-            child.setVisible(true);
-            addChildComponent(child, zOrder);
-        }/*
-        void EScope::addAndMakeVisible() 
-        {
-            addAndMakeVisible();// recThumbnail);
+            recThumbnail.setBounds(x, y, width, height);
         }
-        */
-
+#endif  
         AudioIODeviceCallback* getAudioIODeviceCallBack() { return &rec; }
         /*
         void EScope::setVisible(bool  	shouldBeVisible)
@@ -68,6 +68,7 @@ namespace juce
         void setDisplayThumbnailMode(int displayMode)
         {
             recThumbnail.setDisplayThumbnailMode(displayMode);
+            recThumbnail.repaint();
         }
         bool setSource(InputSource* newSource) { return(recThumbnail.setSource(newSource)); }        
         void setSampleRate(double smpRate) 
@@ -76,10 +77,7 @@ namespace juce
             recThumbnail.setSampleRate(smpRate); 
         }
         void setDisplayYZoom(double yZoom) { recThumbnail.setDisplayYZoom(yZoom); }
-        void setBounds(int x, int y, int width, int height)
-        {
-            recThumbnail.setBounds(x, y, width, height);
-        }
+ 
 
 
 

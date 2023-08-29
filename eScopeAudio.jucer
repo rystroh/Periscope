@@ -8,8 +8,7 @@
       <FILE id="uH9wim" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
-      <FILE id="j8piaK" name="AudioRecording.h" compile="0" resource="0"
-            file="Source/AudioRecording.h"/>
+      <FILE id="wM79fo" name="eScope.h" compile="0" resource="0" file="Source/eScope.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>

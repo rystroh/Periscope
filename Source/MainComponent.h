@@ -62,6 +62,7 @@ private:
                         eScope.setSampleRate(reader->sampleRate);
                         eScope.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
                         eScope.setDisplayYZoom(1.0);
+                        eScope.resized();
                     }
                 }
             });

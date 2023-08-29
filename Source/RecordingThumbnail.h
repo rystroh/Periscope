@@ -503,6 +503,7 @@ namespace juce
         void resized() override
         {
             int xzoomticknb;
+            /*
             auto thumbArea = getLocalBounds();
             wavZone = getWaveZone(thumbArea);
 
@@ -512,7 +513,7 @@ namespace juce
             bounds = getLocalBounds().removeFromBottom(14).reduced(2);
             bounds.setWidth(wavZone.getWidth());
             //scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
-            scrollbar.setBounds(bounds);
+            scrollbar.setBounds(bounds);*/
             xzoomticknb = createZoomVector(zoomVector);
         }
         //----------------------------------------------------------------------------------

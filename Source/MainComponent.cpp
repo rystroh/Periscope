@@ -19,10 +19,13 @@ MainComponent::MainComponent()
         else
             startRecording();
     };
+#if option == 1
+    addAndMakeVisible(eScope.recThumbnail);
+#endif
 
-    //addAndMakeVisible(eScope.recThumbnail); //needs refactoring
-    addAndMakeVisible(eScope); //not working
-    //addAndMakeVisible(eScope.recThumbnail); //needs refactoring
+#if option == 2
+    addAndMakeVisible(eScope);
+#endif
     openButton.onClick = [this] { openButtonClicked(); };
     
     // Some platforms require permissions to open input channels so request that here
