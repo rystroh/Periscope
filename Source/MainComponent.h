@@ -33,7 +33,11 @@ private:
     juce::AudioFormatManager formatManager;                    // [3]    
   
     juce::File lastRecording;
+    juce::File lastRecording1;
+    juce::File lastRecording2;
     juce::EScope eScope;
+    juce::EScope eScope1;
+    juce::EScope eScope2;
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
@@ -91,13 +95,22 @@ private:
         //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
 
         eScope.startRecording(lastRecording);
+        lastRecording1 = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
+        eScope1.startRecording(lastRecording1);
+        lastRecording2 = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
+        eScope2.startRecording(lastRecording2);
+
         recordButton.setButtonText("Stop");
         eScope.setDisplayThumbnailMode(3);
+        eScope1.setDisplayThumbnailMode(3);
+        eScope2.setDisplayThumbnailMode(3);
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
     {
         eScope.rec.stop();
+        eScope1.rec.stop();
+        eScope2.rec.stop();
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
         File fileToShare = lastRecording;
@@ -116,7 +129,10 @@ private:
                         nullptr);
             });
 #endif
+        
         lastRecording = juce::File();
+        lastRecording1 = juce::File();
+        lastRecording2 = juce::File();
         recordButton.setButtonText("Record");
         /*
         eScope.recThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
@@ -124,6 +140,10 @@ private:
 
         eScope.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
         eScope.setDisplayYZoom(1.0);
+        eScope1.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+        eScope1.setDisplayYZoom(1.0);
+        eScope2.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+        eScope2.setDisplayYZoom(1.0);
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

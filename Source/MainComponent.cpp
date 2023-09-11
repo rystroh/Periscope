@@ -21,11 +21,16 @@ MainComponent::MainComponent()
     };
 #if option == 1
     addAndMakeVisible(eScope.recThumbnail);
+    addAndMakeVisible(eScope1.recThumbnail);
+    addAndMakeVisible(eScope2.recThumbnail);
 #endif
 
 #if option == 2
     addAndMakeVisible(eScope);
 #endif
+    eScope.setChannelID(0);
+    eScope1.setChannelID(1);
+    eScope2.setChannelID(2);
     openButton.onClick = [this] { openButtonClicked(); };
     juce::XmlElement xxw("DEVICESETUP");
     xxw.setAttribute("deviceType", "ASIO");
@@ -52,6 +57,8 @@ MainComponent::MainComponent()
     }*/
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.addAudioCallback(eScope.getAudioIODeviceCallBack());
+    devManager.addAudioCallback(eScope1.getAudioIODeviceCallBack());
+    devManager.addAudioCallback(eScope2.getAudioIODeviceCallBack());
     setSize(870, 600);
     formatManager.registerBasicFormats();
 }
@@ -62,6 +69,8 @@ MainComponent::~MainComponent()
     shutdownAudio();
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.removeAudioCallback(eScope.getAudioIODeviceCallBack());
+    devManager.removeAudioCallback(eScope1.getAudioIODeviceCallBack());
+    devManager.removeAudioCallback(eScope2.getAudioIODeviceCallBack());
 }
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
@@ -70,6 +79,8 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     auto device = devManager.getCurrentAudioDevice();
     //eScope.audioDeviceAboutToStart(device); //needs refactoring
     eScope.setSampleRate(device->getCurrentSampleRate());
+    eScope1.setSampleRate(device->getCurrentSampleRate());
+    eScope2.setSampleRate(device->getCurrentSampleRate());
 }
 //-------------------------------------------------------------------------------------
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
@@ -92,6 +103,8 @@ void MainComponent::resized()
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     eScope.setBounds(10, 40, getWidth() - 20, area.getHeight() / 4);
+    eScope1.setBounds(10, 40 + area.getHeight() / 4, getWidth() - 20, area.getHeight() / 4);
+    eScope2.setBounds(10, 40 + area.getHeight() / 2, getWidth() - 20, area.getHeight() / 4);
 }
 
 void stopRecording()
