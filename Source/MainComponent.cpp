@@ -27,7 +27,17 @@ MainComponent::MainComponent()
     addAndMakeVisible(eScope);
 #endif
     openButton.onClick = [this] { openButtonClicked(); };
-    
+    juce::XmlElement xxw("DEVICESETUP");
+    xxw.setAttribute("deviceType", "ASIO");
+    xxw.setAttribute("audioOutputDeviceName", "ASIO Fireface USB");
+    xxw.setAttribute("audioInputDeviceName", "ASIO Fireface USB");
+    xxw.setAttribute("audioDeviceRate", "48000.0");
+    xxw.setAttribute("audioDeviceInChans", "11111111");
+    xxw.setAttribute("audioDeviceBufferSize", "480.0");
+
+    //xxw.setText()
+    deviceManager.initialise(8, 2, &xxw, true);
+    /*
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
         && ! juce::RuntimePermissions::isGranted (juce::RuntimePermissions::recordAudio))
@@ -39,7 +49,7 @@ MainComponent::MainComponent()
     {
         // Specify the number of input and output channels that we want to open
         setAudioChannels (2, 2);
-    }
+    }*/
     auto& devManager = MainComponent::getAudioDeviceManager();
     devManager.addAudioCallback(eScope.getAudioIODeviceCallBack());
     setSize(870, 600);
@@ -82,4 +92,9 @@ void MainComponent::resized()
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     eScope.setBounds(10, 40, getWidth() - 20, area.getHeight() / 4);
+}
+
+void stopRecording()
+{
+    
 }

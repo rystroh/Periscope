@@ -128,8 +128,17 @@ namespace juce
 
             if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
             {
+                /*
+                activeWriter.load()->write(&inputChannelData[0], numSamples);
+        
+                // Create an AudioBuffer to wrap our incoming data, note that this does no 
+                //allocations or copies, it simply references our input data
+                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[0]), thumbnail.getNumChannels(), numSamples);
+                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                nextSampleNum += numSamples;
+                */
+                
                 activeWriter.load()->write(inputChannelData, numSamples);
-
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
                 AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
