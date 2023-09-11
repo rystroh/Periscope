@@ -125,23 +125,22 @@ namespace juce
             ignoreUnused(context);
 
             const ScopedLock sl(writerLock);
-
+/*
             if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
             {
-                /*
-                activeWriter.load()->write(&inputChannelData[0], numSamples);
-        
-                // Create an AudioBuffer to wrap our incoming data, note that this does no 
-                //allocations or copies, it simply references our input data
-                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[0]), thumbnail.getNumChannels(), numSamples);
-                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                nextSampleNum += numSamples;
-                */
-                
                 activeWriter.load()->write(inputChannelData, numSamples);
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
                 AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
+                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                nextSampleNum += numSamples;
+            }*/
+            if (activeWriter.load() != nullptr && chanID < numInputChannels)
+            {                
+                activeWriter.load()->write(&inputChannelData[chanID], numSamples);
+                // Create an AudioBuffer to wrap our incoming data, note that this does no 
+                //allocations or copies, it simply references our input data
+                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
                 thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
                 nextSampleNum += numSamples;
             }
@@ -150,6 +149,16 @@ namespace juce
             for (int i = 0; i < numOutputChannels; ++i)
                 if (outputChannelData[i] != nullptr)
                     FloatVectorOperations::clear(outputChannelData[i], numSamples);
+        }
+        //----------------------------------------------------------------------------------
+        int getChannelID(void)
+        {
+            return(chanID);
+        }
+        //----------------------------------------------------------------------------------
+        void setChannelID(int setChanID)
+        {
+            chanID = setChanID;
         }
         //----------------------------------------------------------------------------------
     private:
@@ -164,6 +173,7 @@ namespace juce
         int64 nextSampleNum = 0;
         CriticalSection writerLock;
         std::atomic<AudioFormatWriter::ThreadedWriter*> activeWriter{ nullptr };
+        int chanID = 0; // default channel selected in multi channel audio interface is first one
     };
 };
 

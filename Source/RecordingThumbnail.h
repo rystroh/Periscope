@@ -709,6 +709,7 @@ namespace juce
 
         double sampleRate = 0.0;
 
+        // display things
         bool displayFullThumb = false;
         int displayThumbMode;
 

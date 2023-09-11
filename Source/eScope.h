@@ -78,12 +78,17 @@ namespace juce
         }
         void setDisplayYZoom(double yZoom) { recThumbnail.setDisplayYZoom(yZoom); }
  
-/*
-        void setgetNumChannels(int chanID)
+
+        int getChannelID(void)
         {
-            recThumbnail.setgetNumChannels(chanID);
+            return(rec.getChannelID());
         }
-        */
+
+        void setChannelID(int chanID)
+        {
+            rec.setChannelID(chanID);
+        }
+       
     private:
 
 
