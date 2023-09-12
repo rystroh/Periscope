@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "eScope.h"
+const int eScopeChanNb = 8;
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -31,13 +32,9 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
 
     juce::AudioFormatManager formatManager;                    // [3]    
-  
-    juce::File lastRecording;
-    juce::File lastRecording1;
-    juce::File lastRecording2;
-    juce::EScope eScope;
-    juce::EScope eScope1;
-    juce::EScope eScope2;
+    
+    juce::File lastRecording[eScopeChanNb];
+    juce::EScope eScope[eScopeChanNb];
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
@@ -62,11 +59,11 @@ private:
                     if (reader != nullptr)
                     {
                         auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                        eScope.setSource(new juce::FileInputSource(file));
-                        eScope.setSampleRate(reader->sampleRate);
-                        eScope.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                        eScope.setDisplayYZoom(1.0);
-                        eScope.resized();
+                        eScope[0].setSource(new juce::FileInputSource(file));
+                        eScope[0].setSampleRate(reader->sampleRate);
+                        eScope[0].setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                        eScope[0].setDisplayYZoom(1.0);
+                        eScope[0].resized();
                     }
                 }
             });
@@ -91,26 +88,26 @@ private:
 #else
         auto parentDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
 #endif
-        lastRecording = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
+        auto& devManager = MainComponent::getAudioDeviceManager();
+        auto device = devManager.getCurrentAudioDevice();
+        auto smpRate = device->getCurrentSampleRate();
         //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
-
-        eScope.startRecording(lastRecording);
-        lastRecording1 = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-        eScope1.startRecording(lastRecording1);
-        lastRecording2 = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-        eScope2.startRecording(lastRecording2);
-
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx].setSampleRate(smpRate);
+            lastRecording[idx] = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
+            eScope[idx].startRecording(lastRecording[idx]);
+            eScope[idx].setDisplayThumbnailMode(3);
+        }
         recordButton.setButtonText("Stop");
-        eScope.setDisplayThumbnailMode(3);
-        eScope1.setDisplayThumbnailMode(3);
-        eScope2.setDisplayThumbnailMode(3);
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
     {
-        eScope.rec.stop();
-        eScope1.rec.stop();
-        eScope2.rec.stop();
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx].rec.stop();
+        }
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
         File fileToShare = lastRecording;
@@ -129,21 +126,14 @@ private:
                         nullptr);
             });
 #endif
-        
-        lastRecording = juce::File();
-        lastRecording1 = juce::File();
-        lastRecording2 = juce::File();
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            lastRecording[idx] = juce::File();
+            eScope[idx].setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+            eScope[idx].setDisplayYZoom(1.0);
+        }
         recordButton.setButtonText("Record");
-        /*
-        eScope.recThumbnail.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        eScope.recThumbnail.setDisplayYZoom(1.0);*/
-
-        eScope.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        eScope.setDisplayYZoom(1.0);
-        eScope1.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        eScope1.setDisplayYZoom(1.0);
-        eScope2.setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-        eScope2.setDisplayYZoom(1.0);
+        
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
