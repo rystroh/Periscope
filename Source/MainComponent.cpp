@@ -4,6 +4,7 @@
 MainComponent::MainComponent()
   //  :juce::AudioDeviceManager()
 {  
+    
     addAndMakeVisible(recordButton);
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
@@ -26,6 +27,7 @@ MainComponent::MainComponent()
 #if option == 1
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
+        eScope[idx].addChangeListener(&listenerComponent);
         addAndMakeVisible(eScope[idx].recThumbnail);
         eScope[idx].setChannelID(idx);
     }

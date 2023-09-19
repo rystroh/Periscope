@@ -9,6 +9,10 @@
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="wM79fo" name="eScope.h" compile="0" resource="0" file="Source/eScope.h"/>
+      <FILE id="SNOmdT" name="ListenerComponent.cpp" compile="1" resource="0"
+            file="Source/ListenerComponent.cpp"/>
+      <FILE id="Rx9Iho" name="ListenerComponent.h" compile="0" resource="0"
+            file="Source/ListenerComponent.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_ASIO="1"/>

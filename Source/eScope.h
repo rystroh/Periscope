@@ -9,7 +9,7 @@ namespace juce
 {
     //=====================================================================================
     
-    class  EScope : public Component
+    class  EScope : public Component, public juce::ChangeBroadcaster
     {
     public:
         EScope()
@@ -88,7 +88,15 @@ namespace juce
         {
             rec.setChannelID(chanID);
         }
-       
+        void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
+        {
+            sendChangeMessage();
+            recThumbnail.mouseWheelMove(event, wheel);
+        }
+        void mouseDown(const MouseEvent& event)
+        {
+            recThumbnail.mouseDown(event);
+        }
     private:
 
 

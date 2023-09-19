@@ -1,7 +1,10 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <sstream>
+#include <string>
 #include "eScope.h"
+#include "ListenerComponent.h"
 const int eScopeChanNb = 8;
 //==============================================================================
 /*
@@ -34,6 +37,7 @@ private:
     juce::AudioFormatManager formatManager;                    // [3]    
     
     juce::File lastRecording[eScopeChanNb];
+    ListenerComponent listenerComponent;
     juce::EScope eScope[eScopeChanNb];
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
@@ -42,9 +46,11 @@ private:
     }
  //-------------------------------------------------------------------------------------
     void openButtonClicked()
-    {
+    {/*
         chooser = std::make_unique<juce::FileChooser>("Select a Wave file...",
-                                                       juce::File{},"*.wav");
+                                                       juce::File{},"*.wav");*/
+        chooser = std::make_unique<juce::FileChooser>("Select a Wave List...",
+            juce::File{}, "*.txt");
         auto chooserFlags = juce::FileBrowserComponent::openMode
                           | juce::FileBrowserComponent::canSelectFiles;
 
@@ -54,16 +60,27 @@ private:
 
                 if (file != juce::File{})
                 {
-                    auto* reader = formatManager.createReaderFor(file);
+                    //std::ifstream wavlist(file);
+                    //fopen(file, "r");
+                    juce::FileInputStream inputStream(file);
 
-                    if (reader != nullptr)
+                    int idx = 0;
+
+                    while (!inputStream.isExhausted()) // [3]
                     {
-                        auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                        eScope[0].setSource(new juce::FileInputSource(file));
-                        eScope[0].setSampleRate(reader->sampleRate);
-                        eScope[0].setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                        eScope[0].setDisplayYZoom(1.0);
-                        eScope[0].resized();
+                        auto line = inputStream.readNextLine();
+                        auto* reader = formatManager.createReaderFor(line);
+
+                        if (reader != nullptr)
+                        {
+                            auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
+                            eScope[idx].setSource(new juce::FileInputSource(line));
+                            eScope[idx].setSampleRate(reader->sampleRate);
+                            eScope[idx].setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                            eScope[idx].setDisplayYZoom(1.0);
+                            eScope[idx].resized();
+                            idx++;
+                        }
                     }
                 }
             });

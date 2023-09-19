@@ -578,7 +578,7 @@ namespace juce
             DBG("Mouse.x = " << Posi3.getX());
         }
         //----------------------------------------------------------------------------------
-        void mouseWheelMove(const MouseEvent&, const MouseWheelDetails& wheel) override
+        void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override
         {
             auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             if (thumbnail.getTotalLength() > 0.0)
