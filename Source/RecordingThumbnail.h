@@ -6,7 +6,8 @@ namespace juce
     //=====================================================================================
     class RecordingThumbnail : public Component,
         private ChangeListener,
-        private juce::ScrollBar::Listener
+        private juce::ScrollBar::Listener,
+        public juce::ChangeBroadcaster
     {
     public:
         RecordingThumbnail()
@@ -582,6 +583,7 @@ namespace juce
         {
             auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             DBG("Mouse.x = " << Posi3.getX());
+            sendChangeMessage();
         }
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override

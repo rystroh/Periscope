@@ -54,21 +54,15 @@ MainComponent::MainComponent()
     };
 
     
-#if option == 2
-    addAndMakeVisible(eScope);
-#endif
 
-#if option == 1
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
-        eScope[idx].addChangeListener(&listenerComponent);
-        addAndMakeVisible(eScope[idx].recThumbnail);
+        eScope[idx].recThumbnail.addChangeListener(&listenerComponent);
+        addAndMakeVisible(eScope[idx]);
         eScope[idx].setChannelID(idx);
     }
 
-#endif
     addAndMakeVisible(listenerComponent);
-
 
     openButton.onClick = [this] { openButtonClicked(); };
     juce::XmlElement xxw("DEVICESETUP");
@@ -76,10 +70,13 @@ MainComponent::MainComponent()
     xxw.setAttribute("audioOutputDeviceName", "ASIO Fireface USB");
     xxw.setAttribute("audioInputDeviceName", "ASIO Fireface USB");
     xxw.setAttribute("audioDeviceRate", "48000.0");
-    xxw.setAttribute("audioDeviceInChans", "11111111");
     xxw.setAttribute("audioDeviceBufferSize", "480.0");
+    /*
+    xxw.setAttribute("audioDeviceRate", "44100.0");
+    xxw.setAttribute("audioDeviceBufferSize", "512.0");*/
 
-    //xxw.setText()
+    xxw.setAttribute("audioDeviceInChans", "11111111");    
+
     deviceManager.initialise(eScopeChanNb, 2, &xxw, true);
     /*
     // Some platforms require permissions to open input channels so request that here

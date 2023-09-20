@@ -4,7 +4,7 @@
 #include <algorithm>
 #include "AudioRecorder.h"
 #include "RecordingThumbnail.h"
-#define option 1
+
 namespace juce
 {
     //=====================================================================================
@@ -14,7 +14,9 @@ namespace juce
     public:
         EScope()
         {
-            //addAndMakeVisible(&recThumbnail,0);
+
+            addAndMakeVisible(&recThumbnail,0);
+
         }
         ~EScope()
         {
@@ -23,14 +25,9 @@ namespace juce
         juce::RecordingThumbnail recThumbnail;
         juce::AudioRecorder rec{ recThumbnail.getAudioThumbnail() };
 
-#if option == 2   
+
         void EScope::paint(juce::Graphics& g) override
         {
-            /*
-            g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
-            g.setColour(juce::Colours::grey);
-            g.drawRect(getLocalBounds(), 1);
-            */
             recThumbnail.paint(g);
         }
 
@@ -39,19 +36,8 @@ namespace juce
             auto area = getLocalBounds();
             recThumbnail.setBounds(area); //this triggers a recThumbnail.resized();
         }
-#endif        
-#if option == 1
-        void setBounds(int x, int y, int width, int height)
-        {
-            recThumbnail.setBounds(x, y, width, height);
-        }
-#endif  
+  
         AudioIODeviceCallback* getAudioIODeviceCallBack() { return &rec; }
-        /*
-        void EScope::setVisible(bool  	shouldBeVisible)
-        {
-            recThumbnail.setVisible(shouldBeVisible);
-        }*/
 
         void startRecording(const File& file) { rec.startRecording(file); }
         bool isRecording() { return rec.isRecording(); }
