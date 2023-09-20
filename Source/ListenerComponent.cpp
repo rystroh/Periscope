@@ -32,7 +32,7 @@ void ListenerComponent::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
     g.setFont (14.0f);
-    g.drawText ("ListenerComponent", getLocalBounds(),
+    g.drawText ("Listener", getLocalBounds(),
                 juce::Justification::centred, true);   // draw some placeholder text
 }
 

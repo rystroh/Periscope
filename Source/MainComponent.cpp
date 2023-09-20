@@ -4,7 +4,6 @@
 MainComponent::MainComponent()
   //  :juce::AudioDeviceManager()
 {  
-    
     addAndMakeVisible(recordButton);
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
@@ -19,7 +18,42 @@ MainComponent::MainComponent()
             stopRecording();
         else
             startRecording();
+    };    
+    
+    addAndMakeVisible(menu);
+    menu.setTextWhenNothingSelected("Display Mode");
+    
+    menu.addItem("Trace Analyser", 1);
+    menu.addItem("Oscilloscope", 2);
+    recmode = 2;
+    menu.setSelectedId(recmode);
+    for (int idx = 0; idx < eScopeChanNb; idx++)
+    {
+        eScope[idx].setDisplayThumbnailMode(recmode);
+    }
+    menu.onChange = [this]()
+    {
+        auto oscmode = menu.getItemId(menu.getSelectedItemIndex());
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx].setDisplayThumbnailMode(oscmode);
+        }
     };
+
+    addAndMakeVisible(oscWinSizeSlider);
+    oscWinSizeSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
+    oscWinSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
+    oscWinSizeSlider.setRange(0.05, 1.00, 0.05);
+    oscWinSizeSlider.onValueChange = [this]()
+    {
+        oscilloWinSize = oscWinSizeSlider.getValue();
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx].setViewSize(oscilloWinSize);
+        }
+    };
+
+    
 #if option == 2
     addAndMakeVisible(eScope);
 #endif
@@ -33,6 +67,8 @@ MainComponent::MainComponent()
     }
 
 #endif
+    addAndMakeVisible(listenerComponent);
+
 
     openButton.onClick = [this] { openButtonClicked(); };
     juce::XmlElement xxw("DEVICESETUP");
@@ -108,7 +144,10 @@ void MainComponent::resized()
     auto area = getLocalBounds();    
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
- 
+    listenerComponent.setBounds(openButton.getX() + openButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    menu.setBounds(listenerComponent.getX() + listenerComponent.getWidth() + 10, recordButton.getY(), 2*recordButton.getWidth(), recordButton.getHeight());
+    oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + 10, recordButton.getY(),4 * recordButton.getWidth(), recordButton.getHeight());
+    
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         eScope[idx].setBounds(10, 40 + idx*area.getHeight() / eScopeChanNb, getWidth() - 20, area.getHeight() / eScopeChanNb);

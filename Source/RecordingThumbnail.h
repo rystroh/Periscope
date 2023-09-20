@@ -36,6 +36,12 @@ namespace juce
         juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
         double gridOpacity = 0.5; //grid opacity
         int yScaleZoneWidth = 50;
+        float viewSize = 0.1;// viewing window size
+       //----------------------------------------------------------------------------------
+        void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
+        {
+            viewSize = dispTime;
+        }
         //----------------------------------------------------------------------------------
         bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
         //----------------------------------------------------------------------------------
@@ -468,7 +474,7 @@ namespace juce
                     thumbnail.drawChannels(g, wavZone.reduced(2), startTime, endofrecording, ThumbYZoom);
                     break;
 
-                case 2: // zooming mode                
+                case 3: // zooming mode                
                     thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
                     newRange.setEnd(thumbnailsize);
@@ -482,12 +488,12 @@ namespace juce
                     drawYLabels(g, thumbArea);
                     break;
 
-                case 3: //oscilloscope dancing view
-                    if (currentlength > 0.05)
+                case 2: //oscilloscope dancing view                    
+                    if (currentlength > viewSize)
                     {
                         thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         g.setColour(wavFormColour);
-                        thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - 0.05, currentlength, ThumbYZoom);
+                        thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
                     }
                     break;
                 }
@@ -658,7 +664,7 @@ namespace juce
         void setDisplayXZone(double zoomfactor)
         {
             displayFullThumb = false;
-            displayThumbMode = 2; //zoom mode
+            displayThumbMode = 3; //zoom mode
             auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
          //   repaint();
             if (thumbnail.getTotalLength() > 0)

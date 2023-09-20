@@ -88,6 +88,10 @@ namespace juce
         {
             rec.setChannelID(chanID);
         }
+        void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
+        {
+            recThumbnail.setViewSize(dispTime);
+        }
         void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
         {
             sendChangeMessage();

@@ -32,6 +32,9 @@ private:
     // Your private member variables go here...
     juce::TextButton recordButton{ "Record" };
     juce::TextButton openButton{ "Open File" };
+    juce::ComboBox menu;
+    juce::Slider oscWinSizeSlider;
+
     std::unique_ptr<juce::FileChooser> chooser;
 
     juce::AudioFormatManager formatManager;                    // [3]    
@@ -39,6 +42,8 @@ private:
     juce::File lastRecording[eScopeChanNb];
     ListenerComponent listenerComponent;
     juce::EScope eScope[eScopeChanNb];
+    int recmode; // can be 1= track view or 2= oscilloscope
+    double oscilloWinSize = 0.05;
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
@@ -114,7 +119,7 @@ private:
             eScope[idx].setSampleRate(smpRate);
             lastRecording[idx] = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
             eScope[idx].startRecording(lastRecording[idx]);
-            eScope[idx].setDisplayThumbnailMode(3);
+            eScope[idx].setDisplayThumbnailMode(recmode);
         }
         recordButton.setButtonText("Stop");
     }
