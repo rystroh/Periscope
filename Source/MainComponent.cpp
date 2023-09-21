@@ -57,7 +57,7 @@ MainComponent::MainComponent()
 
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
-        eScope[idx].recThumbnail.addChangeListener(&listenerComponent);
+        eScope[idx].recThumbnail.addChangeListener(this);
         addAndMakeVisible(eScope[idx]);
         eScope[idx].setChannelID(idx);
     }
@@ -154,4 +154,21 @@ void MainComponent::resized()
 void stopRecording()
 {
     
+}
+
+//-------------------------------------------------------------------------------------
+void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    juce::RecordingThumbnail* src = ((juce::RecordingThumbnail*)source);
+    int eScopeID = src->chanID;
+    auto visibRange = src->getVisibleRange();
+    auto xZoom = src->getXZoom();
+    for (int idx = 0; idx < eScopeChanNb; idx++)
+    {
+        if (idx != eScopeID)
+        {
+            eScope[idx].setXZoom(xZoom);
+            eScope[idx].setVisibleRange(visibRange);
+        }
+    }
 }
