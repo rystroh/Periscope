@@ -4,19 +4,20 @@
 #include <algorithm>
 #include "AudioRecorder.h"
 #include "RecordingThumbnail.h"
+#include "..\SGUL\Source\SGUL.h"
 
-namespace juce
-{
+//namespace juce
+//{
     //=====================================================================================
     
-    class  EScope : public Component, public juce::ChangeBroadcaster
+    class  EScope : public sgul::Panel, public juce::ChangeBroadcaster
     {
     public:
-        EScope()
+        EScope(const juce::String& id) : Panel(id)
         {
-
             addAndMakeVisible(&recThumbnail,0);
-
+            setWidth(300, 600, 10000);
+            setHeight(50, 100, 500);
         }
         ~EScope()
         {
@@ -37,11 +38,11 @@ namespace juce
             recThumbnail.setBounds(area); //this triggers a recThumbnail.resized();
         }
   
-        AudioIODeviceCallback* getAudioIODeviceCallBack() { return &rec; }
+        juce::AudioIODeviceCallback* getAudioIODeviceCallBack() { return &rec; }
 
-        void startRecording(const File& file) { rec.startRecording(file); }
+        void startRecording(const juce::File& file) { rec.startRecording(file); }
         bool isRecording() { return rec.isRecording(); }
-        void audioDeviceAboutToStart(AudioIODevice* device)//needs refactorisation
+        void audioDeviceAboutToStart(juce::AudioIODevice* device)//needs refactorisation
         {
             auto smpRate = device->getCurrentSampleRate();
             //rec.audioDeviceAboutToStart(device);
@@ -56,7 +57,7 @@ namespace juce
             recThumbnail.setDisplayThumbnailMode(displayMode);
             recThumbnail.repaint();
         }
-        bool setSource(InputSource* newSource) { return(recThumbnail.setSource(newSource)); }        
+        bool setSource(juce::InputSource* newSource) { return(recThumbnail.setSource(newSource)); }
         void setSampleRate(double smpRate) 
         {
             rec.setSampleRate(smpRate);
@@ -78,12 +79,12 @@ namespace juce
         {
             recThumbnail.setViewSize(dispTime);
         }
-        void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
+        void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) //override
         {
             sendChangeMessage();
             recThumbnail.mouseWheelMove(event, wheel);
         }
-        void mouseDown(const MouseEvent& event)
+        void mouseDown(const juce::MouseEvent& event)
         {
             recThumbnail.mouseDown(event);
         }
@@ -92,4 +93,4 @@ namespace juce
 
     };
     //==============================================================================*/
-};
+//};
