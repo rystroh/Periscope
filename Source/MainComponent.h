@@ -47,18 +47,22 @@ public:
 
 private:
     friend Header;
+
+    // Audio stuff
     juce::AudioDeviceManager defaultDeviceManager;
     juce::AudioSourcePlayer audioSourcePlayer;
     bool usingCustomDeviceManager;
 
-    //==============================================================================
-    // Your private member variables go here...
     juce::AudioFormatManager formatManager;                    // [3]    
+    juce::File lastRecording[eScopeChanNb];
+
+    // GUI stuff
     std::unique_ptr<Header> header;
     std::unique_ptr<EScope> eScope[eScopeChanNb];
-    juce::File lastRecording[eScopeChanNb];
- //   juce::EScope eScope[eScopeChanNb];
- 
+    std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
+                                        // in a vertical rack inside the parent vertical rack
+                                        // to offer a global scrollbar for all channels at once
+
     std::unique_ptr<sgul::DREAMLookAndFeel> laf;
 
     // Parameter management stuff

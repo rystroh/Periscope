@@ -31,8 +31,6 @@ private:
     MainComponent* main;
     juce::TextButton recordButton{ "Record" };
     juce::TextButton openButton{ "Open File" };
-    //juce::ComboBox menu;
-    //juce::Slider oscWinSizeSlider;
     sgul::ComboBox menu{ "Mode", true, sgul::ComboBox::HORIZONTAL};
     sgul::Slider oscWinSizeSlider{ "Win size", true, sgul::Slider::HORIZONTAL2, " "};
 

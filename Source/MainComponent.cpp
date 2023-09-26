@@ -14,22 +14,30 @@ usingCustomDeviceManager(false)
     mm = std::make_unique<sgul::MappingManager>(pc.get());
     sgul::Control::setMappingManager(mm.get());
 
+    // Instantiate top level rack elements
+    
+    // Create eScope instances
     for (int idx = 0; idx < eScopeChanNb; idx++)
-    {
         eScope[idx] = std::make_unique<EScope>("Channel" + juce::String(idx));
-    }
 
-    header = std::make_unique<Header>(this);
-    addPanel(header.get(), 0);
-    addPanelSwitchBar();
+    header = std::make_unique<Header>(this); // must be done after having instantiated eScope panels
 
+    // Create channel rack instance
+    channel_rack = std::make_unique<sgul::Rack>("Channels", true);
+
+    // Populate channel rack
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         eScope[idx]->setDisplayThumbnailMode(header->getRecMode());
-        addPanel(eScope[idx].get(), RESIZER + DISPLAY_NAME + COLLAPSIBLE);
+        channel_rack->addPanel(eScope[idx].get(), RESIZER + DISPLAY_NAME + COLLAPSIBLE + SWITCHABLE);
     }
+    channel_rack->computeSizeFromChildren(true, true);
+
+    // Populate main rack
+    addPanel(header.get(), 0);
+//    addPanelSwitchBar(channel_rack.get());
+    addPanel(channel_rack.get(), VSCROLLABLE + HSCROLLABLE);
     
-    computeSizeFromChildren(true, true);
 
     juce::XmlElement xxw("DEVICESETUP");
     xxw.setAttribute("deviceType", "ASIO");
