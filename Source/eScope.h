@@ -74,6 +74,7 @@
         void setChannelID(int chanID)
         {
             rec.setChannelID(chanID);
+            recThumbnail.chanID = chanID;
         }
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
@@ -87,6 +88,14 @@
         void mouseDown(const juce::MouseEvent& event)
         {
             recThumbnail.mouseDown(event);
+        }
+        void setVisibleRange(juce::Range<double> newRange)
+        {
+            recThumbnail.setRange(newRange);
+        }
+        void setXZoom(double zoomfactor)
+        {
+            recThumbnail.setDisplayXZone(zoomfactor);
         }
     private:
 

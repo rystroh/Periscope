@@ -3,16 +3,76 @@
 <JUCERPROJECT id="AjQSsx" name="eScopeAudio" projectType="guiapp" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="g1UIBm" name="eScopeAudio">
+    <GROUP id="{CEA80E9B-E7F6-F846-1E2C-EA2127A808FD}" name="SGUL">
+      <GROUP id="{C0DE8C06-845C-004C-D22F-4DD9536C3D2F}" name="Source">
+        <FILE id="emwebq" name="Rack.h" compile="0" resource="0" file="SGUL/Source/Rack.h"/>
+        <FILE id="ax7clv" name="Slider.cpp" compile="1" resource="0" file="SGUL/Source/Slider.cpp"/>
+        <FILE id="QdeqsA" name="Slider.h" compile="0" resource="0" file="SGUL/Source/Slider.h"/>
+        <FILE id="HymKxw" name="ToggleButton.cpp" compile="1" resource="0"
+              file="SGUL/Source/ToggleButton.cpp"/>
+        <FILE id="B6tC18" name="ToggleButton.h" compile="0" resource="0" file="SGUL/Source/ToggleButton.h"/>
+        <FILE id="e02iU7" name="TextEditor.h" compile="0" resource="0" file="SGUL/Source/TextEditor.h"/>
+        <FILE id="p2RDX2" name="TextEditor.cpp" compile="1" resource="0" file="SGUL/Source/TextEditor.cpp"/>
+        <FILE id="K9wNkv" name="ScrollView.cpp" compile="1" resource="0" file="SGUL/Source/ScrollView.cpp"/>
+        <FILE id="nm4oiZ" name="SGUL.h" compile="0" resource="0" file="SGUL/Source/SGUL.h"/>
+        <FILE id="FwFB0L" name="ResizerBar.h" compile="0" resource="0" file="SGUL/Source/ResizerBar.h"/>
+        <FILE id="gppMdv" name="RackElement.h" compile="0" resource="0" file="SGUL/Source/RackElement.h"/>
+        <FILE id="rpjvNP" name="ResizerBar.cpp" compile="1" resource="0" file="SGUL/Source/ResizerBar.cpp"/>
+        <FILE id="rw78O9" name="RackElement.cpp" compile="1" resource="0" file="SGUL/Source/RackElement.cpp"/>
+        <FILE id="Yh0Hba" name="Rack.cpp" compile="1" resource="0" file="SGUL/Source/Rack.cpp"/>
+        <FILE id="JFDczU" name="PushButton.h" compile="0" resource="0" file="SGUL/Source/PushButton.h"/>
+        <FILE id="lvaGF3" name="PanelSwitchBar.h" compile="0" resource="0"
+              file="SGUL/Source/PanelSwitchBar.h"/>
+        <FILE id="fQDLAK" name="PushButton.cpp" compile="1" resource="0" file="SGUL/Source/PushButton.cpp"/>
+        <FILE id="fqw6l9" name="PanelSwitchBar.cpp" compile="1" resource="0"
+              file="SGUL/Source/PanelSwitchBar.cpp"/>
+        <FILE id="yUFOzy" name="Panel.h" compile="0" resource="0" file="SGUL/Source/Panel.h"/>
+        <FILE id="oYIwhN" name="Panel.cpp" compile="1" resource="0" file="SGUL/Source/Panel.cpp"/>
+        <FILE id="npHzwH" name="MappingManager.cpp" compile="1" resource="0"
+              file="SGUL/Source/MappingManager.cpp"/>
+        <FILE id="cuAtEr" name="MappingManager.h" compile="0" resource="0"
+              file="SGUL/Source/MappingManager.h"/>
+        <FILE id="CcpoWE" name="HeaderBar.h" compile="0" resource="0" file="SGUL/Source/HeaderBar.h"/>
+        <FILE id="j5YBBW" name="HeaderBar.cpp" compile="1" resource="0" file="SGUL/Source/HeaderBar.cpp"/>
+        <FILE id="cBhHyF" name="DREAMLookAndFeel.h" compile="0" resource="0"
+              file="SGUL/Source/DREAMLookAndFeel.h"/>
+        <FILE id="LGLKPj" name="DREAMLookAndFeel.cpp" compile="1" resource="0"
+              file="SGUL/Source/DREAMLookAndFeel.cpp"/>
+        <FILE id="iSFdQg" name="Control.h" compile="0" resource="0" file="SGUL/Source/Control.h"/>
+        <FILE id="JE947W" name="Control.cpp" compile="1" resource="0" file="SGUL/Source/Control.cpp"/>
+        <FILE id="ch2kNr" name="ComboBox.cpp" compile="1" resource="0" file="SGUL/Source/ComboBox.cpp"/>
+        <FILE id="uAfH9o" name="ComboBox.h" compile="0" resource="0" file="SGUL/Source/ComboBox.h"/>
+        <FILE id="Wv21sk" name="CheckBox.h" compile="0" resource="0" file="SGUL/Source/CheckBox.h"/>
+        <FILE id="aQ5x96" name="CheckBox.cpp" compile="1" resource="0" file="SGUL/Source/CheckBox.cpp"/>
+        <FILE id="VXTAIm" name="VuMeter.h" compile="0" resource="0" file="SGUL/Source/VuMeter.h"/>
+        <FILE id="OhNH3Y" name="VuMeter.cpp" compile="1" resource="0" file="SGUL/Source/VuMeter.cpp"/>
+        <FILE id="Mvf7Sc" name="Toolbar.cpp" compile="1" resource="0" file="SGUL/Source/Toolbar.cpp"/>
+        <FILE id="zA9HhU" name="Toolbar.h" compile="0" resource="0" file="SGUL/Source/Toolbar.h"/>
+        <FILE id="bQ9UaJ" name="Tabs.cpp" compile="1" resource="0" file="SGUL/Source/Tabs.cpp"/>
+        <FILE id="V7HX1J" name="Tabs.h" compile="0" resource="0" file="SGUL/Source/Tabs.h"/>
+        <FILE id="minyQM" name="ScrollView.h" compile="0" resource="0" file="SGUL/Source/ScrollView.h"/>
+        <FILE id="IcnLHP" name="ParameterContainer.h" compile="0" resource="0"
+              file="SGUL/Source/ParameterContainer.h"/>
+        <FILE id="oaYBRK" name="ParameterContainer.cpp" compile="1" resource="0"
+              file="SGUL/Source/ParameterContainer.cpp"/>
+        <FILE id="LyNekg" name="PanelSwitchButton.h" compile="0" resource="0"
+              file="SGUL/Source/PanelSwitchButton.h"/>
+        <FILE id="Lc33ET" name="PanelSwitchButton.cpp" compile="1" resource="0"
+              file="SGUL/Source/PanelSwitchButton.cpp"/>
+        <FILE id="sNTUI6" name="Oscilloscope.h" compile="0" resource="0" file="SGUL/Source/Oscilloscope.h"/>
+        <FILE id="fjxbeK" name="Oscilloscope.cpp" compile="1" resource="0"
+              file="SGUL/Source/Oscilloscope.cpp"/>
+        <FILE id="ngRb6w" name="NodePath.h" compile="0" resource="0" file="SGUL/Source/NodePath.h"/>
+      </GROUP>
+    </GROUP>
     <GROUP id="{C3084179-C89D-81C3-736B-EAB569609034}" name="Source">
       <FILE id="HNnqP6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="uH9wim" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
       <FILE id="wM79fo" name="eScope.h" compile="0" resource="0" file="Source/eScope.h"/>
-      <FILE id="SNOmdT" name="ListenerComponent.cpp" compile="1" resource="0"
-            file="Source/ListenerComponent.cpp"/>
-      <FILE id="Rx9Iho" name="ListenerComponent.h" compile="0" resource="0"
-            file="Source/ListenerComponent.h"/>
+      <FILE id="q4o2GK" name="Header.cpp" compile="1" resource="0" file="Source/Header.cpp"/>
+      <FILE id="FV2P25" name="Header.h" compile="0" resource="0" file="Source/Header.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_ASIO="1"/>

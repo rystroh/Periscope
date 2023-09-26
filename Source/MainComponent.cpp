@@ -18,7 +18,11 @@ usingCustomDeviceManager(false)
     
     // Create eScope instances
     for (int idx = 0; idx < eScopeChanNb; idx++)
+    {
         eScope[idx] = std::make_unique<EScope>("Channel" + juce::String(idx));
+        eScope[idx]->setChannelID(idx);
+    }
+
 
     header = std::make_unique<Header>(this); // must be done after having instantiated eScope panels
 
@@ -28,6 +32,7 @@ usingCustomDeviceManager(false)
     // Populate channel rack
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
+        eScope[idx]->recThumbnail.addChangeListener(this);
         eScope[idx]->setDisplayThumbnailMode(header->getRecMode());
         channel_rack->addPanel(eScope[idx].get(), RESIZER + DISPLAY_NAME + COLLAPSIBLE + SWITCHABLE);
     }
@@ -161,3 +166,20 @@ void MainComponent::releaseResources()
 //void MainComponent::resized()
 //{
 //}
+
+//-------------------------------------------------------------------------------------
+void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
+{
+    juce::RecordingThumbnail* src = ((juce::RecordingThumbnail*)source);
+    int eScopeID = src->chanID;
+    auto visibRange = src->getVisibleRange();
+    auto xZoom = src->getXZoom();
+    for (int idx = 0; idx < eScopeChanNb; idx++)
+    {
+        if (idx != eScopeID)
+        {
+            eScope[idx]->setXZoom(xZoom);
+            eScope[idx]->setVisibleRange(visibRange);
+        }
+    }
+}

@@ -4,7 +4,6 @@
 #include <sstream>
 #include <string>
 #include "eScope.h"
-#include "ListenerComponent.h"
 #include "Header.h"
 const int eScopeChanNb = 8;
 
@@ -14,7 +13,7 @@ class Rack;
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public sgul::Rack, public juce::AudioSource
+class MainComponent  : public sgul::Rack, public juce::AudioSource, public juce::ChangeListener
 {
 public:
     //==============================================================================
@@ -30,6 +29,8 @@ public:
 //    void paint (juce::Graphics& g) override;
 //    void resized() override;
 
+    void changeListenerCallback(juce::ChangeBroadcaster* source);
+    
     /** A subclass should call this from their constructor, to set up the audio. */
     void setAudioChannels(int numInputChannels, int numOutputChannels, const juce::XmlElement* const storedSettings = nullptr);
 

@@ -4,7 +4,6 @@
 #include <sstream>
 #include <string>
 #include "eScope.h"
-#include "ListenerComponent.h"
 #include "..\SGUL\Source\SGUL.h"
 //==============================================================================
 /*
@@ -38,7 +37,6 @@ private:
 
     std::unique_ptr<juce::FileChooser> chooser;
 
-    ListenerComponent listenerComponent;
     int recmode; // can be 1= track view or 2= oscilloscope
     double oscilloWinSize = 0.05;
  //-------------------------------------------------------------------------------------

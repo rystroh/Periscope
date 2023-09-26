@@ -38,6 +38,7 @@ namespace juce
         double gridOpacity = 0.5; //grid opacity
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
+        int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
        //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
@@ -624,6 +625,7 @@ namespace juce
                         (visibleRange.getLength())), newStart);
                     setRange({ newStart, newStart + visibleRange.getLength() });
                     repaint();
+                    sendChangeMessage();
                 }
                 else //X Zoom Control
                 {
@@ -658,6 +660,7 @@ namespace juce
                     //DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " 
                     //<< zoomVector.size() << " NewZoom " << NewZoomFactor);
                     setDisplayXZone(NewZoomFactor);
+                    sendChangeMessage();
 
                 }
             }
@@ -709,6 +712,10 @@ namespace juce
             return fact;
 
         }
+        //----------------------------------------------------------------------------------
+        juce::Range<double> getVisibleRange() { return(visibleRange); }
+        //----------------------------------------------------------------------------------
+        double getXZoom() { return(ThumbXZoom); }
         //----------------------------------------------------------------------------------
     private:
         AudioFormatManager formatManager;

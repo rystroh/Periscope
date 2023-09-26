@@ -58,12 +58,8 @@ Header::Header(MainComponent* mainComp) : Panel("Header"), main(mainComp)
 
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
-        main->eScope[idx]->recThumbnail.addChangeListener(&listenerComponent);
         addAndMakeVisible(main->eScope[idx].get());
-        main->eScope[idx]->setChannelID(idx);
     }
-
-    addAndMakeVisible(listenerComponent);
 
     openButton.onClick = [this] { openButtonClicked(); };
 
@@ -101,8 +97,7 @@ void Header::resized()
     auto area = getLocalBounds();    
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
     openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    listenerComponent.setBounds(openButton.getX() + openButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    menu.setBounds(listenerComponent.getX() + listenerComponent.getWidth() + 50, recordButton.getY(), 2*recordButton.getWidth(), recordButton.getHeight());
+    menu.setBounds(openButton.getX() + openButton.getWidth() + 50, recordButton.getY(), 2*recordButton.getWidth(), recordButton.getHeight());
     oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + 10, recordButton.getY(),4 * recordButton.getWidth(), recordButton.getHeight());
     save_button->setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
  }
