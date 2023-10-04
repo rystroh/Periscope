@@ -30,6 +30,9 @@ public:
 //    void resized() override;
 
     void changeListenerCallback(juce::ChangeBroadcaster* source);
+
+    // Command management stuff
+    bool executeCommand(int id, sgul::Control* source) override;
     
     /** A subclass should call this from their constructor, to set up the audio. */
     void setAudioChannels(int numInputChannels, int numOutputChannels, const juce::XmlElement* const storedSettings = nullptr);
@@ -58,6 +61,8 @@ private:
     juce::File lastRecording[eScopeChanNb];
 
     // GUI stuff
+    std::unique_ptr<juce::FileChooser> chooser;
+
     std::unique_ptr<Header> header;
     std::unique_ptr<EScope> eScope[eScopeChanNb];
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
@@ -70,7 +75,9 @@ private:
     std::unique_ptr<sgul::ParameterContainer> pc;
     std::unique_ptr<sgul::MappingManager> mm;
 
- 
+    int recmode = 2; // can be 1= track view or 2= oscilloscope
+    double oscilloWinSize = 0.05;
+
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
@@ -129,9 +136,9 @@ private:
             eScope[idx]->setSampleRate(smpRate);
             lastRecording[idx] = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
             eScope[idx]->startRecording(lastRecording[idx]);
-            eScope[idx]->setDisplayThumbnailMode(header->getRecMode());
+            eScope[idx]->setDisplayThumbnailMode(recmode);
         }
-        header->recordButton.setButtonText("Stop");
+        //sgul// header->recordButton.setButtonText("Stop");
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
@@ -164,7 +171,7 @@ private:
             eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
             eScope[idx]->setDisplayYZoom(1.0);
         }
-        header->recordButton.setButtonText("Record");
+        //sgul// header->recordButton.setButtonText("Record");
         
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

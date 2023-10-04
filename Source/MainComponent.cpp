@@ -1,4 +1,5 @@
 #include "MainComponent.h"
+#include "CommandList.h"
 #include "..\SGUL\Source\SGUL.h"
 
 //==============================================================================
@@ -13,27 +14,21 @@ usingCustomDeviceManager(false)
     pc = std::make_unique<sgul::ParameterContainer>("TestTree");
     mm = std::make_unique<sgul::MappingManager>(pc.get());
     sgul::Control::setMappingManager(mm.get());
+    sgul::Panel::setMappingManager(mm.get());
 
-    // Instantiate top level rack elements
-    
-    // Create eScope instances
+    // Instantiate top level rack elements   
+    // - Create header instance
+    header = std::make_unique<Header>(); // must be done after having instantiated eScope panels
+    // - Create channel rack instance
+    channel_rack = std::make_unique<sgul::Rack>("Channels", true);
+
+    // Create eScope instances and populate channel rack
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         eScope[idx] = std::make_unique<EScope>("Channel" + juce::String(idx));
         eScope[idx]->setChannelID(idx);
-    }
-
-
-    header = std::make_unique<Header>(this); // must be done after having instantiated eScope panels
-
-    // Create channel rack instance
-    channel_rack = std::make_unique<sgul::Rack>("Channels", true);
-
-    // Populate channel rack
-    for (int idx = 0; idx < eScopeChanNb; idx++)
-    {
         eScope[idx]->recThumbnail.addChangeListener(this);
-        eScope[idx]->setDisplayThumbnailMode(header->getRecMode());
+        eScope[idx]->setDisplayThumbnailMode(recmode);
         channel_rack->addPanel(eScope[idx].get(), RESIZER + DISPLAY_NAME + COLLAPSIBLE + SWITCHABLE);
     }
     channel_rack->computeSizeFromChildren(true, true);
@@ -78,6 +73,14 @@ usingCustomDeviceManager(false)
 
     // Build parameter set
     mm->buildParameterSet(this);
+
+    // Add commands
+    addCommand(RECORD, "Record");
+    addCommand(OPEN_FILE, "Open file");
+    addCommand(DISPLAY_MODE, "Display mode");
+    addCommand(WIN_SIZE, "Window size");
+    addCommand(LOAD_SETTINGS, "Load settings");
+    addCommand(SAVE_SETTINGS, "Save settings");
 
     // setSize(1800, 1000);
     setSize(900, 500);
@@ -170,7 +173,7 @@ void MainComponent::releaseResources()
 //-------------------------------------------------------------------------------------
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
-    juce::RecordingThumbnail* src = ((juce::RecordingThumbnail*)source);
+    RecordingThumbnail* src = ((RecordingThumbnail*)source);
     int eScopeID = src->chanID;
     auto visibRange = src->getVisibleRange();
     auto xZoom = src->getXZoom();
@@ -181,5 +184,87 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
             eScope[idx]->setXZoom(xZoom);
             eScope[idx]->setVisibleRange(visibRange);
         }
+    }
+}
+
+bool MainComponent::executeCommand(int id, sgul::Control* source)
+{
+    switch (id)
+    {
+    case RECORD:
+        if (source->getControlValue())
+            startRecording();
+        else
+            stopRecording();
+        return true;
+    case OPEN_FILE:
+    {
+        chooser = std::make_unique<juce::FileChooser>("Select a Wave List...",
+            juce::File{}, "*.txt");
+        auto chooserFlags = juce::FileBrowserComponent::openMode
+            | juce::FileBrowserComponent::canSelectFiles;
+
+        chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+            {
+                auto file = fc.getResult();
+
+                if (file != juce::File{})
+                    configureStreaming(file);
+            });
+
+        return true;
+    }
+    case DISPLAY_MODE:
+    {
+        int oscmode = source->getControlValue();
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx]->setDisplayThumbnailMode(oscmode);
+        }
+        return true;
+    }
+    case WIN_SIZE:
+    {
+        oscilloWinSize = source->getControlValue();
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx]->setViewSize(oscilloWinSize);
+        }
+        return true;
+    };
+    case LOAD_SETTINGS:
+    {
+        chooser = std::make_unique<juce::FileChooser>("Load settings",
+            juce::File{}, "*.xml");
+        auto chooserFlags = juce::FileBrowserComponent::openMode
+            | juce::FileBrowserComponent::canSelectFiles;
+
+        chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+            {
+                auto file = fc.getResult();
+
+                if (file != juce::File{})
+                    mm->loadParameters(file, this);
+            });
+        return true;
+    }
+    case SAVE_SETTINGS:
+    {
+        chooser = std::make_unique<juce::FileChooser>("Save settings as...",
+            juce::File{}, "*.xml");
+        auto chooserFlags = juce::FileBrowserComponent::saveMode
+            | juce::FileBrowserComponent::canSelectFiles;
+
+        chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+            {
+                auto file = fc.getResult();
+
+                if (file != juce::File{})
+                    mm->saveParameters(file);
+            });
+        return true;
+    }
+    default:
+        return false;
     }
 }

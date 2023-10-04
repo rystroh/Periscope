@@ -23,7 +23,7 @@
         {
 
         }
-        juce::RecordingThumbnail recThumbnail;
+        RecordingThumbnail recThumbnail;
         juce::AudioRecorder rec{ recThumbnail.getAudioThumbnail() };
 
 

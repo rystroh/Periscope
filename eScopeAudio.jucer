@@ -66,6 +66,12 @@
       </GROUP>
     </GROUP>
     <GROUP id="{C3084179-C89D-81C3-736B-EAB569609034}" name="Source">
+      <FILE id="DntdsD" name="AudioRecorder.h" compile="0" resource="0" file="Source/AudioRecorder.h"/>
+      <FILE id="hC85ZV" name="AudioRecording.h" compile="0" resource="0"
+            file="Source/AudioRecording.h"/>
+      <FILE id="Z0LHyQ" name="CommandList.h" compile="0" resource="0" file="Source/CommandList.h"/>
+      <FILE id="vdlKrx" name="RecordingThumbnail.h" compile="0" resource="0"
+            file="Source/RecordingThumbnail.h"/>
       <FILE id="HNnqP6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="uH9wim" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"

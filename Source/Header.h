@@ -15,32 +15,27 @@ class Header  : public sgul::Panel
 {
 public:
     //==============================================================================
-    Header(MainComponent* mainComp);
+    Header();
     ~Header() override {};
 
     //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
-    int getRecMode() { return recmode; };
-    int getOscilloWinSize() { return oscilloWinSize; };
+
 private:
     friend MainComponent;
     //==============================================================================
     // Your private member variables go here...
-    MainComponent* main;
-    juce::TextButton recordButton{ "Record" };
-    juce::TextButton openButton{ "Open File" };
+    // *** Controls ***
+    sgul::ToggleButton recordButton{ "Record", false, sgul::ToggleButton::HORIZONTAL, "Record", "Stop", " " };
+    sgul::PushButton openButton{ "Open file", false, sgul::PushButton::NAME};
     sgul::ComboBox menu{ "Mode", true, sgul::ComboBox::HORIZONTAL};
     sgul::Slider oscWinSizeSlider{ "Win size", true, sgul::Slider::HORIZONTAL2, " "};
 
-    std::unique_ptr<sgul::PushButton> save_button;
-
-    std::unique_ptr<juce::FileChooser> chooser;
-
-    int recmode; // can be 1= track view or 2= oscilloscope
-    double oscilloWinSize = 0.05;
+    sgul::PushButton load_button{ "Load", false, sgul::PushButton::NAME };
+    sgul::PushButton save_button{ "Save", false, sgul::PushButton::NAME };
  //-------------------------------------------------------------------------------------
-    void openButtonClicked();
+    //void openButtonClicked();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Header)
 };
