@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include "eScope.h"
+#include "CommandList.h"
 #include "..\SGUL\Source\SGUL.h"
 //==============================================================================
 /*
@@ -27,13 +28,22 @@ private:
     //==============================================================================
     // Your private member variables go here...
     // *** Controls ***
-    sgul::ToggleButton recordButton{ "Record", false, sgul::ToggleButton::HORIZONTAL, "Record", "Stop", " " };
-    sgul::PushButton openButton{ "Open file", false, sgul::PushButton::NAME};
-    sgul::ComboBox menu{ "Mode", true, sgul::ComboBox::HORIZONTAL};
-    sgul::Slider oscWinSizeSlider{ "Win size", true, sgul::Slider::HORIZONTAL2, " "};
+    // * Command only controls (state not saved in configuration) *
+    // This button issues a synchronous record command
+    sgul::ToggleButton recordButton{ "Record", sgul::ToggleButton::HORIZONTAL, "Record", "Stop", RECORD, true}; 
+    // This button issues an open file command
+    sgul::PushButton openButton{ "Open file", sgul::PushButton::NAME, OPEN_FILE};
+    // This button issues a load settings command
+    sgul::PushButton load_button{ "Load", sgul::PushButton::NAME, LOAD_SETTINGS};
+    // This button issues a save settings command
+    sgul::PushButton save_button{ "Save", sgul::PushButton::NAME, SAVE_SETTINGS};
 
-    sgul::PushButton load_button{ "Load", false, sgul::PushButton::NAME };
-    sgul::PushButton save_button{ "Save", false, sgul::PushButton::NAME };
+    // * Controls whose values are saved in the settings *
+    // This button issues a display mode command
+    sgul::ComboBox menu{ "Mode", sgul::ComboBox::HORIZONTAL, sgul::ComboBox::ValueType::ID, "", DISPLAY_MODE};
+    // This button issues a window size command
+    sgul::Slider oscWinSizeSlider{ "Win size", sgul::Slider::HORIZONTAL2, "", WIN_SIZE };
+
  //-------------------------------------------------------------------------------------
     //void openButtonClicked();
 
