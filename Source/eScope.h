@@ -23,7 +23,7 @@ namespace juce
 
         }
         juce::RecordingThumbnail recThumbnail;
-        juce::AudioRecorder rec{ recThumbnail.getAudioThumbnail() };
+        juce::AudioRecorder recorder{ recThumbnail.getAudioThumbnail() };
 
 
         void EScope::paint(juce::Graphics& g) override
@@ -37,15 +37,15 @@ namespace juce
             recThumbnail.setBounds(area); //this triggers a recThumbnail.resized();
         }
   
-        AudioIODeviceCallback* getAudioIODeviceCallBack() { return &rec; }
+        AudioIODeviceCallback* getAudioIODeviceCallBack() { return &recorder; }
 
-        void startRecording(const File& file) { rec.startRecording(file); }
-        bool isRecording() { return rec.isRecording(); }
+        void startRecording(const File& file) { recorder.startRecording(file); }
+        bool isRecording() { return recorder.isRecording(); }
         void audioDeviceAboutToStart(AudioIODevice* device)//needs refactorisation
         {
             auto smpRate = device->getCurrentSampleRate();
             //rec.audioDeviceAboutToStart(device);
-            rec.setSampleRate(smpRate);
+            recorder.setSampleRate(smpRate);
             recThumbnail.setSampleRate(smpRate);
            
         }
@@ -56,27 +56,43 @@ namespace juce
             recThumbnail.setDisplayThumbnailMode(displayMode);
             recThumbnail.repaint();
         }
-        bool setSource(InputSource* newSource) { return(recThumbnail.setSource(newSource)); }        
-        void setSampleRate(double smpRate) 
+        bool setSource(InputSource* newSource) { return(recThumbnail.setSource(newSource)); }
+
+        void prepareToPlay(int samplesPerBlockExpected, double sampleRate)
         {
-            rec.setSampleRate(smpRate);
+            recorder.prepareToPlay(samplesPerBlockExpected, sampleRate);
+            recThumbnail.prepareToPlay(samplesPerBlockExpected, sampleRate);
+        }
+
+        void setSampleRate(double smpRate) //called by prepareToPlay
+        {
+            recorder.setSampleRate(smpRate);
             recThumbnail.setSampleRate(smpRate); 
+        }
+        void setBufferSize(long bufferSize) //called by prepareToPlay
+        {
+            //recorder.setBufferSize(smpRate);
+            //recThumbnail.setBufferSize(smpRate);
         }
         void setDisplayYZoom(double yZoom) { recThumbnail.setDisplayYZoom(yZoom); }
  
 
         int getChannelID(void)
         {
-            return(rec.getChannelID());
+            return(recorder.getChannelID());
         }
 
         void setChannelID(int chanID)
         {
-            rec.setChannelID(chanID);
+            recorder.setChannelID(chanID);
             recThumbnail.chanID = chanID;
+            bool* ptr = recThumbnail.getTriggeredPtr();
+            recorder.setTriggerPtr(ptr);
         }
+
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
+            recorder.setViewSize(dispTime);
             recThumbnail.setViewSize(dispTime);
         }
         void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
@@ -95,6 +111,10 @@ namespace juce
         void setXZoom(double zoomfactor)
         {
             recThumbnail.setDisplayXZone(zoomfactor);
+        }
+        void setThreshold(double threshold)
+        {
+            recorder.setThreshold(threshold);
         }
     private:
 

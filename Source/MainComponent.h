@@ -4,8 +4,15 @@
 #include <sstream>
 #include <string>
 #include "eScope.h"
-#include "ListenerComponent.h"
+
+#define option 1
+#if option == 1
+const int eScopeChanNb = 1;
+#endif // option = 1
+
+#if option == 2
 const int eScopeChanNb = 8;
+#endif // option = 1
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
@@ -33,15 +40,18 @@ private:
     // Your private member variables go here...
     juce::TextButton recordButton{ "Record" };
     juce::TextButton openButton{ "Open File" };
+    juce::TextButton liveButton{ "Live" };
     juce::ComboBox menu;
     juce::Slider oscWinSizeSlider;
+    juce::Slider thresholdSlider;
+    juce::Label dispBuffSizeLabel;
+    juce::Label thresholdLabel;
 
     std::unique_ptr<juce::FileChooser> chooser;
 
     juce::AudioFormatManager formatManager;                    // [3]    
     
     juce::File lastRecording[eScopeChanNb];
-    ListenerComponent listenerComponent;
     juce::EScope eScope[eScopeChanNb];
     int recmode; // can be 1= track view or 2= oscilloscope
     double oscilloWinSize = 0.05;
@@ -51,6 +61,28 @@ private:
         return deviceManager; 
     }
  //-------------------------------------------------------------------------------------
+    void liveButtonClicked()
+    {
+        auto& devManager = MainComponent::getAudioDeviceManager();
+        auto device = devManager.getCurrentAudioDevice();
+        auto smpRate = device->getCurrentSampleRate();
+        int samplesPerBlockExpected = 512;
+        samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
+        prepareToPlay(samplesPerBlockExpected, smpRate);
+        oscilloWinSize = oscWinSizeSlider.getValue();
+
+        recmode = 4; // force to oscilloscope mode
+        for (int idx = 0; idx < eScopeChanNb; idx++)
+        {
+            eScope[idx].setSampleRate(smpRate);
+            eScope[idx].setViewSize(oscilloWinSize);
+            lastRecording[idx] = juce::File();
+            eScope[idx].startRecording(lastRecording[idx]);
+            eScope[idx].setDisplayThumbnailMode(recmode);
+        }
+
+    }
+//-------------------------------------------------------------------------------------
     void openButtonClicked()
     {/*
         chooser = std::make_unique<juce::FileChooser>("Select a Wave file...",
@@ -114,6 +146,9 @@ private:
         auto& devManager = MainComponent::getAudioDeviceManager();
         auto device = devManager.getCurrentAudioDevice();
         auto smpRate = device->getCurrentSampleRate();
+        
+        recmode = menu.getSelectedItemIndex();        
+        recmode = 1; //trackView
         //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
@@ -129,7 +164,7 @@ private:
     {
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
-            eScope[idx].rec.stop();
+            eScope[idx].recorder.stop();
         }
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);

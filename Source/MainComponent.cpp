@@ -8,6 +8,12 @@ MainComponent::MainComponent()
     recordButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xffff5c5c));
     recordButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
 
+    addAndMakeVisible(liveButton);
+    liveButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x1c1c1c1c));
+    liveButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
+
+    liveButton.onClick = [this] { liveButtonClicked(); };
+
     addAndMakeVisible(openButton);
     openButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0x5c5c5c5c));
     openButton.setColour(juce::TextButton::textColourOnId, juce::Colours::black);
@@ -39,11 +45,17 @@ MainComponent::MainComponent()
             eScope[idx].setDisplayThumbnailMode(oscmode);
         }
     };
+    addAndMakeVisible(dispBuffSizeLabel);
+    dispBuffSizeLabel.setText("Buff Size", juce::dontSendNotification);
+    addAndMakeVisible(thresholdLabel);
+    thresholdLabel.setText("Threshold", juce::dontSendNotification);
 
     addAndMakeVisible(oscWinSizeSlider);
     oscWinSizeSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
     oscWinSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
     oscWinSizeSlider.setRange(0.05, 1.00, 0.05);
+    oscWinSizeSlider.setTitle("Buff Size");
+    
     oscWinSizeSlider.onValueChange = [this]()
     {
         oscilloWinSize = oscWinSizeSlider.getValue();
@@ -53,18 +65,33 @@ MainComponent::MainComponent()
         }
     };
 
-    
+    addAndMakeVisible(thresholdSlider);
+    thresholdSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
+    thresholdSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
+    thresholdSlider.setTitle("Threshold");
+    thresholdSlider.setRange(0.0, 1.00, 0.01);
+    thresholdSlider.onValueChange = [this]()
+    {
+        double thresholdValue = thresholdSlider.getValue();
+
+            eScope[0].setThreshold(thresholdValue);
+
+    };
 
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         eScope[idx].recThumbnail.addChangeListener(this);
+        eScope[idx].recorder.addChangeListener(this);
         addAndMakeVisible(eScope[idx]);
         eScope[idx].setChannelID(idx);
     }
-
-    addAndMakeVisible(listenerComponent);
-
     openButton.onClick = [this] { openButtonClicked(); };
+
+#if option == 1
+    deviceManager.initialise(eScopeChanNb, 2, nullptr, true);
+#endif
+
+#if option == 2    
     juce::XmlElement xxw("DEVICESETUP");
     xxw.setAttribute("deviceType", "ASIO");
     xxw.setAttribute("audioOutputDeviceName", "ASIO Fireface USB");
@@ -75,9 +102,9 @@ MainComponent::MainComponent()
     xxw.setAttribute("audioDeviceRate", "44100.0");
     xxw.setAttribute("audioDeviceBufferSize", "512.0");*/
 
-    xxw.setAttribute("audioDeviceInChans", "11111111");    
-
+    xxw.setAttribute("audioDeviceInChans", "11111111");
     deviceManager.initialise(eScopeChanNb, 2, &xxw, true);
+#endif
     /*
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -96,7 +123,13 @@ MainComponent::MainComponent()
     {
         devManager.addAudioCallback(eScope[idx].getAudioIODeviceCallBack());
     }
+#if option == 1
+    setSize(1500, 400);
+#endif
+#if option == 2
     setSize(1800, 1000);
+#endif
+    
     formatManager.registerBasicFormats();
 }
 
@@ -118,7 +151,8 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     //eScope.audioDeviceAboutToStart(device); //needs refactoring
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
-        eScope[idx].setSampleRate(device->getCurrentSampleRate());
+        //eScope[idx].setSampleRate(device->getCurrentSampleRate());
+        eScope[idx].prepareToPlay(samplesPerBlockExpected, sampleRate);
     }
 }
 //-------------------------------------------------------------------------------------
@@ -138,13 +172,25 @@ void MainComponent::paint (juce::Graphics& g)
 //-------------------------------------------------------------------------------------
 void MainComponent::resized()
 {
-    auto area = getLocalBounds();    
+    juce::Rectangle  area = getLocalBounds();
+    //juce::Rectangle uiarea = area.removeFromTop(40).removeFromLeft(100).reduced(10);
     recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
-    openButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    listenerComponent.setBounds(openButton.getX() + openButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    menu.setBounds(listenerComponent.getX() + listenerComponent.getWidth() + 10, recordButton.getY(), 2*recordButton.getWidth(), recordButton.getHeight());
-    oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + 10, recordButton.getY(),4 * recordButton.getWidth(), recordButton.getHeight());
+
+    int numSlider = 3;
+ 
+    int sliderWidth = (area.getWidth() - 4 * recordButton.getWidth()) / numSlider;
+
+    liveButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    openButton.setBounds(liveButton.getX() + liveButton.getWidth() + 10, liveButton.getY(), liveButton.getWidth(), liveButton.getHeight());
+    menu.setBounds(openButton.getX() + openButton.getWidth() + 10, recordButton.getY(), 2*recordButton.getWidth(), recordButton.getHeight());
     
+    oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + 10, recordButton.getY(), sliderWidth, recordButton.getHeight());
+    dispBuffSizeLabel.setBounds(oscWinSizeSlider.getX()+ oscWinSizeSlider.getWidth()/2- recordButton.getWidth()/2, recordButton.getY()-10, recordButton.getWidth(), recordButton.getHeight());
+    
+    thresholdSlider.setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + 10, recordButton.getY(), sliderWidth, recordButton.getHeight());
+    thresholdLabel.setBounds(thresholdSlider.getX() + thresholdSlider.getWidth() / 2 - recordButton.getWidth()/2, recordButton.getY() - 10, recordButton.getWidth(), recordButton.getHeight());
+
+
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         eScope[idx].setBounds(10, 40 + idx*area.getHeight() / eScopeChanNb, getWidth() - 20, area.getHeight() / eScopeChanNb);

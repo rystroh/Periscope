@@ -4,6 +4,7 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="g1UIBm" name="eScopeAudio">
     <GROUP id="{C3084179-C89D-81C3-736B-EAB569609034}" name="Source">
+      <FILE id="GugS2u" name="20Hz_Bleep.h" compile="1" resource="0" file="Source/20Hz_Bleep.h"/>
       <FILE id="HNnqP6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="uH9wim" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"

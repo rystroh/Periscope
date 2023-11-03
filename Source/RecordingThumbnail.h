@@ -39,7 +39,10 @@ namespace juce
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
-       //----------------------------------------------------------------------------------
+        bool bTriggered = false;
+        //----------------------------------------------------------------------------------
+        bool* getTriggeredPtr(void) { return &bTriggered; }
+        //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
             viewSize = dispTime;
@@ -47,10 +50,17 @@ namespace juce
         //----------------------------------------------------------------------------------
         bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
         //----------------------------------------------------------------------------------
+        void prepareToPlay(int smpPerBlockExpected, double smpRate)
+        {
+            sampleRate = smpRate;
+            samplesPerBlockExpected = smpPerBlockExpected;
+        }
+        //----------------------------------------------------------------------------------
         void setSampleRate(double smpRate)
         {
             sampleRate = smpRate;
         }
+
         //----------------------------------------------------------------------------------
         void setDisplayFullThumbnail(bool displayFull)
         {
@@ -476,6 +486,18 @@ namespace juce
                     thumbnail.drawChannels(g, wavZone.reduced(2), startTime, endofrecording, ThumbYZoom);
                     break;
 
+                case 2: //oscilloscope dancing view                    
+                    if (currentlength >= viewSize)
+                    {
+                        thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                        wavZone = getWaveZone(thumbArea);
+                        paintGrid(g, wavZone);
+                        g.setColour(wavFormColour);
+                        thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
+                        bTriggered = false;
+                    }
+                    break;
+
                 case 3: // zooming mode                
                     thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
@@ -489,15 +511,19 @@ namespace juce
                     drawXLabels(g, thumbArea);
                     drawYLabels(g, thumbArea);
                     break;
-
-                case 2: //oscilloscope dancing view                    
-                    if (currentlength > viewSize)
+                case 4: //oscilloscope with trigger
+                    if(bTriggered)
                     {
-                        thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                    //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                        wavZone = getWaveZone(thumbArea);
+                        paintGrid(g, wavZone);
                         g.setColour(wavFormColour);
                         thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
-                    }
+                        bTriggered = false;
+                    }                    
                     break;
+
+
                 }
             }
             else
@@ -582,9 +608,8 @@ namespace juce
         //----------------------------------------------------------------------------------
         void mouseDown(const MouseEvent& event)
         {
-            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
-            DBG("Mouse.x = " << Posi3.getX());
-            sendChangeMessage();
+            auto Posi3 = getMouseXYRelative(); // Read Mouse click position
+            //DBG("Mouse.x = " << Posi3.getX());            
         }
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override
@@ -602,7 +627,6 @@ namespace juce
                         {
                             YZoomIndex++;
                             ThumbYZoom = getZoomMult(YZoomIndex);
-
                             repaint();
                         }
                     }
@@ -661,7 +685,6 @@ namespace juce
                     //<< zoomVector.size() << " NewZoom " << NewZoomFactor);
                     setDisplayXZone(NewZoomFactor);
                     sendChangeMessage();
-
                 }
             }
         }
@@ -723,6 +746,7 @@ namespace juce
         AudioThumbnail thumbnail{ 1, formatManager, thumbnailCache };
 
         double sampleRate = 0.0;
+        int samplesPerBlockExpected = 0;
 
         // display things
         bool displayFullThumb = false;
