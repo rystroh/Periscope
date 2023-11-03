@@ -171,30 +171,26 @@ namespace juce
             if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopeBufferSize>0)
             {
                 //activeWriter.load()->write(&inputChannelData[chanID], numSamples);
-                wavaddr=0;
                 //
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
-#if audio_source == 1
-                if(wavidx<=48000)
-                    { 
-                    //AudioBuffer<float> buffer(const_cast<float**>(&wavptr), 1, numSamples);// one stream per buffer
-                    //AudioBuffer<float> buffer(wavptr, 1, numSamples);// one stream per buffer
-                    auto* channelData = wavptr;
-                    wavptr += numSamples;
-                    wavidx += numSamples;
-                    }
-              
-
-#else               
                 AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
                 auto* channelData = buffer.getWritePointer(0);
-#endif
 
-                
-                    
-                
-                
+#if audio_source == 1 //overwrite stream with test wav file
+                if (wavidx <= 48000) //only copy at the beginning of the stream (the size of the array) 
+                {
+                    //AudioBuffer<float> buffer(const_cast<float**>(&wavptr), 1, numSamples);// one stream per buffer
+                    //AudioBuffer<float> buffer(wavptr, 1, numSamples);// one stream per buffer
+                    //auto* channelData = wavptr;
+                    for (int sample = 0; sample < buffer.getNumSamples(); sample++)
+                    {
+                        channelData[sample] = *wavptr;
+                        wavptr++;
+                        wavidx++;
+                    }
+                }
+#endif
                 if (writePosition + numSamples > eScopeBufferSize)//need to wrap
                 {
                     int nbOfSmpPossibleToCopy = eScopeBufferSize - writePosition;
@@ -351,6 +347,7 @@ namespace juce
         uint16 wavaddr = 0;
         uint16 wavidx = 0;
         const float *wavptr = nullptr;
+        uint16 wavSize = 48000;
     };
 };
 
