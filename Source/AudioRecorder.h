@@ -95,7 +95,8 @@ namespace juce
             writePosition = 0;
             wavaddr = 0;
             wavidx = 0;
-            wavptr = &Bleep_20Hz[0]; 
+            wavptr = &Bleep_20Hz[0];
+            thumbnailWritten = false;
         }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)
@@ -211,7 +212,7 @@ namespace juce
                     double min = 1, max = -1;
                     double smpValue;
                     bool bTriggered;
-                    if (*thumbnailTriggeredPtr == false)
+                    if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
                     {
                         for (int idx = 0; idx < numSamples; idx++)
                         {
@@ -225,7 +226,7 @@ namespace juce
                                 *thumbnailTriggeredPtr = true;
                                 triggAddress = writePosition + idx;
                                 triggAddress %= eScopeBufferSize; //wrap if needed
-                                currentSmpCount = idx;
+                                currentSmpCount = numSamples-idx;//nb of samples recorded after trigger condition
                                 idx = numSamples; //exit for 
                             }
                         }
@@ -239,8 +240,9 @@ namespace juce
             writePosition %= eScopeBufferSize;
 
             //now if we have enough sample, pass them to the Thumbnail for display
-            if (currentSmpCount >= halfMaxSmpCount)
+            if ((currentSmpCount >= halfMaxSmpCount) && (thumbnailWritten == false))
             {
+                thumbnailWritten = true;
                 thumbnail.reset(1, sampleRate, 0);
                 //copy data that are before the Threshold
                 if (triggAddress >= halfMaxSmpCount) //head data not wrapped 
@@ -250,7 +252,8 @@ namespace juce
                     if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
-                        thumbnail.addBlock(offsetinescopebuffer, eScopeBuffer, triggAddress, maxSmpCount);
+                        //thumbnail.addBlock(offsetinescopebuffer, eScopeBuffer, triggAddress, maxSmpCount);
+                        thumbnail.addBlock(writePosition, eScopeBuffer, offsetinescopebuffer, maxSmpCount);
                     }
                     else //tail data wrapped 
                     {
@@ -312,7 +315,24 @@ namespace juce
         //----------------------------------------------------------------------------------
         void setThreshold(double threshold)
         {
+#if audio_source == 1
+            switch ((int)(threshold*100))
+            {
+            case 0:
+                thresholdTrigger = 0.01;
+                break;
+            case 1:
+                thresholdTrigger = 0.011;
+                break;
+            case 2:
+                thresholdTrigger = 0.017;
+                break;
+            default:
+                thresholdTrigger = threshold;
+            }
+#else
             thresholdTrigger = threshold;
+#endif
         }
         //----------------------------------------------------------------------------------
         void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}        
@@ -350,6 +370,7 @@ namespace juce
         uint16 wavidx = 0;
         const float *wavptr = nullptr;
         uint16 wavSize = 48000;
+        bool thumbnailWritten = false;
     };
 };
 

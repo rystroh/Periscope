@@ -134,6 +134,37 @@ namespace juce
 
         }
         //----------------------------------------------------------------------------------
+        void paintGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        {
+            double zoomfactor = 128;
+
+            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
+            double displayStartTime, displayEndTime, displayWidth;
+
+            auto renderArea = bounds;
+            auto top = renderArea.getY();
+            auto bottom = renderArea.getBottom();
+            auto left = renderArea.getX();
+            auto right = renderArea.getRight();
+            auto width = renderArea.getWidth(); // width of Display zone in pixels
+
+            double SampleSize = totlen * sampleRate; //size  of sample in points
+            double Ratio = SampleSize / (double)width;
+            auto visRangeWidth = visibleRange.getLength();
+            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
+
+            double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
+
+            int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
+            thumbh = bounds.getHeight();
+            newY2 = bounds.getCentreY();
+            g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
+            g.setOpacity(gridOpacity);
+            g.drawHorizontalLine(newY2, left, right);
+ 
+        }
+        //----------------------------------------------------------------------------------
         void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
             double zoomfactor = 128;
@@ -512,15 +543,17 @@ namespace juce
                     drawYLabels(g, thumbArea);
                     break;
                 case 4: //oscilloscope with trigger
-                    if(bTriggered)
+                    if (bTriggered)
                     {
-                    //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                        //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                        bTriggered = false;
+                    }
                         wavZone = getWaveZone(thumbArea);
-                        paintGrid(g, wavZone);
+                        //paintGrid(g, wavZone);
+                        paintGridLin(g, wavZone);
                         g.setColour(wavFormColour);
                         thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
-                        bTriggered = false;
-                    }                    
+                                        
                     break;
 
 
