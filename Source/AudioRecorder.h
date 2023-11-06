@@ -191,17 +191,20 @@ namespace juce
                     }
                 }
 #endif
-                if (writePosition + numSamples > eScopeBufferSize)//need to wrap
+                // write in circulare buffer for later display
+                if (writePosition + numSamples > eScopeBufferSize)//need to wrap condition
                 {
                     int nbOfSmpPossibleToCopy = eScopeBufferSize - writePosition;
                     int remaning = numSamples - nbOfSmpPossibleToCopy;
                     eScopeBuffer.copyFrom(0, writePosition, channelData, nbOfSmpPossibleToCopy);
                     eScopeBuffer.copyFrom(0, 0, channelData + nbOfSmpPossibleToCopy, numSamples - nbOfSmpPossibleToCopy);
                 }
-                else
+                else  //no need to wrap : copy to circular buffer
                 {
                     eScopeBuffer.copyFrom(0, writePosition, channelData, numSamples);
                 }
+
+             // check if any sample in this new block is above threshold -> triggering display
                 if (currentSmpCount == 0)
                 {
                     // check trigger condition in block of samples
@@ -225,7 +228,6 @@ namespace juce
                                 currentSmpCount = idx;
                                 idx = numSamples; //exit for 
                             }
-
                         }
                     }
                 }
@@ -235,6 +237,7 @@ namespace juce
                 } 
             writePosition += numSamples;
             writePosition %= eScopeBufferSize;
+
             //now if we have enough sample, pass them to the Thumbnail for display
             if (currentSmpCount >= halfMaxSmpCount)
             {
@@ -271,7 +274,6 @@ namespace juce
                 {
 
                 }
-
                 currentSmpCount = 0;
             }
  /*         if (*thumbnailTriggeredPtr)
