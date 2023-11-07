@@ -3,6 +3,7 @@ namespace juce
 {
 #include <vector>
 #include <algorithm>
+#define audio_source 1
     //=====================================================================================
     class RecordingThumbnail : public Component,
         private ChangeListener,
@@ -34,8 +35,11 @@ namespace juce
         juce::Colour digitColour = juce::Colour(0xff8a8a8a);
         juce::Colour gridColour = juce::Colour(0xff8a8a8a);
         juce::Colour gridHorizontalCenterColour = juce::Colours::red;
+        juce::Colour triggerColour = juce::Colours::yellow;
         juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
         double gridOpacity = 0.5; //grid opacity
+        double triggerOpacity = 0.75; //trigger lines opacity
+
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
@@ -59,6 +63,33 @@ namespace juce
         void setSampleRate(double smpRate)
         {
             sampleRate = smpRate;
+        }
+        void setThreshold(double threshold)
+        {
+#if audio_source == 1
+            switch ((int)(threshold * 100))
+            {
+            case 0:
+                thresholdTrigger = 0.010;   // addr =    530
+                break;
+            case 1:
+                thresholdTrigger = 0.011;   // addr =  2 829
+                break;
+            case 2:
+                thresholdTrigger = 0.017;   // addr =  5 303
+                break;
+            case 3:
+                thresholdTrigger = 0.037;   // addr = 10 141
+                break;
+            case 4:
+                thresholdTrigger = 0.800;   // addr = 19 556
+                break;
+            default:
+                thresholdTrigger = threshold;
+            }
+#else
+            thresholdTrigger = threshold;
+#endif
         }
 
         //----------------------------------------------------------------------------------
@@ -155,6 +186,23 @@ namespace juce
             double curRatio = Ratio / totlen * (double)visibleRange.getLength();
 
             double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
+            if (stepSize != newstepSize)
+            {
+                stepSize = newstepSize;
+                //DBG("paintGrid::stepSize = " << stepSize);
+            }
+            std::vector<double> xs = getXs(); //create vector with nice positions for vert
+
+            int newX1;
+
+            // draw vertical time lines
+            g.setColour(gridColour);
+            g.setOpacity(gridOpacity);
+            for (auto x : xs)
+            {
+                newX1 = timeToX(x); // get 
+                g.drawVerticalLine(newX1, top, bottom);
+            }
 
             int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
             thumbh = bounds.getHeight();
@@ -162,7 +210,15 @@ namespace juce
             g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
             g.setOpacity(gridOpacity);
             g.drawHorizontalLine(newY2, left, right);
- 
+
+            g.setColour(triggerColour);//Draw middle horizontal line
+            g.setOpacity(triggerOpacity);
+            newX1 = timeToX(viewSize * 0.5); // get time center
+            g.drawVerticalLine(newX1, top, bottom);
+            double yfact = ThumbYZoom;
+            float thresholdPos = newY2 - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
+            newY2 = (int)thresholdPos;            
+            g.drawHorizontalLine(newY2, left, right);             
         }
         //----------------------------------------------------------------------------------
         void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -249,6 +305,39 @@ namespace juce
                 String str;
                 newX1 = timeToX(x); // get
                 str << x;
+                str.toDecimalStringWithSignificantFigures(x, 2);
+                Rectangle<int> r;
+                auto textWidth = g.getCurrentFont().getStringWidth(str);
+                r.setSize(textWidth, fontHeight);
+                if (newX1 + (double)textWidth / 2.0 > right)
+                    r.setCentre(static_cast<int>((newX1)-(double)textWidth / 2.0), 0);
+                else
+                    r.setCentre(static_cast<int>(newX1), 0);
+
+                r.setY(textArea.getY());
+                g.drawFittedText(str, r, juce::Justification::centred, 1);
+            }
+        }
+        //----------------------------------------------------------------------------------
+        void drawXLabelsOffset(juce::Graphics& g, const juce::Rectangle<int>& bounds, double timeOffset)
+        {
+            g.setColour(gridColour);
+            g.setOpacity(1.0);
+            const int fontHeight = 10;
+            g.setFont(fontHeight);
+            auto textArea = getHTextZone(bounds);// getRenderZone(bounds);
+            auto left = textArea.getX();
+            auto top = textArea.getY();
+            auto right = left + textArea.getWidth();
+
+            std::vector<double> xs = getXs();
+
+            int newX1;
+            for (auto x : xs)
+            {
+                String str;
+                newX1 = timeToX(x); // get
+                str << x- timeOffset;
                 str.toDecimalStringWithSignificantFigures(x, 2);
                 Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
@@ -548,15 +637,19 @@ namespace juce
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
                     }
-                        wavZone = getWaveZone(thumbArea);
-                        //paintGrid(g, wavZone);
-                        paintGridLin(g, wavZone);
-                        g.setColour(wavFormColour);
-                        thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
-                                        
+                    thumbnailsize = thumbnail.getTotalLength();
+                    newRange.setStart(0.0);
+                    newRange.setEnd(thumbnailsize);
+                    setRange(newRange);
+                    wavZone = getWaveZone(thumbArea);
+                    //paintGrid(g, wavZone);
+                    paintGridLin(g, wavZone);
+                    g.setColour(wavFormColour);
+                    //thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
+                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                    drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
+                    //drawYLabels(g, thumbArea);                                        
                     break;
-
-
                 }
             }
             else
@@ -798,6 +891,7 @@ namespace juce
         const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
+        double thresholdTrigger;
 
         //----------------------------------------------------------------------------------
         float timeToX(const double time) const

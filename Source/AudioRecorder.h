@@ -247,21 +247,21 @@ namespace juce
                 //copy data that are before the Threshold
                 if (triggAddress >= halfMaxSmpCount) //head data not wrapped 
                 { 
-                    int offsetinescopebuffer = triggAddress - halfMaxSmpCount;
+                    int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
                     int smpCount;
                     if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
-                        //thumbnail.addBlock(offsetinescopebuffer, eScopeBuffer, triggAddress, maxSmpCount);
-                        thumbnail.addBlock(writePosition, eScopeBuffer, offsetinescopebuffer, maxSmpCount);
+                        //thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, maxSmpCount);
+                        thumbnail.addBlock(0, eScopeBuffer, offsetInEScopeBuffer, maxSmpCount);
                     }
                     else //tail data wrapped 
                     {
                         smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
-                        thumbnail.addBlock(offsetinescopebuffer, eScopeBuffer, triggAddress, smpCount);
+                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
 
                         smpCount = maxSmpCount - smpCount;
-                        thumbnail.addBlock(offsetinescopebuffer, eScopeBuffer, triggAddress, smpCount);
+                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
                     }
                 }
                 else
@@ -319,13 +319,19 @@ namespace juce
             switch ((int)(threshold*100))
             {
             case 0:
-                thresholdTrigger = 0.01;
+                thresholdTrigger = 0.010;   // addr =    530
                 break;
             case 1:
-                thresholdTrigger = 0.011;
+                thresholdTrigger = 0.011;   // addr =  2 829
                 break;
             case 2:
-                thresholdTrigger = 0.017;
+                thresholdTrigger = 0.017;   // addr =  5 303
+                break;
+            case 3:
+                thresholdTrigger = 0.037;   // addr = 10 141
+                break;
+            case 4:
+                thresholdTrigger = 0.800;   // addr = 19 556
                 break;
             default:
                 thresholdTrigger = threshold;

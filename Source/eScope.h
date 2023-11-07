@@ -115,6 +115,7 @@ namespace juce
         void setThreshold(double threshold)
         {
             recorder.setThreshold(threshold);
+            recThumbnail.setThreshold(threshold);
         }
     private:
 
