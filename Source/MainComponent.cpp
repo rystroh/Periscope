@@ -1,26 +1,26 @@
 #include "MainComponent.h"
 #include "CommandList.h"
-#include "..\SGUL\Source\SGUL.h"
+#include "..\GRAPE\Source\GRAPE.h"
 
 //==============================================================================
 MainComponent::MainComponent() : Rack("Main", true), deviceManager(defaultDeviceManager),
 usingCustomDeviceManager(false)
 {  
     // Use Dream Look and Feel 
-    laf = std::make_unique <sgul::DREAMLookAndFeel>();
+    laf = std::make_unique <grape::DREAMLookAndFeel>();
     juce::LookAndFeel::setDefaultLookAndFeel(laf.get());
 
     // Instantiate Parameter Container & Mapping Manager and link Mapping Manager to controls
-    pc = std::make_unique<sgul::ParameterContainer>("TestTree");
-    mm = std::make_unique<sgul::MappingManager>(pc.get());
-    sgul::Control::setMappingManager(mm.get());
-    sgul::Panel::setMappingManager(mm.get());
+    pc = std::make_unique<grape::ParameterContainer>("TestTree");
+    mm = std::make_unique<grape::MappingManager>(pc.get());
+    grape::Control::setMappingManager(mm.get());
+    grape::Panel::setMappingManager(mm.get());
 
     // Instantiate top level rack elements   
     // - Create header instance
     header = std::make_unique<Header>(); // must be done after having instantiated eScope panels
     // - Create channel rack instance
-    channel_rack = std::make_unique<sgul::Rack>("Channels", true);
+    channel_rack = std::make_unique<grape::Rack>("Channels", true);
 
     // Create eScope instances and populate channel rack
     for (int idx = 0; idx < eScopeChanNb; idx++)
@@ -187,7 +187,7 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
     }
 }
 
-bool MainComponent::executeCommand(int id, sgul::Control* source)
+bool MainComponent::executeCommand(int id, grape::Control* source)
 {
     switch (id)
     {

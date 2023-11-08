@@ -13,7 +13,7 @@ class Rack;
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public sgul::Rack, public juce::AudioSource, public juce::ChangeListener
+class MainComponent  : public grape::Rack, public juce::AudioSource, public juce::ChangeListener
 {
 public:
     //==============================================================================
@@ -32,7 +32,7 @@ public:
     void changeListenerCallback(juce::ChangeBroadcaster* source);
 
     // Command management stuff
-    bool executeCommand(int id, sgul::Control* source) override;
+    bool executeCommand(int id, grape::Control* source) override;
     
     /** A subclass should call this from their constructor, to set up the audio. */
     void setAudioChannels(int numInputChannels, int numOutputChannels, const juce::XmlElement* const storedSettings = nullptr);
@@ -69,11 +69,11 @@ private:
                                         // in a vertical rack inside the parent vertical rack
                                         // to offer a global scrollbar for all channels at once
 
-    std::unique_ptr<sgul::DREAMLookAndFeel> laf;
+    std::unique_ptr<grape::DREAMLookAndFeel> laf;
 
     // Parameter management stuff
-    std::unique_ptr<sgul::ParameterContainer> pc;
-    std::unique_ptr<sgul::MappingManager> mm;
+    std::unique_ptr<grape::ParameterContainer> pc;
+    std::unique_ptr<grape::MappingManager> mm;
 
     int recmode = 2; // can be 1= track view or 2= oscilloscope
     double oscilloWinSize = 0.05;
@@ -138,7 +138,7 @@ private:
             eScope[idx]->startRecording(lastRecording[idx]);
             eScope[idx]->setDisplayThumbnailMode(recmode);
         }
-        //sgul// header->recordButton.setButtonText("Stop");
+        //grape// header->recordButton.setButtonText("Stop");
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
@@ -171,7 +171,7 @@ private:
             eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
             eScope[idx]->setDisplayYZoom(1.0);
         }
-        //sgul// header->recordButton.setButtonText("Record");
+        //grape// header->recordButton.setButtonText("Record");
         
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

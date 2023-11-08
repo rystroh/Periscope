@@ -1,6 +1,6 @@
 #include "Header.h"
 #include "MainComponent.h"
-#include "..\SGUL\Source\SGUL.h"
+#include "..\GRAPE\Source\GRAPE.h"
 
 //==============================================================================
 Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)

@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <algorithm>
-#include "..\sgul\source\sgul.h"
+#include "..\grape\source\grape.h"
     //=====================================================================================
     class RecordingThumbnail : public juce::Component,
         private juce::ChangeListener,

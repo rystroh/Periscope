@@ -4,13 +4,13 @@
 #include <algorithm>
 #include "AudioRecorder.h"
 #include "RecordingThumbnail.h"
-#include "..\SGUL\Source\SGUL.h"
+#include "..\GRAPE\Source\GRAPE.h"
 
 //namespace juce
 //{
     //=====================================================================================
     
-    class  EScope : public sgul::Panel, public juce::ChangeBroadcaster
+    class  EScope : public grape::Panel, public juce::ChangeBroadcaster
     {
     public:
         EScope(const juce::String& id) : Panel(id)
