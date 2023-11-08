@@ -3,7 +3,7 @@ namespace juce
 {
 #include <vector>
 #include <algorithm>
-#define audio_source 1
+//#define modify_triggers 1
     //=====================================================================================
     class RecordingThumbnail : public Component,
         private ChangeListener,
@@ -66,7 +66,7 @@ namespace juce
         }
         void setThreshold(double threshold)
         {
-#if audio_source == 1
+#if modify_triggers == 1
             switch ((int)(threshold * 100))
             {
             case 0:

@@ -1,9 +1,14 @@
 #pragma once
-#include "20Hz_Bleep.h";
+//#include "20Hz_Bleep.h";
+//#include "RampPos48000.h"
+//#include "Ramp48000Skipped2.h"
+//#include "Ramp48000Skipped3.h"
+#include "Ramp120k.h""
 namespace juce
 {
 #define audio_source 1
-    //=====================================================================================
+//#define modify_triggers 1
+//=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
                               and writes the incoming audio data to a WAV file.          */
     class AudioRecorder : public AudioIODeviceCallback,
@@ -92,10 +97,15 @@ namespace juce
             divider = (double) eScopeBufferSize / (double) smpPerBlockExpected;
             remainer = (int)eScopeBufferSize % (int)smpPerBlockExpected;
             eScopeBuffer.setSize(1, (int)eScopeBufferSize);
+            eScopeBuffer.clear();
             writePosition = 0;
             wavaddr = 0;
-            wavidx = 0;
-            wavptr = &Bleep_20Hz[0];
+            wavidx = 0;    
+            //wavptr = &Bleep_20Hz[0];
+            //wavptr = &RampPos48000[0];
+            //wavptr = &Ramp48000Skipped2[0];
+            //wavptr = &Ramp48000Skipped3[0];
+            wavptr = &Ramp120k[0];
             thumbnailWritten = false;
         }
         //----------------------------------------------------------------------------------
@@ -179,7 +189,7 @@ namespace juce
                 auto* channelData = buffer.getWritePointer(0);
 
 #if audio_source == 1 //overwrite stream with test wav file
-                if (wavidx <= 48000) //only copy at the beginning of the stream (the size of the array) 
+                if (wavidx <= BleepSize) //only copy at the beginning of the stream (the size of the array) 
                 {
                     //AudioBuffer<float> buffer(const_cast<float**>(&wavptr), 1, numSamples);// one stream per buffer
                     //AudioBuffer<float> buffer(wavptr, 1, numSamples);// one stream per buffer
@@ -254,6 +264,7 @@ namespace juce
                         smpCount = triggAddress + halfMaxSmpCount;
                         //thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, maxSmpCount);
                         thumbnail.addBlock(0, eScopeBuffer, offsetInEScopeBuffer, maxSmpCount);
+                        eScopeBufferSize = 0; // reset flag for tests
                     }
                     else //tail data wrapped 
                     {
@@ -264,8 +275,28 @@ namespace juce
                         thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
                     }
                 }
-                else
-                { 
+                else //head data wrapped or not enough data recorded before trigger point
+                {
+                    int offsetInEScopeBuffer = 0;
+                    int smpCount;
+                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    {
+                        smpCount = triggAddress + halfMaxSmpCount;
+                        int paddingSmpNb = halfMaxSmpCount - triggAddress;
+                        int paddingPtrinBuffer = eScopeBufferSize - paddingSmpNb;
+                        //thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, maxSmpCount);
+                        thumbnail.addBlock(0, eScopeBuffer, paddingPtrinBuffer, paddingSmpNb);
+                        thumbnail.addBlock(paddingSmpNb, eScopeBuffer, offsetInEScopeBuffer, smpCount);
+                        eScopeBufferSize = 0; // reset flag for tests
+                    }
+                    else //tail data wrapped 
+                    {
+                        smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
+                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+
+                        smpCount = maxSmpCount - smpCount;
+                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+                    }
                 
                 }
                 //copy data aftert the Threshold
@@ -315,7 +346,7 @@ namespace juce
         //----------------------------------------------------------------------------------
         void setThreshold(double threshold)
         {
-#if audio_source == 1
+#if modify_triggers == 1
             switch ((int)(threshold*100))
             {
             case 0:
