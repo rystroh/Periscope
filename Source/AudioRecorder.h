@@ -3,7 +3,7 @@
 //#include "RampPos48000.h"
 //#include "Ramp48000Skipped2.h"
 //#include "Ramp48000Skipped3.h"
-#include "Ramp120k.h""
+#include "Ramp120k.h"
 namespace juce
 {
 #define audio_source 1
@@ -91,7 +91,8 @@ namespace juce
             sampleRate = smpRate;
             samplesPerBlockExpected = smpPerBlockExpected;
 
-            eScopeBufferSize = (int) (smpRate * 2.0); //2 seconds
+            eScopeBufferSize = maxSmpCount;// (int)(smpRate * 2.0); //2 seconds
+
             double divider;
             int    remainer;
             divider = (double) eScopeBufferSize / (double) smpPerBlockExpected;
@@ -120,6 +121,8 @@ namespace juce
                 DBG("Odd MacSmpCount");
             }
         }
+        //----------------------------------------------------------------------------------
+        juce::AudioBuffer<float>* getBufferPtr() {  return (&eScopeBuffer);  }
         //----------------------------------------------------------------------------------
         void setSampleRate(double smpRate) 
         {

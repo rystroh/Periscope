@@ -44,8 +44,11 @@ namespace juce
         float viewSize = 0.1;// viewing window size
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
         bool bTriggered = false;
+        juce::AudioBuffer<float>* eBuffer;
         //----------------------------------------------------------------------------------
         bool* getTriggeredPtr(void) { return &bTriggered; }
+        //----------------------------------------------------------------------------------
+        void setBufferedToImage(juce::AudioBuffer<float>* recBuffer) {  eBuffer = recBuffer; }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
@@ -60,10 +63,8 @@ namespace juce
             samplesPerBlockExpected = smpPerBlockExpected;
         }
         //----------------------------------------------------------------------------------
-        void setSampleRate(double smpRate)
-        {
-            sampleRate = smpRate;
-        }
+        void setSampleRate(double smpRate) { sampleRate = smpRate; }
+        //----------------------------------------------------------------------------------
         void setThreshold(double threshold)
         {
 #if modify_triggers == 1
@@ -91,7 +92,6 @@ namespace juce
             thresholdTrigger = threshold;
 #endif
         }
-
         //----------------------------------------------------------------------------------
         void setDisplayFullThumbnail(bool displayFull)
         {
@@ -107,10 +107,7 @@ namespace juce
                 repaint();
         }
         //----------------------------------------------------------------------------------
-        void setDisplayThumbnailMode(int displayMode)
-        {
-            displayThumbMode = displayMode;
-        }
+        void setDisplayThumbnailMode(int displayMode)  { displayThumbMode = displayMode; }
         //----------------------------------------------------------------------------------
         void setDisplayYZoom(double yZoom) // called by SliderValueChanged in MainComponent.h
         {
@@ -155,15 +152,9 @@ namespace juce
                 return(1);//should never happen
         }
         //------------------------------------------------------------------------------
-        std::vector<double> getTimeLineX()
-        {
-
-        }
+        std::vector<double> getTimeLineX()  {        }
         //------------------------------------------------------------------------------
-        std::vector<float>  getTimeLabels()
-        {
-
-        }
+        std::vector<float>  getTimeLabels() {        }
         //----------------------------------------------------------------------------------
         void paintGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
@@ -564,7 +555,7 @@ namespace juce
             g.setColour(digitPanelColour);
             g.fillRect(extZone);
             g.setColour(juce::Colours::black);
-            g.drawRect(extZone, 1.0);
+            g.drawRect(extZone, 1);
             //juce::Rectangle<int> wavZone = getWaveZone(thumbArea);
             wavZone = getWaveZone(thumbArea);
             g.setColour(wavBackgroundColour);
@@ -594,7 +585,7 @@ namespace juce
                     wavZone = getWaveZone(thumbArea);
                     paintGrid(g, wavZone);
                     g.setColour(wavFormColour);
-                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     xzoomticknb = createZoomVector(zoomVector);
                     drawXLabels(g, thumbArea);
                     drawYLabels(g, thumbArea);
@@ -603,7 +594,7 @@ namespace juce
                 case 1: // recording mode (scrolling data)                
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     g.setColour(wavFormColour);
-                    thumbnail.drawChannels(g, wavZone.reduced(2), startTime, endofrecording, ThumbYZoom);
+                    thumbnail.drawChannels(g, wavZone.reduced(2), startTime, endofrecording, (float)ThumbYZoom);
                     break;
 
                 case 2: //oscilloscope dancing view                    
@@ -613,7 +604,7 @@ namespace juce
                         wavZone = getWaveZone(thumbArea);
                         paintGrid(g, wavZone);
                         g.setColour(wavFormColour);
-                        thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
+                        thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, (float)ThumbYZoom);
                         bTriggered = false;
                     }
                     break;
@@ -627,7 +618,7 @@ namespace juce
                     wavZone = getWaveZone(thumbArea);
                     paintGrid(g, wavZone);
                     g.setColour(wavFormColour);
-                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabels(g, thumbArea);
                     drawYLabels(g, thumbArea);
                     break;
@@ -646,7 +637,7 @@ namespace juce
                     paintGridLin(g, wavZone);
                     g.setColour(wavFormColour);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
-                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), ThumbYZoom);
+                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     //drawYLabels(g, thumbArea);                                        
                     break;
@@ -677,7 +668,7 @@ namespace juce
             xzoomticknb = createZoomVector(zoomVector);
         }
         //----------------------------------------------------------------------------------
-        int  createZoomVector(std::vector<double>& Divider)
+        int createZoomVector(std::vector<double>& Divider)
         {
             //auto vrange = visibleRange.getLength();
             auto totlen = thumbnail.getTotalLength();
@@ -729,7 +720,7 @@ namespace juce
                 Divider.push_back(Ratio); //if Ratio is not already there, add it 
             std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
 
-            return (Divider.size());
+            return ((int)Divider.size());
         }
         //----------------------------------------------------------------------------------
         void mouseDown(const MouseEvent& event)

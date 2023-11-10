@@ -53,7 +53,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(oscWinSizeSlider);
     oscWinSizeSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
     oscWinSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
-    oscWinSizeSlider.setRange(0.05, 1.00, 0.05);
+    oscWinSizeSlider.setRange(0.05, 2.00, 0.05);
     oscWinSizeSlider.setTitle("Buff Size");
     
     oscWinSizeSlider.onValueChange = [this]()

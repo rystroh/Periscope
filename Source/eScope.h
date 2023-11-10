@@ -12,19 +12,10 @@ namespace juce
     class  EScope : public Component, public juce::ChangeBroadcaster
     {
     public:
-        EScope()
-        {
-
-            addAndMakeVisible(&recThumbnail,0);
-
-        }
-        ~EScope()
-        {
-
-        }
+        EScope() { addAndMakeVisible(&recThumbnail,0); }
+        ~EScope(){ }
         juce::RecordingThumbnail recThumbnail;
         juce::AudioRecorder recorder{ recThumbnail.getAudioThumbnail() };
-
 
         void EScope::paint(juce::Graphics& g) override
         {
@@ -92,8 +83,10 @@ namespace juce
 
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
-            recorder.setViewSize(dispTime);
+            recorder.setViewSize(dispTime);            
             recThumbnail.setViewSize(dispTime);
+            juce::AudioBuffer<float>* recBuffer = recorder.getBufferPtr();
+            recThumbnail.setBufferedToImage(recBuffer);
         }
         void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
         {
