@@ -65,6 +65,7 @@ private:
 
     std::unique_ptr<Header> header;
     std::unique_ptr<EScope> eScope[eScopeChanNb];
+    std::unique_ptr<Rack> display_rack; // this is a horizontal rack for placing a vertical panel switch bar
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
                                         // in a vertical rack inside the parent vertical rack
                                         // to offer a global scrollbar for all channels at once

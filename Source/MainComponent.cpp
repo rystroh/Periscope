@@ -11,14 +11,18 @@ usingCustomDeviceManager(false)
     juce::LookAndFeel::setDefaultLookAndFeel(laf.get());
 
     // Instantiate Parameter Container & Mapping Manager and link Mapping Manager to controls
-    pc = std::make_unique<grape::ParameterContainer>("TestTree");
+    pc = std::make_unique<grape::ParameterContainer>("eScope");
     mm = std::make_unique<grape::MappingManager>(pc.get());
     grape::Control::setMappingManager(mm.get());
     grape::Panel::setMappingManager(mm.get());
 
     // Instantiate top level rack elements   
     // - Create header instance
-    header = std::make_unique<Header>(); // must be done after having instantiated eScope panels
+    header = std::make_unique<Header>();
+    // - Create horizontal display rack instance
+    display_rack = std::make_unique<grape::Rack>("Display", "", false);
+
+    // Instantiate display rack elements   
     // - Create channel rack instance
     channel_rack = std::make_unique<grape::Rack>("Channels", true);
 
@@ -33,10 +37,14 @@ usingCustomDeviceManager(false)
     }
     channel_rack->computeSizeFromChildren(true, true);
 
+    // Populate horizontal display rack
+    display_rack->addPanelSwitchBar(channel_rack.get());
+    display_rack->addPanel(channel_rack.get(), VSCROLLABLE + HSCROLLABLE);
+    display_rack->computeSizeFromChildren(true, true);
+
     // Populate main rack
     addPanel(header.get(), 0);
-    addPanelSwitchBar(channel_rack.get());
-    addPanel(channel_rack.get(), VSCROLLABLE + HSCROLLABLE);
+    addPanel(display_rack.get(), 0);
     
 
     juce::XmlElement xxw("DEVICESETUP");
