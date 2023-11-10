@@ -29,13 +29,13 @@ usingCustomDeviceManager(false)
         eScope[idx]->setChannelID(idx);
         eScope[idx]->recThumbnail.addChangeListener(this);
         eScope[idx]->setDisplayThumbnailMode(recmode);
-        channel_rack->addPanel(eScope[idx].get(), RESIZER + DISPLAY_NAME + COLLAPSIBLE + SWITCHABLE);
+        channel_rack->addPanel(eScope[idx].get(), RESIZER + SWITCHABLE);
     }
     channel_rack->computeSizeFromChildren(true, true);
 
     // Populate main rack
     addPanel(header.get(), 0);
-//    addPanelSwitchBar(channel_rack.get());
+    addPanelSwitchBar(channel_rack.get());
     addPanel(channel_rack.get(), VSCROLLABLE + HSCROLLABLE);
     
 
