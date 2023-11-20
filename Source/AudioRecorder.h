@@ -84,6 +84,7 @@ namespace juce
         void audioDeviceAboutToStart(AudioIODevice* device) override
         {
             sampleRate = device->getCurrentSampleRate();
+            samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
         }
         //----------------------------------------------------------------------------------
         void prepareToPlay(int smpPerBlockExpected, double smpRate)
@@ -113,8 +114,12 @@ namespace juce
         void setViewSize(float dispTime)
         {
             thumbnailSize = dispTime * sampleRate;
-            maxSmpCount = thumbnailSize;
+            double flBlockNb = (double)thumbnailSize / (double)samplesPerBlockExpected + 0.5;
+            int smpBlockNb = (int)flBlockNb;
+            maxSmpCount = smpBlockNb * samplesPerBlockExpected; //make it multiple of block Size
             halfMaxSmpCount = (int)maxSmpCount / 2;
+            thumbnailSize = maxSmpCount;
+            
             float remain = (int)maxSmpCount % 2;
             if (remain > 0)
             {

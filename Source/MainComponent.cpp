@@ -119,9 +119,11 @@ MainComponent::MainComponent()
         setAudioChannels (2, 2);
     }*/
     auto& devManager = MainComponent::getAudioDeviceManager();
+    auto& result = devManager.getAudioDeviceSetup();
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         devManager.addAudioCallback(eScope[idx].getAudioIODeviceCallBack());
+        //eScope
     }
 #if option == 1
     setSize(1500, 400);
@@ -129,7 +131,7 @@ MainComponent::MainComponent()
 #if option == 2
     setSize(1800, 1000);
 #endif
-    
+
     formatManager.registerBasicFormats();
 }
 
