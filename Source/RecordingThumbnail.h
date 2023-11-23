@@ -43,12 +43,18 @@ namespace juce
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
+        
+        //-------------------------------------------------------------------
+        //following elements are passed between RecTumbnail and AudioRecorder
         bool bTriggered = false;
         juce::AudioBuffer<float>* eBuffer;
+
+
         //----------------------------------------------------------------------------------
         bool* getTriggeredPtr(void) { return &bTriggered; }
         //----------------------------------------------------------------------------------
         void setBufferedToImage(juce::AudioBuffer<float>* recBuffer) {  eBuffer = recBuffer; }
+        //called by eScope setViewSize
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {

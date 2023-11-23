@@ -80,14 +80,17 @@ namespace juce
             bool* ptr = recThumbnail.getTriggeredPtr();
             recorder.setTriggerPtr(ptr);
         }
-
+        //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
             recorder.setViewSize(dispTime);            
             recThumbnail.setViewSize(dispTime);
+            // update pointers to the buffer and pointers used for display outside of Thumbnail
             juce::AudioBuffer<float>* recBuffer = recorder.getBufferPtr();
             recThumbnail.setBufferedToImage(recBuffer);
+
         }
+        //----------------------------------------------------------------------------------
         void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
         {
             sendChangeMessage();

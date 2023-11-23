@@ -162,9 +162,35 @@ namespace juce
                 return(false);
         }
         //----------------------------------------------------------------------------------
-        void audioDeviceStopped() override
+        void audioDeviceStopped() override  { sampleRate = 0; }
+        //----------------------------------------------------------------------------------
+        bool checkForLevelTrigger(int nbSamples, int* triggerIndex, AudioBuffer<float> *buffer)
         {
-            sampleRate = 0;
+            // check trigger condition in block of samples
+            bool triggerConditionFound = false;
+            double min = 1, max = -1;
+            double smpValue;
+            bool bTriggered;
+            
+                for (int idx = 0; idx < nbSamples; idx++)
+                {
+                    smpValue = buffer->getSample(0, idx);
+                    if (smpValue < min)
+                        min = smpValue;
+                    if (smpValue > max)
+                        max = smpValue;
+                    if (smpValue > thresholdTrigger)
+                    {
+                        //*thumbnailTriggeredPtr = true;
+                        //triggAddress = writePosition + idx;
+                        //triggAddress %= eScopeBufferSize; //wrap if needed
+                        //currentSmpCount = numSamples - idx;//nb of samples recorded after trigger condition
+                        *triggerIndex = idx;
+                        idx = nbSamples; //force the exit of "for" loop
+                        triggerConditionFound = true;                        
+                    }
+                }
+            return (triggerConditionFound);
         }
         //----------------------------------------------------------------------------------
         void audioDeviceIOCallbackWithContext(const float* const* inputChannelData,
@@ -197,18 +223,7 @@ namespace juce
                 auto* channelData = buffer.getWritePointer(0);
 
 #if audio_source == 1 //overwrite stream with test wav file
-                if (wavidx <= BleepSize) //only copy at the beginning of the stream (the size of the array) 
-                {
-                    //AudioBuffer<float> buffer(const_cast<float**>(&wavptr), 1, numSamples);// one stream per buffer
-                    //AudioBuffer<float> buffer(wavptr, 1, numSamples);// one stream per buffer
-                    //auto* channelData = wavptr;
-                    for (int sample = 0; sample < buffer.getNumSamples(); sample++)
-                    {
-                        channelData[sample] = *wavptr;
-                        wavptr++;
-                        wavidx++;
-                    }
-                }
+                overwriteStreamWithTestWav(channelData, buffer.getNumSamples());
 #endif
                 // write in circulare buffer for later display
                 if (writePosition + numSamples > eScopeBufferSize)//need to wrap condition
@@ -226,27 +241,16 @@ namespace juce
              // check if any sample in this new block is above threshold -> triggering display
                 if (currentSmpCount == 0)
                 {
-                    // check trigger condition in block of samples
-                    double min = 1, max = -1;
-                    double smpValue;
-                    bool bTriggered;
+                    int triggerIndex;
                     if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
                     {
-                        for (int idx = 0; idx < numSamples; idx++)
+                        bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &buffer);
+                        *thumbnailTriggeredPtr = bTriggered;
+                        if (bTriggered)
                         {
-                            smpValue = buffer.getSample(0, idx);
-                            if (smpValue < min)
-                                min = smpValue;
-                            if (smpValue > max)
-                                max = smpValue;
-                            if (smpValue > thresholdTrigger)
-                            {
-                                *thumbnailTriggeredPtr = true;
-                                triggAddress = writePosition + idx;
-                                triggAddress %= eScopeBufferSize; //wrap if needed
-                                currentSmpCount = numSamples-idx;//nb of samples recorded after trigger condition
-                                idx = numSamples; //exit for 
-                            }
+                            triggAddress = writePosition + triggerIndex;
+                            triggAddress %= eScopeBufferSize; //wrap if needed
+                            currentSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
                         }
                     }
                 }
@@ -257,7 +261,7 @@ namespace juce
             writePosition += numSamples;
             writePosition %= eScopeBufferSize;
 
-            //now if we have enough sample, pass them to the Thumbnail for display
+            //now if we have enough samples, pass them to the Thumbnail for display
             if ((currentSmpCount >= halfMaxSmpCount) && (thumbnailWritten == false))
             {
                 thumbnailWritten = true;
@@ -380,7 +384,29 @@ namespace juce
 #endif
         }
         //----------------------------------------------------------------------------------
-        void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}        
+        void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}
+        //----------------------------------------------------------------------------------
+        //----------------------------------------------------------------------------------
+#if audio_source == 1 //for debug and tests only
+        void overwriteStreamWithTestWav(float* chanDataptr, int numSmp)
+        {
+            if (wavidx <= BleepSize) //only copy at the beginning of the stream (the size of the array) 
+            {
+                //AudioBuffer<float> buffer(const_cast<float**>(&wavptr), 1, numSamples);// one stream per buffer
+                //AudioBuffer<float> buffer(wavptr, 1, numSamples);// one stream per buffer
+                //auto* channelData = wavptr;
+                //for (int sample = 0; sample < buffer.getNumSamples(); sample++)
+                for (int sample = 0; sample < numSmp; sample++)
+                {
+                    //channelData[sample] = *wavptr;
+                    *chanDataptr = *wavptr;
+                    chanDataptr++;
+                    wavptr++;
+                    wavidx++; //why ?
+                }
+            }
+        }
+#endif
         //----------------------------------------------------------------------------------
     private:
         AudioThumbnail& thumbnail;
@@ -399,9 +425,10 @@ namespace juce
         int64 nextSampleNum = 0;
         CriticalSection writerLock;
         std::atomic<AudioFormatWriter::ThreadedWriter*> activeWriter{ nullptr };
+
         int chanID = 0; // default channel selected in multi channel audio interface is first one
         double thresholdTrigger = 1.0;
-        bool* thumbnailTriggeredPtr;
+        bool* thumbnailTriggeredPtr; // <- declare ptr to flag accessible by display part
         juce::AudioBuffer<float>eScopeBuffer;
         int  eScopeBufferSize;
         int writePosition = 0;
@@ -411,8 +438,8 @@ namespace juce
         int maxSmpCount = 0;
         int halfMaxSmpCount = 0;
 
-        uint16 wavaddr = 0;
-        uint16 wavidx = 0;
+        unsigned long wavaddr = 0;
+        unsigned long wavidx = 0;
         const float *wavptr = nullptr;
         uint16 wavSize = 48000;
         bool thumbnailWritten = false;
