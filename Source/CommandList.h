@@ -1,0 +1,12 @@
+#pragma once
+
+enum CommandList {
+	RECORD = 1,
+	OPEN_FILE,
+	DISPLAY_MODE,
+	WIN_SIZE,
+	LOAD_SETTINGS,
+	SAVE_SETTINGS,
+	GO_LIVE,
+	THRESHOLD_LEVEL
+};

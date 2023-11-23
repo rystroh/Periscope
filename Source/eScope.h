@@ -4,18 +4,28 @@
 #include <algorithm>
 #include "AudioRecorder.h"
 #include "RecordingThumbnail.h"
+#include "..\GRAPE\Source\GRAPE.h"
 
-namespace juce
-{
+//namespace juce
+//{
     //=====================================================================================
     
-    class  EScope : public Component, public juce::ChangeBroadcaster
+    class  EScope : public grape::Panel, public juce::ChangeBroadcaster
     {
     public:
-        EScope() { addAndMakeVisible(&recThumbnail,0); }
-        ~EScope(){ }
-        juce::RecordingThumbnail recThumbnail;
+        EScope(const juce::String& id) : Panel(id)
+        {
+            addAndMakeVisible(&recThumbnail,0);
+            setWidth(300, 600, 10000);
+            setHeight(50, 100, 500);
+        }
+        ~EScope()
+        {
+
+        }
+        RecordingThumbnail recThumbnail;
         juce::AudioRecorder recorder{ recThumbnail.getAudioThumbnail() };
+
 
         void EScope::paint(juce::Graphics& g) override
         {
@@ -28,11 +38,11 @@ namespace juce
             recThumbnail.setBounds(area); //this triggers a recThumbnail.resized();
         }
   
-        AudioIODeviceCallback* getAudioIODeviceCallBack() { return &recorder; }
+        juce::AudioIODeviceCallback* getAudioIODeviceCallBack() { return &recorder; }
 
-        void startRecording(const File& file) { recorder.startRecording(file); }
+        void startRecording(const juce::File& file) { recorder.startRecording(file); }
         bool isRecording() { return recorder.isRecording(); }
-        void audioDeviceAboutToStart(AudioIODevice* device)//needs refactorisation
+        void audioDeviceAboutToStart(juce::AudioIODevice* device)//needs refactorisation
         {
             auto smpRate = device->getCurrentSampleRate();
             //rec.audioDeviceAboutToStart(device);
@@ -47,7 +57,7 @@ namespace juce
             recThumbnail.setDisplayThumbnailMode(displayMode);
             recThumbnail.repaint();
         }
-        bool setSource(InputSource* newSource) { return(recThumbnail.setSource(newSource)); }
+        bool setSource(juce::InputSource* newSource) { return(recThumbnail.setSource(newSource)); }
 
         void prepareToPlay(int samplesPerBlockExpected, double sampleRate)
         {
@@ -90,17 +100,16 @@ namespace juce
             recThumbnail.setBufferedToImage(recBuffer);
 
         }
-        //----------------------------------------------------------------------------------
-        void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) //override
+        void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) //override
         {
             sendChangeMessage();
             recThumbnail.mouseWheelMove(event, wheel);
         }
-        void mouseDown(const MouseEvent& event)
+        void mouseDown(const juce::MouseEvent& event)
         {
             recThumbnail.mouseDown(event);
         }
-        void setVisibleRange(Range<double> newRange)
+        void setVisibleRange(juce::Range<double> newRange)
         {
             recThumbnail.setRange(newRange);
         }
@@ -118,4 +127,4 @@ namespace juce
 
     };
     //==============================================================================*/
-};
+//};

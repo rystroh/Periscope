@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include "eScope.h"
+#include "Header.h"
 
 #define option 1
 #if option == 1
@@ -13,12 +14,14 @@ const int eScopeChanNb = 1;
 #if option == 2
 const int eScopeChanNb = 8;
 #endif // option = 1
+
+class Rack;
 //==============================================================================
 /*
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::AudioAppComponent, public juce::ChangeListener
+class MainComponent  : public grape::Rack, public juce::AudioSource, public juce::ChangeListener
 {
 public:
     //==============================================================================
@@ -31,97 +34,87 @@ public:
     void releaseResources() override;
 
     //==============================================================================
-    void paint (juce::Graphics& g) override;
-    void resized() override;
+//    void paint (juce::Graphics& g) override;
+//    void resized() override;
+
     void changeListenerCallback(juce::ChangeBroadcaster* source);
 
-private:
-    //==============================================================================
-    // Your private member variables go here...
-    juce::TextButton recordButton{ "Record" };
-    juce::TextButton openButton{ "Open File" };
-    juce::TextButton liveButton{ "Live" };
-    juce::ComboBox menu;
-    juce::Slider oscWinSizeSlider;
-    juce::Slider thresholdSlider;
-    juce::Label dispBuffSizeLabel;
-    juce::Label thresholdLabel;
+    // Command management stuff
+    bool executeCommand(int id, grape::Control* source) override;
+    
+    /** A subclass should call this from their constructor, to set up the audio. */
+    void setAudioChannels(int numInputChannels, int numOutputChannels, const juce::XmlElement* const storedSettings = nullptr);
 
-    std::unique_ptr<juce::FileChooser> chooser;
+
+
+    /** Shuts down the audio device and clears the audio source.
+
+        This method should be called in the destructor of the derived class
+        otherwise an assertion will be triggered.
+    */
+    void shutdownAudio();
+
+
+    juce::AudioDeviceManager& deviceManager;
+
+private:
+    friend Header;
+
+    // Audio stuff
+    juce::AudioDeviceManager defaultDeviceManager;
+    juce::AudioSourcePlayer audioSourcePlayer;
+    bool usingCustomDeviceManager;
 
     juce::AudioFormatManager formatManager;                    // [3]    
-    
     juce::File lastRecording[eScopeChanNb];
-    juce::EScope eScope[eScopeChanNb];
-    int recmode; // can be 1= track view or 2= oscilloscope
+
+    // GUI stuff
+    std::unique_ptr<juce::FileChooser> chooser;
+
+    std::unique_ptr<Header> header;
+    std::unique_ptr<EScope> eScope[eScopeChanNb];
+    std::unique_ptr<Rack> display_rack; // this is a horizontal rack for placing a vertical panel switch bar
+    std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
+                                        // in a vertical rack inside the parent vertical rack
+                                        // to offer a global scrollbar for all channels at once
+
+    std::unique_ptr<grape::DREAMLookAndFeel> laf;
+
+    // Parameter management stuff
+    std::unique_ptr<grape::ParameterContainer> pc;
+    std::unique_ptr<grape::MappingManager> mm;
+
+    int recmode = 2; // can be 1= track view or 2= oscilloscope
     double oscilloWinSize = 0.05;
+
  //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
         return deviceManager; 
     }
  //-------------------------------------------------------------------------------------
-    void liveButtonClicked()
+    void configureStreaming(juce::File file)
     {
-        auto& devManager = MainComponent::getAudioDeviceManager();
-        auto device = devManager.getCurrentAudioDevice();
-        auto smpRate = device->getCurrentSampleRate();
-        int samplesPerBlockExpected = 512;
-        samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
-        prepareToPlay(samplesPerBlockExpected, smpRate);
-        oscilloWinSize = oscWinSizeSlider.getValue();
+        juce::FileInputStream inputStream(file);
 
-        recmode = 4; // force to oscilloscope mode
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        int idx = 0;
+
+        while (!inputStream.isExhausted()) // [3]
         {
-            eScope[idx].setSampleRate(smpRate);
-            eScope[idx].setViewSize(oscilloWinSize);
-            lastRecording[idx] = juce::File();
-            eScope[idx].startRecording(lastRecording[idx]);
-            eScope[idx].setDisplayThumbnailMode(recmode);
-        }
+            auto line = inputStream.readNextLine();
+            auto* reader = formatManager.createReaderFor(line);
 
-    }
-//-------------------------------------------------------------------------------------
-    void openButtonClicked()
-    {/*
-        chooser = std::make_unique<juce::FileChooser>("Select a Wave file...",
-                                                       juce::File{},"*.wav");*/
-        chooser = std::make_unique<juce::FileChooser>("Select a Wave List...",
-            juce::File{}, "*.txt");
-        auto chooserFlags = juce::FileBrowserComponent::openMode
-                          | juce::FileBrowserComponent::canSelectFiles;
-
-        chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+            if (reader != nullptr)
             {
-                auto file = fc.getResult();
-
-                if (file != juce::File{})
-                {
-                    //std::ifstream wavlist(file);
-                    //fopen(file, "r");
-                    juce::FileInputStream inputStream(file);
-
-                    int idx = 0;
-
-                    while (!inputStream.isExhausted()) // [3]
-                    {
-                        auto line = inputStream.readNextLine();
-                        auto* reader = formatManager.createReaderFor(line);
-
-                        if (reader != nullptr)
-                        {
-                            auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                            eScope[idx].setSource(new juce::FileInputSource(line));
-                            eScope[idx].setSampleRate(reader->sampleRate);
-                            eScope[idx].setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                            eScope[idx].setDisplayYZoom(1.0);
-                            eScope[idx].resized();
-                            idx++;
-                        }
-                    }
-                }
-            });
+                auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
+                eScope[idx]->setSource(new juce::FileInputSource(line));
+                eScope[idx]->setSampleRate(reader->sampleRate);
+                eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                eScope[idx]->setDisplayYZoom(1.0);
+                eScope[idx]->resized();
+                idx++;
+            }
+        }
     }
 //-------------------------------------------------------------------------------------
     void startRecording()
@@ -147,24 +140,24 @@ private:
         auto device = devManager.getCurrentAudioDevice();
         auto smpRate = device->getCurrentSampleRate();
         
-        recmode = menu.getSelectedItemIndex();        
-        recmode = 1; //trackView
+        //recmode = menu.getSelectedItemIndex();      //removed during merge operation 23-11-2023  
+        //recmode = 1; //trackView //removed during merge operation 23-11-2023
         //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
-            eScope[idx].setSampleRate(smpRate);
+            eScope[idx]->setSampleRate(smpRate);
             lastRecording[idx] = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-            eScope[idx].startRecording(lastRecording[idx]);
-            eScope[idx].setDisplayThumbnailMode(recmode);
+            eScope[idx]->startRecording(lastRecording[idx]);
+            eScope[idx]->setDisplayThumbnailMode(recmode);
         }
-        recordButton.setButtonText("Stop");
+        //grape// header->recordButton.setButtonText("Stop");
     }
 //-------------------------------------------------------------------------------------
     void stopRecording()
     {
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
-            eScope[idx].recorder.stop();
+            eScope[idx]->recorder.stop();
         }
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
@@ -187,10 +180,10 @@ private:
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
             lastRecording[idx] = juce::File();
-            eScope[idx].setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-            eScope[idx].setDisplayYZoom(1.0);
+            eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+            eScope[idx]->setDisplayYZoom(1.0);
         }
-        recordButton.setButtonText("Record");
+        //grape// header->recordButton.setButtonText("Record");
         
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

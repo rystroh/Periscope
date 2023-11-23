@@ -1,12 +1,11 @@
 #pragma once
-namespace juce
-{
+
 #include <vector>
 #include <algorithm>
-//#define modify_triggers 1
+#include "..\grape\source\grape.h"
     //=====================================================================================
-    class RecordingThumbnail : public Component,
-        private ChangeListener,
+    class RecordingThumbnail : public juce::Component,
+        private juce::ChangeListener,
         private juce::ScrollBar::Listener,
         public juce::ChangeBroadcaster
     {
@@ -27,7 +26,7 @@ namespace juce
             thumbnail.removeChangeListener(this);
         }
 
-        AudioThumbnail& getAudioThumbnail() { return thumbnail; }
+        juce::AudioThumbnail& getAudioThumbnail() { return thumbnail; }
 
         juce::Colour wavFormColour = juce::Colour(0xff43d996);
         juce::Colour wavBackgroundColour = juce::Colours::black;
@@ -61,7 +60,7 @@ namespace juce
             viewSize = dispTime;
         }
         //----------------------------------------------------------------------------------
-        bool setSource(InputSource* newSource) { return(thumbnail.setSource(newSource)); }
+        bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
         //----------------------------------------------------------------------------------
         void prepareToPlay(int smpPerBlockExpected, double smpRate)
         {
@@ -105,7 +104,7 @@ namespace juce
             if (displayFull)
             {
                 auto thumbnailsize = thumbnail.getTotalLength();
-                Range<double> newRange(0.0, thumbnailsize);
+                juce::Range<double> newRange(0.0, thumbnailsize);
                 scrollbar.setRangeLimits(newRange);
                 setRange(newRange);
             }
@@ -115,7 +114,7 @@ namespace juce
         //----------------------------------------------------------------------------------
         void setDisplayThumbnailMode(int displayMode)  { displayThumbMode = displayMode; }
         //----------------------------------------------------------------------------------
-        void setDisplayYZoom(double yZoom) // called by SliderValueChanged in MainComponent.h
+        void setDisplayYZoom(double yZoom) // called by SliderValueChanged in Mainjuce::Component.h
         {
             ThumbYZoom = yZoom;
             if (yZoom == 1.0)
@@ -125,7 +124,7 @@ namespace juce
             repaint();
         }
         //----------------------------------------------------------------------------------
-        void setRange(Range<double> newRange)
+        void setRange(juce::Range<double> newRange)
         {
             visibleRange = newRange;
             scrollbar.setCurrentRange(visibleRange);
@@ -299,11 +298,11 @@ namespace juce
             int newX1;
             for (auto x : xs)
             {
-                String str;
+                juce::String str;
                 newX1 = timeToX(x); // get
                 str << x;
                 str.toDecimalStringWithSignificantFigures(x, 2);
-                Rectangle<int> r;
+                juce::Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
                 r.setSize(textWidth, fontHeight);
                 if (newX1 + (double)textWidth / 2.0 > right)
@@ -332,11 +331,11 @@ namespace juce
             int newX1;
             for (auto x : xs)
             {
-                String str;
+                juce::String str;
                 newX1 = timeToX(x); // get
                 str << x- timeOffset;
                 str.toDecimalStringWithSignificantFigures(x, 2);
-                Rectangle<int> r;
+                juce::Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
                 r.setSize(textWidth, fontHeight);
                 if (newX1 + (double)textWidth / 2.0 > right)
@@ -364,8 +363,8 @@ namespace juce
             auto maxright = textArea.getRight();
             auto right = left + textArea.getWidth();
 
-            Rectangle<int> rTxt;
-            String strTxt;
+            juce::Rectangle<int> rTxt;
+            juce::String strTxt;
             strTxt << "-144 dB";
             auto txtWidth = g.getCurrentFont().getStringWidth(strTxt);
             rTxt.setSize(txtWidth, fontHeight);
@@ -381,12 +380,12 @@ namespace juce
 
             for (int idx = 0; idx < NiceGainY.size(); idx++)
             {
-                String str;
+                juce::String str;
                 newY1 = newY2 - NiceGainY[idx] - fontHeight / 2.0;
                 newGain = NiceGainVect[idx]; // get
                 str << newGain << " dB";
                 str.toDecimalStringWithSignificantFigures(newGain, 2);
-                Rectangle<int> r;
+                juce::Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
                 int left, top, right, butt;
 
@@ -553,7 +552,7 @@ namespace juce
             return bounds;
         }
         //----------------------------------------------------------------------------------
-        void paint(Graphics& g) override
+        void paint(juce::Graphics& g) override
         {
             //g.fillAll(Colours::dimgrey);
             auto thumbArea = getLocalBounds();
@@ -573,8 +572,8 @@ namespace juce
                 double  endTime = 1.0f;
                 double  endofrecording = 1.0f;
                 double currentlength = thumbnail.getTotalLength();
-                endofrecording = jmax(10.0, currentlength);
-                Range<double> newRange;
+                endofrecording = juce::jmax(10.0, currentlength);
+                juce::Range<double> newRange;
                 double thumbnailsize;
                 int xzoomticknb;
 
@@ -729,13 +728,13 @@ namespace juce
             return ((int)Divider.size());
         }
         //----------------------------------------------------------------------------------
-        void mouseDown(const MouseEvent& event)
+        void mouseDown(const juce::MouseEvent& event)
         {
             auto Posi3 = getMouseXYRelative(); // Read Mouse click position
             //DBG("Mouse.x = " << Posi3.getX());            
         }
         //----------------------------------------------------------------------------------
-        void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override
+        void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override
         {
             auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             if (thumbnail.getTotalLength() > 0.0)
@@ -768,7 +767,7 @@ namespace juce
                 {
                     auto newStart = visibleRange.getStart() -
                         wheel.deltaY * (visibleRange.getLength()) / 10.0;
-                    newStart = jlimit(0.0, jmax(0.0, thumbnail.getTotalLength() -
+                    newStart = juce::jlimit(0.0, juce::jmax(0.0, thumbnail.getTotalLength() -
                         (visibleRange.getLength())), newStart);
                     setRange({ newStart, newStart + visibleRange.getLength() });
                     repaint();
@@ -864,9 +863,9 @@ namespace juce
         double getXZoom() { return(ThumbXZoom); }
         //----------------------------------------------------------------------------------
     private:
-        AudioFormatManager formatManager;
-        AudioThumbnailCache thumbnailCache{ 10 };
-        AudioThumbnail thumbnail{ 1, formatManager, thumbnailCache };
+        juce::AudioFormatManager formatManager;
+        juce::AudioThumbnailCache thumbnailCache{ 10 };
+        juce::AudioThumbnail thumbnail{ 1, formatManager, thumbnailCache };
 
         double sampleRate = 0.0;
         int samplesPerBlockExpected = 0;
@@ -926,4 +925,4 @@ namespace juce
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RecordingThumbnail)
     };
     //=====================================================================================
-};
+
