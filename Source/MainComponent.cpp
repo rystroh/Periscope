@@ -96,6 +96,8 @@ usingCustomDeviceManager(false)
     addCommand(WIN_SIZE, "Window size");
     addCommand(LOAD_SETTINGS, "Load settings");
     addCommand(SAVE_SETTINGS, "Save settings");
+    addCommand(GO_LIVE,"Go Live");
+    addCommand(THRESHOLD_LEVEL,"Threshold Level");
 
     // setSize(1800, 1000);
 #if option == 1
