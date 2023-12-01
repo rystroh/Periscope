@@ -390,20 +390,14 @@ namespace juce
 #if audio_source == 1 //for debug and tests only
         void overwriteStreamWithTestWav(float* chanDataptr, int numSmp)
         {
-            if (wavidx <= BleepSize) //only copy at the beginning of the stream (the size of the array) 
+            int sample = 0;
+            while((wavidx <= BleepSize) && (sample < numSmp)) //only copy at the beginning of the stream (the size of the array) 
             {
-                //AudioBuffer<float> buffer(const_cast<float**>(&wavptr), 1, numSamples);// one stream per buffer
-                //AudioBuffer<float> buffer(wavptr, 1, numSamples);// one stream per buffer
-                //auto* channelData = wavptr;
-                //for (int sample = 0; sample < buffer.getNumSamples(); sample++)
-                for (int sample = 0; sample < numSmp; sample++)
-                {
-                    //channelData[sample] = *wavptr;
                     *chanDataptr = *wavptr;
                     chanDataptr++;
                     wavptr++;
-                    wavidx++; //why ?
-                }
+                    sample++;
+                    wavidx++; //to check that total count doesn't exceed wav size 
             }
         }
 #endif
