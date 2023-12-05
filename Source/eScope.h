@@ -98,8 +98,12 @@
             // update pointers to the buffer and pointers used for display outside of Thumbnail
             juce::AudioBuffer<float>* recBuffer = recorder.getBufferPtr();
             recThumbnail.setBufferedToImage(recBuffer);
-
+            unsigned long* StartAddr = recorder.getStartAddrPtr();
+            recThumbnail.setBufferStartAddress(StartAddr);
+            unsigned long* TriggAddr = recorder.getTriggAddrPtr();
+            recThumbnail.setBufferTriggAddress(TriggAddr);
         }
+        //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) //override
         {
             sendChangeMessage();

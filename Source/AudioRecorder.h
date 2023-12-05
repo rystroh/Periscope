@@ -129,15 +129,13 @@ namespace juce
         //----------------------------------------------------------------------------------
         juce::AudioBuffer<float>* getBufferPtr() {  return (&eScopeBuffer);  }
         //----------------------------------------------------------------------------------
-        void setSampleRate(double smpRate) 
-        {
-            sampleRate = smpRate;
-        }
+        unsigned long* getStartAddrPtr() { return (&wfStartAddress); }
         //----------------------------------------------------------------------------------
-        double getSampleRate(void)
-        {
-            return(sampleRate);
-        }
+        unsigned long* getTriggAddrPtr() { return (&wfTriggAddress); }
+        //----------------------------------------------------------------------------------
+        void setSampleRate(double smpRate) { sampleRate = smpRate; }
+        //----------------------------------------------------------------------------------
+        double getSampleRate(void) { return(sampleRate); }
         //----------------------------------------------------------------------------------
         bool setSampleDepth(int depth)
         {
@@ -164,16 +162,15 @@ namespace juce
         //----------------------------------------------------------------------------------
         void audioDeviceStopped() override  { sampleRate = 0; }
         //----------------------------------------------------------------------------------
-        bool checkForLevelTrigger(int nbSamples, int* triggerIndex, AudioBuffer<float> *buffer)
+        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, AudioBuffer<float> *buffer)
         {
             // check trigger condition in block of samples
             bool triggerConditionFound = false;
             double min = 1, max = -1;
             double smpValue;
-            bool bTriggered;
-            
-                for (int idx = 0; idx < nbSamples; idx++)
-                {
+            int idx = 0;
+            while((idx < nbSamples) && !triggerConditionFound)
+            {
                     smpValue = buffer->getSample(0, idx);
                     if (smpValue < min)
                         min = smpValue;
@@ -181,15 +178,11 @@ namespace juce
                         max = smpValue;
                     if (smpValue > thresholdTrigger)
                     {
-                        //*thumbnailTriggeredPtr = true;
-                        //triggAddress = writePosition + idx;
-                        //triggAddress %= eScopeBufferSize; //wrap if needed
-                        //currentSmpCount = numSamples - idx;//nb of samples recorded after trigger condition
-                        *triggerIndex = idx;
-                        idx = nbSamples; //force the exit of "for" loop
+                        *trigIndex = idx;
                         triggerConditionFound = true;                        
                     }
-                }
+                    idx++;
+            }
             return (triggerConditionFound);
         }
         //----------------------------------------------------------------------------------
@@ -241,7 +234,7 @@ namespace juce
              // check if any sample in this new block is above threshold -> triggering display
                 if (currentSmpCount == 0)
                 {
-                    int triggerIndex;
+                    unsigned int triggerIndex;
                     if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
                     {
                         bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &buffer);
@@ -434,6 +427,10 @@ namespace juce
 
         unsigned long wavaddr = 0;
         unsigned long wavidx = 0;
+
+        unsigned long wfStartAddress = 0;
+        unsigned long wfTriggAddress = 0;
+
         const float *wavptr = nullptr;
         uint16 wavSize = 48000;
         bool thumbnailWritten = false;

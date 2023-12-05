@@ -28,6 +28,7 @@
 
         juce::AudioThumbnail& getAudioThumbnail() { return thumbnail; }
 
+        juce::Colour testColour = juce::Colours::antiquewhite;
         juce::Colour wavFormColour = juce::Colour(0xff43d996);
         juce::Colour wavBackgroundColour = juce::Colours::black;
         juce::Colour digitPanelColour = juce::Colour(0xff232323);
@@ -42,18 +43,23 @@
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
+        std::vector<float> mAudioPoints;
         
         //-------------------------------------------------------------------
         //following elements are passed between RecTumbnail and AudioRecorder
         bool bTriggered = false;
         juce::AudioBuffer<float>* eBuffer;
-
-
+        unsigned long *wfStartAddr ;
+        unsigned long *wfTriggAddr ;
         //----------------------------------------------------------------------------------
         bool* getTriggeredPtr(void) { return &bTriggered; }
         //----------------------------------------------------------------------------------
         void setBufferedToImage(juce::AudioBuffer<float>* recBuffer) {  eBuffer = recBuffer; }
         //called by eScope setViewSize
+        //----------------------------------------------------------------------------------
+        void setBufferStartAddress(unsigned long* addr) { wfStartAddr = addr; }
+        //----------------------------------------------------------------------------------
+        void setBufferTriggAddress(unsigned long* addr) { wfTriggAddr = addr; }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
@@ -280,6 +286,61 @@
                 g.drawHorizontalLine(newY42, left, right);
                 //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
             }
+        }
+        //----------------------------------------------------------------------------------
+        void drawBuffer(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        {
+            juce::Path path;
+            path.clear();
+            mAudioPoints.clear();
+            double wavPoint;
+            unsigned long *ptr;
+            ptr = wfTriggAddr;
+            juce::AudioBuffer<float> waveform = *eBuffer;
+            auto ptNb = eBuffer->getNumSamples();
+           
+
+            auto top = bounds.getY();
+            auto bottom = bounds.getBottom();
+            auto left = bounds.getX();
+            auto right = bounds.getRight();
+            auto width = bounds.getWidth(); // width of Display zone in pixels
+  
+
+            float ratio = (float)ptNb / (float)width;
+
+            for (int sample = 0; sample < ptNb; sample += ratio)
+            {
+                wavPoint = eBuffer->getSample(0, sample);
+                mAudioPoints.push_back(wavPoint);
+            }
+            path.startNewSubPath(0, bounds.getHeight() / 2);
+            for(int sample = 0;sample< mAudioPoints.size();sample++)
+            {
+                auto point = juce::jmap<float>(mAudioPoints[sample], -1.0f, 1.0f, bottom, top);
+                path.lineTo(sample, point);
+            }
+            
+            g.strokePath(path, juce::PathStrokeType(2));
+            // draw vertical time lines
+            g.setColour(testColour);
+            g.setOpacity(gridOpacity);
+            g.drawLine(left, bottom, right, bottom);
+            g.drawLine(left, top, right, top);
+            g.drawLine(left, bottom, left, top);
+            g.drawLine(right, bottom, right, top);
+            g.drawLine(left, bottom, right, top);
+            g.drawLine(left, top, right, bottom);
+
+     /*       for (int idx = 0; idx < 480; idx++)
+            {
+                wavPoint = *(eBuffer + *ptr);
+                ptr++;
+            }*/
+            /*
+            juce::AudioBuffer<float>* eBuffer;
+            unsigned long* wfStartAddr;
+            unsigned long* wfTriggAddr;*/
         }
         //----------------------------------------------------------------------------------
         void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -641,10 +702,15 @@
                     //paintGrid(g, wavZone);
                     paintGridLin(g, wavZone);
                     g.setColour(wavFormColour);
-                    //thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
-                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
+                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    //drawYLabels(g, thumbArea);                                        
+                    //drawYLabels(g, thumbArea);
+                    drawBuffer(g, wavZone);
+                    /*
+                    juce::AudioBuffer<float>* eBuffer;
+                    unsigned long* wfStartAddr;
+                    unsigned long* wfTriggAddr;*/
                     break;
                 }
             }
