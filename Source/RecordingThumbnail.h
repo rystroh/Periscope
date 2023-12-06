@@ -288,7 +288,12 @@
             }
         }
         //----------------------------------------------------------------------------------
-        void drawBuffer(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        void drawBuffer(juce::Graphics& g, 
+                        const juce::Rectangle<int>& bounds,
+                        double  startTimeSeconds,
+                        double  endTimeSeconds,
+                        float  	verticalZoomFactor
+                        )
         {
             juce::Path path;
             path.clear();
@@ -298,29 +303,37 @@
             ptr = wfTriggAddr;
             juce::AudioBuffer<float> waveform = *eBuffer;
             auto ptNb = eBuffer->getNumSamples();
-           
 
+          
             auto top = bounds.getY();
             auto bottom = bounds.getBottom();
             auto left = bounds.getX();
             auto right = bounds.getRight();
             auto width = bounds.getWidth(); // width of Display zone in pixels
   
-
+            unsigned long startSample = sampleRate * startTimeSeconds;
+            unsigned long endSample = sampleRate * endTimeSeconds;
+            ptNb = endSample - startSample;
             float ratio = (float)ptNb / (float)width;
 
-            for (int sample = 0; sample < ptNb; sample += ratio)
+
+            for (int sample = startSample; sample < endSample; sample += ratio)
             {
                 wavPoint = eBuffer->getSample(0, sample);
                 mAudioPoints.push_back(wavPoint);
             }
-            path.startNewSubPath(0, bounds.getHeight() / 2);
-            for(int sample = 0;sample< mAudioPoints.size();sample++)
+
+            //path.startNewSubPath(0, bounds.getHeight() / 2);
+
+            auto point = juce::jmap<float>(mAudioPoints[0], -1.0f, 1.0f, bottom, top)* verticalZoomFactor;
+            path.startNewSubPath(0, point);
+
+            for(int sample = 1;sample< mAudioPoints.size();sample++)
             {
-                auto point = juce::jmap<float>(mAudioPoints[sample], -1.0f, 1.0f, bottom, top);
+                point = juce::jmap<float>(mAudioPoints[sample], -1.0f, 1.0f, bottom, top)* verticalZoomFactor;
                 path.lineTo(sample, point);
             }
-            
+            g.setColour(wavFormColour);
             g.strokePath(path, juce::PathStrokeType(2));
             // draw vertical time lines
             g.setColour(testColour);
@@ -704,9 +717,35 @@
                     g.setColour(wavFormColour);
                     ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     //drawYLabels(g, thumbArea);
-                    drawBuffer(g, wavZone);
+
+                    /*
+                    juce::AudioBuffer<float>* eBuffer;
+                    unsigned long* wfStartAddr;
+                    unsigned long* wfTriggAddr;*/
+                    break;
+                case 5: //oscilloscope with trigger Zoom 
+                    if (bTriggered)
+                    {
+                        //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
+                        bTriggered = false;
+                    }
+                    thumbnailsize = thumbnail.getTotalLength();
+                    //newRange.setStart(0.0);
+                    //newRange.setEnd(thumbnailsize);
+                    //setRange(newRange);
+                    wavZone = getWaveZone(thumbArea);
+                    //paintGrid(g, wavZone);
+                    paintGridLin(g, wavZone);
+                    g.setColour(wavFormColour);
+                    ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
+                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
+                    //drawYLabels(g, thumbArea);
+
                     /*
                     juce::AudioBuffer<float>* eBuffer;
                     unsigned long* wfStartAddr;
@@ -802,7 +841,7 @@
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override
         {
-            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            juce::Point< int > Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             if (thumbnail.getTotalLength() > 0.0)
             {
                 if ((juce::ModifierKeys::currentModifiers.isCtrlDown()) ||
@@ -871,23 +910,34 @@
                     }
                     //DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " 
                     //<< zoomVector.size() << " NewZoom " << NewZoomFactor);
-                    setDisplayXZone(NewZoomFactor);
+                    setDisplayXZone(NewZoomFactor, Posi3);
                     sendChangeMessage();
                 }
             }
         }
         //----------------------------------------------------------------------------------
-        void setDisplayXZone(double zoomfactor)
+        void setDisplayXZoom(double zoomfactor)
+        {
+            auto thumbArea = getLocalBounds(); //bounds of display zone
+            auto width = getWidth(); // width of Display zone in pixels
+            juce::Point< int >MousePosition;
+            MousePosition.setX(width / 2);
+            MousePosition.setY(0);
+            setDisplayXZone(zoomfactor, MousePosition);
+        }
+        //----------------------------------------------------------------------------------
+        void setDisplayXZone(double zoomfactor, juce::Point< int >MousePosition)
         {
             displayFullThumb = false;
-            displayThumbMode = 3; //zoom mode
-            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            if (displayThumbMode > 3)// if was in triggered mode
+                displayThumbMode = 5;
+            else
+                displayThumbMode = 3; //zoom mode
+         //auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
          //   repaint();
             if (thumbnail.getTotalLength() > 0)
             {
-                //       auto SampleRate = 48000;
-                auto wavWindowWidth = wavZone.getWidth();
-                //    auto SampleRate = 48000;
+                auto wavWindowWidth = wavZone.getWidth();//width in pixels 
 
                 auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
                 double displayStartTime, displayEndTime, displayWidth;
@@ -899,10 +949,10 @@
                 double Ratio = SampleSize / thumbArea.getWidth();
                 Ratio = (double)SampleSize / (double)wavWindowWidth;
 
-                auto timeAtMousePos = xToTime((float)Posi3.x);
+                auto timeAtMousePos = xToTime((float)MousePosition.x);
 
                 //double PosixRatioPix = (double)width / (double) Posi3.x;
-                double PosixRatioPix = (double)wavWindowWidth / (double)Posi3.x;
+                double PosixRatioPix = (double)wavWindowWidth / (double)MousePosition.x;
 
                 displayWidth = totlen * zoomfactor / Ratio;
 

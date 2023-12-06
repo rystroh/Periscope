@@ -119,7 +119,8 @@
         }
         void setXZoom(double zoomfactor)
         {
-            recThumbnail.setDisplayXZone(zoomfactor);
+            //recThumbnail.setDisplayXZone(zoomfactor);
+            recThumbnail.setDisplayXZoom(zoomfactor);
         }
         void setThreshold(double threshold)
         {
