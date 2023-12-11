@@ -25,7 +25,7 @@ namespace juce
         {
             stop();
         }
-        
+
         //---------------------------------------------------------------------------------
         void startRecording(const File& file)
         {
@@ -77,7 +77,7 @@ namespace juce
         }
         //----------------------------------------------------------------------------------
         bool isRecording() const
-        {  
+        {
             return activeWriter.load() != nullptr;
         }
         //----------------------------------------------------------------------------------
@@ -96,13 +96,13 @@ namespace juce
 
             double divider;
             int    remainer;
-            divider = (double) eScopeBufferSize / (double) smpPerBlockExpected;
+            divider = (double)eScopeBufferSize / (double)smpPerBlockExpected;
             remainer = (int)eScopeBufferSize % (int)smpPerBlockExpected;
             eScopeBuffer.setSize(1, (int)eScopeBufferSize);
             eScopeBuffer.clear();
             writePosition = 0;
             wavaddr = 0;
-            wavidx = 0;    
+            wavidx = 0;
             //wavptr = &Bleep_20Hz[0];
             //wavptr = &RampPos48000[0];
             //wavptr = &Ramp48000Skipped2[0];
@@ -119,7 +119,7 @@ namespace juce
             maxSmpCount = smpBlockNb * samplesPerBlockExpected; //make it multiple of block Size
             halfMaxSmpCount = (int)maxSmpCount / 2;
             thumbnailSize = maxSmpCount;
-            
+
             float remain = (int)maxSmpCount % 2;
             if (remain > 0)
             {
@@ -127,7 +127,7 @@ namespace juce
             }
         }
         //----------------------------------------------------------------------------------
-        juce::AudioBuffer<float>* getBufferPtr() {  return (&eScopeBuffer);  }
+        juce::AudioBuffer<float>* getBufferPtr() { return (&eScopeBuffer); }
         //----------------------------------------------------------------------------------
         unsigned long* getStartAddrPtr() { return (&wfStartAddress); }
         //----------------------------------------------------------------------------------
@@ -160,28 +160,28 @@ namespace juce
                 return(false);
         }
         //----------------------------------------------------------------------------------
-        void audioDeviceStopped() override  { sampleRate = 0; }
+        void audioDeviceStopped() override { sampleRate = 0; }
         //----------------------------------------------------------------------------------
-        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, AudioBuffer<float> *buffer)
+        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, AudioBuffer<float>* buffer)
         {
             // check trigger condition in block of samples
             bool triggerConditionFound = false;
             double min = 1, max = -1;
             double smpValue;
             int idx = 0;
-            while((idx < nbSamples) && !triggerConditionFound)
+            while ((idx < nbSamples) && !triggerConditionFound)
             {
-                    smpValue = buffer->getSample(0, idx);
-                    if (smpValue < min)
-                        min = smpValue;
-                    if (smpValue > max)
-                        max = smpValue;
-                    if (smpValue > thresholdTrigger)
-                    {
-                        *trigIndex = idx;
-                        triggerConditionFound = true;                        
-                    }
-                    idx++;
+                smpValue = buffer->getSample(0, idx);
+                if (smpValue < min)
+                    min = smpValue;
+                if (smpValue > max)
+                    max = smpValue;
+                if (smpValue > thresholdTrigger)
+                {
+                    *trigIndex = idx;
+                    triggerConditionFound = true;
+                }
+                idx++;
             }
             return (triggerConditionFound);
         }
@@ -196,16 +196,16 @@ namespace juce
             ignoreUnused(context);
             //sendSynchronousChangeMessage(); https://docs.juce.com/master/classMessageManagerLock.html#details
             const ScopedLock sl(writerLock);
-/*
-            if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
-            {
-                activeWriter.load()->write(inputChannelData, numSamples);
-                // Create an AudioBuffer to wrap our incoming data, note that this does no 
-                //allocations or copies, it simply references our input data
-                AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
-                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                nextSampleNum += numSamples;
-            }*/
+            /*
+                        if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
+                        {
+                            activeWriter.load()->write(inputChannelData, numSamples);
+                            // Create an AudioBuffer to wrap our incoming data, note that this does no
+                            //allocations or copies, it simply references our input data
+                            AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
+                            thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                            nextSampleNum += numSamples;
+                        }*/
             if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopeBufferSize>0)
             {
                 //activeWriter.load()->write(&inputChannelData[chanID], numSamples);
@@ -231,7 +231,7 @@ namespace juce
                     eScopeBuffer.copyFrom(0, writePosition, channelData, numSamples);
                 }
 
-             // check if any sample in this new block is above threshold -> triggering display
+                // check if any sample in this new block is above threshold -> triggering display
                 if (currentSmpCount == 0)
                 {
                     unsigned int triggerIndex;
@@ -247,21 +247,49 @@ namespace juce
                         }
                     }
                 }
-                else if(currentSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
+                else if (currentSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
                 {
                     currentSmpCount += numSamples;//keep count of samples recorded
-                } 
-            writePosition += numSamples;
-            writePosition %= eScopeBufferSize;
+                }
+                writePosition += numSamples;
+                writePosition %= eScopeBufferSize;
 
-            //now if we have enough samples, pass them to the Thumbnail for display
+                //now if we have enough samples, pass them to the Thumbnail for display
+                thumbnailWritten = WriteThumbnail(); // using numSamples ?
+
+                /*         if (*thumbnailTriggeredPtr)
+                           {
+                               thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                               nextSampleNum += numSamples;
+                           }*/
+
+            }
+
+            if (activeWriter.load() != nullptr && chanID < numInputChannels)
+            {
+                activeWriter.load()->write(&inputChannelData[chanID], numSamples);
+                // Create an AudioBuffer to wrap our incoming data, note that this does no 
+                //allocations or copies, it simply references our input data
+                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                nextSampleNum += numSamples;
+            }
+
+            // We need to clear the output buffers, in case they're full of junk..
+            for (int i = 0; i < numOutputChannels; ++i)
+                if (outputChannelData[i] != nullptr)
+                    FloatVectorOperations::clear(outputChannelData[i], numSamples);
+        }
+        //----------------------------------------------------------------------------------
+        bool WriteThumbnail(void)
+        {
             if ((currentSmpCount >= halfMaxSmpCount) && (thumbnailWritten == false))
             {
                 thumbnailWritten = true;
                 thumbnail.reset(1, sampleRate, 0);
                 //copy data that are before the Threshold
                 if (triggAddress >= halfMaxSmpCount) //head data not wrapped 
-                { 
+                {
                     int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
                     int smpCount;
                     if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
@@ -302,41 +330,22 @@ namespace juce
                         smpCount = maxSmpCount - smpCount;
                         thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
                     }
-                
+
                 }
                 //copy data aftert the Threshold
-                if(eScopeBufferSize-triggAddress >= halfMaxSmpCount)//data not wrapped ?
+                if (eScopeBufferSize - triggAddress >= halfMaxSmpCount)//data not wrapped ?
                 {
-                    thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                    //thumbnail.addBlock(nextSampleNum, eScopeBuffer, 0, numSamples);
                 }
                 else
                 {
 
                 }
                 currentSmpCount = 0;
+                return(true);
             }
- /*         if (*thumbnailTriggeredPtr)
-            {
-                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                nextSampleNum += numSamples;
-            }*/
-
-            }
-
-            if (activeWriter.load() != nullptr && chanID < numInputChannels)
-            {             
-                activeWriter.load()->write(&inputChannelData[chanID], numSamples);
-                // Create an AudioBuffer to wrap our incoming data, note that this does no 
-                //allocations or copies, it simply references our input data
-                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                nextSampleNum += numSamples;
-            }
-
-            // We need to clear the output buffers, in case they're full of junk..
-            for (int i = 0; i < numOutputChannels; ++i)
-                if (outputChannelData[i] != nullptr)
-                    FloatVectorOperations::clear(outputChannelData[i], numSamples);
+            else
+                return(false);            
         }
         //----------------------------------------------------------------------------------
         int getChannelID(void)

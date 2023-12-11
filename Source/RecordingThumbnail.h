@@ -171,7 +171,7 @@
         {
             double zoomfactor = 128;
 
-            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            //auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
             double displayStartTime, displayEndTime, displayWidth;
 
@@ -227,7 +227,7 @@
         {
             double zoomfactor = 128;
 
-            auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            //auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
             double displayStartTime, displayEndTime, displayWidth;
 
@@ -295,6 +295,9 @@
                         float  	verticalZoomFactor
                         )
         {
+            if (startTimeSeconds < 0)
+                startTimeSeconds = 0;//catch stupid conditions
+
             juce::Path path;
             path.clear();
             mAudioPoints.clear();
@@ -313,6 +316,10 @@
   
             unsigned long startSample = sampleRate * startTimeSeconds;
             unsigned long endSample = sampleRate * endTimeSeconds;
+
+            if (endSample > ptNb)
+                endSample = ptNb; //catch stupid conditions
+
             ptNb = endSample - startSample;
             float ratio = (float)ptNb / (float)width;
 
@@ -712,6 +719,7 @@
                     newRange.setEnd(thumbnailsize);
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
+                    xzoomticknb = createZoomVector(zoomVector);
                     //paintGrid(g, wavZone);
                     paintGridLin(g, wavZone);
                     g.setColour(wavFormColour);
@@ -787,8 +795,8 @@
 
             //    auto SampleRate = 48000;
             double SampleSize = totlen * sampleRate;
-            double Ratio = SampleSize / thumbArea.getWidth();
-            Ratio = (double)SampleSize / (double)wavWindowWidth;
+            //double Ratio = SampleSize / thumbArea.getWidth();
+            double Ratio = (double)SampleSize / (double)wavWindowWidth;
             double div = Ratio;
             int it = 0;
             int iteration = 0;
@@ -959,6 +967,10 @@
                 displayStartTime = timeAtMousePos - displayWidth / PosixRatioPix;
                 displayEndTime = displayStartTime + displayWidth;
                 //   DBG("Mouse.x = " << Posi3.x << " PosixRatio = " << PosixRatioPix << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
+                if (displayStartTime < 0)
+                    displayStartTime = 0; // prevent stupid cases
+                if (displayEndTime > totlen)
+                    displayEndTime = totlen;// prevent stupid cases
                 setRange({ displayStartTime, displayEndTime });
             }
             else
