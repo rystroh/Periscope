@@ -24,11 +24,14 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     //oscWinSizeSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
     //oscWinSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
     oscWinSizeSlider.setRange(0.05, 5.00, 0.05);
+    oscWinSizeSlider.setValue(2.5f);
 
     addAndMakeVisible(load_button);
     addAndMakeVisible(save_button);
 
     addAndMakeVisible(ThesholdSlider);
+    ThesholdSlider.setRange(-1.0f, 1.0f, 0.01f);
+    ThesholdSlider.setValue(0.5f);
     addAndMakeVisible(LiveButton);
 
     setWidth(300, 600, 10000);

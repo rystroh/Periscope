@@ -44,7 +44,8 @@
         float viewSize = 0.1;// viewing window size
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
         std::vector<float> mAudioPoints;
-        
+        std::vector<float> mMaxAudioPoints;
+        std::vector<float> mMinAudioPoints;        
         //-------------------------------------------------------------------
         //following elements are passed between RecTumbnail and AudioRecorder
         bool bTriggered = false;
@@ -288,12 +289,12 @@
             }
         }
         //----------------------------------------------------------------------------------
-        void drawBuffer(juce::Graphics& g, 
-                        const juce::Rectangle<int>& bounds,
-                        double  startTimeSeconds,
-                        double  endTimeSeconds,
-                        float  	verticalZoomFactor
-                        )
+        void drawBuffer(juce::Graphics& g,
+            const juce::Rectangle<int>& bounds,
+            double  startTimeSeconds,
+            double  endTimeSeconds,
+            float  	verticalZoomFactor
+        )
         {
             if (startTimeSeconds < 0)
                 startTimeSeconds = 0;//catch stupid conditions
@@ -301,19 +302,22 @@
             juce::Path path;
             path.clear();
             mAudioPoints.clear();
-            double wavPoint;
-            unsigned long *ptr;
+
+            mMaxAudioPoints.clear();
+            mMinAudioPoints.clear();
+
+            double wavPoint,wavMin,wavMax;
+            unsigned long* ptr;
             ptr = wfTriggAddr;
             juce::AudioBuffer<float> waveform = *eBuffer;
             auto ptNb = eBuffer->getNumSamples();
 
-          
             auto top = bounds.getY();
             auto bottom = bounds.getBottom();
             auto left = bounds.getX();
             auto right = bounds.getRight();
             auto width = bounds.getWidth(); // width of Display zone in pixels
-  
+
             unsigned long startSample = sampleRate * startTimeSeconds;
             unsigned long endSample = sampleRate * endTimeSeconds;
 
@@ -323,25 +327,86 @@
             ptNb = endSample - startSample;
             float ratio = (float)ptNb / (float)width;
 
+            DBG("ptNb = " << ptNb << " width = " << width << " ratio = " << ratio << " verticalZoomFactor = " << verticalZoomFactor);
 
-            for (int sample = startSample; sample < endSample; sample += ratio)
-            {
-                wavPoint = eBuffer->getSample(0, sample);
-                mAudioPoints.push_back(wavPoint);
-            }
-
-            //path.startNewSubPath(0, bounds.getHeight() / 2);
-
-            auto point = juce::jmap<float>(mAudioPoints[0], -1.0f, 1.0f, bottom, top)* verticalZoomFactor;
-            path.startNewSubPath(0, point);
-
-            for(int sample = 1;sample< mAudioPoints.size();sample++)
-            {
-                point = juce::jmap<float>(mAudioPoints[sample], -1.0f, 1.0f, bottom, top)* verticalZoomFactor;
-                path.lineTo(sample, point);
-            }
+            int idx,idxEnd;
             g.setColour(wavFormColour);
-            g.strokePath(path, juce::PathStrokeType(2));
+            if (ratio > 1)
+            {
+                for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
+                {
+                    idx = (int)sample;
+                    idxEnd = idx + (int)ratio;
+
+                    wavPoint = eBuffer->getSample(0, idx++);                    
+                    while (idx < idxEnd)
+                    {
+                        auto val = eBuffer->getSample(0, idx++);
+                        if (wavPoint < val)
+                            wavPoint = val;
+                    }
+                    mAudioPoints.push_back(wavPoint);
+                }
+                bool pathStarted = false;
+                auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
+                for (int sample = 0; sample < mAudioPoints.size(); sample++)
+                {
+                    pointScaled = mAudioPoints[sample] * verticalZoomFactor;
+                    if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
+                        DBG("point with index " << sample << " is out = " << pointScaled);
+                    else
+                    {
+                        auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
+                        if (!pathStarted)
+                        {
+                            path.startNewSubPath(sample, point);
+                            pathStarted = true;
+                        }
+                        else
+                            path.lineTo(sample, point);
+                    }
+                }
+                g.strokePath(path, juce::PathStrokeType(1));
+            }
+            else // more than 1 pixel per wav sample
+            {
+                for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
+                {
+                    idx = (int)sample;
+                    wavPoint = eBuffer->getSample(0, idx);
+                    mAudioPoints.push_back(wavPoint);
+                }
+                bool pathStarted = false;
+                auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
+                if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
+                    DBG("first point is out = " << pointScaled);
+                else
+                {
+                    auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
+                    path.startNewSubPath(0, point);
+                    pathStarted = true;
+                }
+
+                for(int sample = 1;sample< mAudioPoints.size();sample++)
+                {
+                    pointScaled = mAudioPoints[sample] * verticalZoomFactor;
+                    if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
+                        DBG("point with index " << sample << " is out = " << pointScaled);
+                    else
+                    {
+                        auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
+                        if (!pathStarted)
+                        {
+                            path.startNewSubPath(sample, point);
+                            pathStarted = true;
+                        }
+                        else
+                            path.lineTo(sample, point);
+                    }                
+                }
+                g.strokePath(path, juce::PathStrokeType(1));
+            }
+
             // draw vertical time lines
             g.setColour(testColour);
             g.setOpacity(gridOpacity);
@@ -349,18 +414,8 @@
             g.drawLine(left, top, right, top);
             g.drawLine(left, bottom, left, top);
             g.drawLine(right, bottom, right, top);
-            g.drawLine(left, bottom, right, top);
-            g.drawLine(left, top, right, bottom);
-
-     /*       for (int idx = 0; idx < 480; idx++)
-            {
-                wavPoint = *(eBuffer + *ptr);
-                ptr++;
-            }*/
-            /*
-            juce::AudioBuffer<float>* eBuffer;
-            unsigned long* wfStartAddr;
-            unsigned long* wfTriggAddr;*/
+            g.drawLine(left, bottom, right, top);// diagonals for debug 
+            g.drawLine(left, top, right, bottom);// diagonals for debug
         }
         //----------------------------------------------------------------------------------
         void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
