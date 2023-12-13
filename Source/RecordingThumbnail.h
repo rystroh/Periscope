@@ -298,9 +298,7 @@
         {
             if (startTimeSeconds < 0)
                 startTimeSeconds = 0;//catch stupid conditions
-
-            juce::Path path;
-            path.clear();
+                        
             mAudioPoints.clear();
 
             mMaxAudioPoints.clear();
@@ -349,6 +347,8 @@
                 }
                 bool pathStarted = false;
                 auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
+                juce::Path path;
+                path.clear();
                 for (int sample = 0; sample < mAudioPoints.size(); sample++)
                 {
                     pointScaled = mAudioPoints[sample] * verticalZoomFactor;
@@ -378,6 +378,8 @@
                 }
                 bool pathStarted = false;
                 auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
+                juce::Path path;
+                path.clear();
                 if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
                     DBG("first point is out = " << pointScaled);
                 else
@@ -412,7 +414,13 @@
             g.setOpacity(gridOpacity);
             g.drawLine(left, bottom, right, bottom);
             g.drawLine(left, top, right, top);
-            g.drawLine(left, bottom, left, top);
+            g.drawVerticalLine(left, top, bottom);
+            float nwx1, nwx2, nwy1, nwy2;
+            nwx1 = 2 * (right - left) / 3;
+            nwy1 = top + 0.25 * (bottom-top);
+            nwy2 = top + 0.75 * (bottom - top);
+            g.drawVerticalLine((int)nwx1, nwy1, nwy2);
+            //g.drawLine(left, bottom, left, top);
             g.drawLine(right, bottom, right, top);
             g.drawLine(left, bottom, right, top);// diagonals for debug 
             g.drawLine(left, top, right, bottom);// diagonals for debug
