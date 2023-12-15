@@ -329,45 +329,60 @@
 
             int idx,idxEnd;
             g.setColour(wavFormColour);
-            if (ratio > 1)
+
+            if (ratio >=2)
             {
                 for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
                 {
                     idx = (int)sample;
-                    idxEnd = idx + (int)ratio;
-
-                    wavPoint = eBuffer->getSample(0, idx++);                    
+                    idxEnd = idx + (int)ratio;                 
+                    wavMin = eBuffer->getSample(0, idx);
+                    wavMax = wavMin;
                     while (idx < idxEnd)
                     {
                         auto val = eBuffer->getSample(0, idx++);
-                        if (wavPoint < val)
-                            wavPoint = val;
+                        if (wavMax < val)
+                            wavMax = val;
+                        if (wavMin > val)
+                            wavMin = val;
                     }
-                    mAudioPoints.push_back(wavPoint);
+                    mMaxAudioPoints.push_back(wavMax);
+                    mMinAudioPoints.push_back(wavMin);
                 }
                 bool pathStarted = false;
-                auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
-                juce::Path path;
-                path.clear();
-                for (int sample = 0; sample < mAudioPoints.size(); sample++)
+                float pointMinScaled, pointMaxScaled;
+
+                for (int sample = 0; sample < mMinAudioPoints.size(); sample++)
                 {
-                    pointScaled = mAudioPoints[sample] * verticalZoomFactor;
-                    if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
-                        DBG("point with index " << sample << " is out = " << pointScaled);
-                    else
+                    pointMinScaled = mMinAudioPoints[sample] * verticalZoomFactor;
+                    pointMaxScaled = mMaxAudioPoints[sample] * verticalZoomFactor;
+                    if ((pointMinScaled < -1) && (pointMaxScaled < -1))
                     {
-                        auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
-                        if (!pathStarted)
-                        {
-                            path.startNewSubPath(sample, point);
-                            pathStarted = true;
-                        }
-                        else
-                            path.lineTo(sample, point);
+                        DBG("first point is out = " << pointMinScaled << " " << pointMaxScaled);
+                    }
+                    else if ((pointMinScaled > 1) && (pointMaxScaled > 1))
+                    {
+                        DBG("first point is out = " << pointMinScaled << " " << pointMaxScaled);
+                    }
+                    else //first point is in frame                 
+                    {
+                        if (pointMinScaled < -1)
+                            pointMinScaled = -1;
+                        if (pointMaxScaled > 1)
+                            pointMaxScaled = 1;
+                        auto wavbottom = juce::jmap<float>(pointMaxScaled, -1.0f, 1.0f, bottom, top);
+                        auto wavtop = juce::jmap<float>(pointMinScaled, -1.0f, 1.0f, bottom, top);
+                        if (std::abs(wavtop - wavbottom)< 1.0f)
+                            wavbottom = wavtop - 1;//set thickness to 1 at least*/
+                        /*
+                        if (wavbottom - wavtop < 1)
+                            wavbottom = wavtop + 1; //set thickness to 1 at least*/
+                        //g.drawVerticalLine(sample, wavtop, wavbottom);
+                        g.drawVerticalLine(sample, wavbottom, wavtop);
+                        pathStarted = true;
                     }
                 }
-                g.strokePath(path, juce::PathStrokeType(1));
-            }
+            } 
             else // more than 1 pixel per wav sample
             {
                 for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
@@ -415,15 +430,16 @@
             g.drawLine(left, bottom, right, bottom);
             g.drawLine(left, top, right, top);
             g.drawVerticalLine(left, top, bottom);
+            /*
             float nwx1, nwx2, nwy1, nwy2;
             nwx1 = 2 * (right - left) / 3;
             nwy1 = top + 0.25 * (bottom-top);
             nwy2 = top + 0.75 * (bottom - top);
-            g.drawVerticalLine((int)nwx1, nwy1, nwy2);
+            g.drawVerticalLine((int)nwx1, nwy1, nwy2);*/
             //g.drawLine(left, bottom, left, top);
             g.drawLine(right, bottom, right, top);
-            g.drawLine(left, bottom, right, top);// diagonals for debug 
-            g.drawLine(left, top, right, bottom);// diagonals for debug
+         //   g.drawLine(left, bottom, right, top);// diagonals for debug 
+         //   g.drawLine(left, top, right, bottom);// diagonals for debug
         }
         //----------------------------------------------------------------------------------
         void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
