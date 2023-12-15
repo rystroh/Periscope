@@ -208,7 +208,7 @@
             }
 
             int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
-            thumbh = bounds.getHeight();
+            //thumbh = bounds.getHeight();
             newY2 = bounds.getCentreY();
             g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
             g.setOpacity(gridOpacity);
@@ -224,53 +224,43 @@
             g.drawHorizontalLine(newY2, left, right);             
         }
         //----------------------------------------------------------------------------------
-        void paintGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        void paintVerticalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            double zoomfactor = 128;
-
-            //auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
-            auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
-            double displayStartTime, displayEndTime, displayWidth;
-
-            auto renderArea = bounds;
-            auto top = renderArea.getY();
-            auto bottom = renderArea.getBottom();
-            auto left = renderArea.getX();
-            auto right = renderArea.getRight();
-            auto width = renderArea.getWidth(); // width of Display zone in pixels
-
-            double SampleSize = totlen * sampleRate; //size  of sample in points
-            double Ratio = SampleSize / (double)width;
+            auto top = bounds.getY();
+            auto bottom = bounds.getBottom();
+            auto width = bounds.getWidth(); // width of Display zone in pixels
             auto visRangeWidth = visibleRange.getLength();
-            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
 
             double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
-
             if (stepSize != newstepSize)
             {
                 stepSize = newstepSize;
                 //DBG("paintGrid::stepSize = " << stepSize);
             }
-            std::vector<double> xs = getXs(); //create vector with nice positions for vert
+            std::vector<double> xs = getXs(); //create vector with nice positions for vert lines
 
             int newX1;
-
             // draw vertical time lines
             g.setColour(gridColour);
             g.setOpacity(gridOpacity);
             for (auto x : xs)
             {
                 newX1 = timeToX(x); // get 
-                g.drawVerticalLine(newX1, top, bottom);
-            }
-
+                //g.drawVerticalLine(newX1, top, bottom);
+                g.drawVerticalLine(newX1, bounds.getY(), bounds.getBottom());
+            }            
+        }
+        //----------------------------------------------------------------------------------
+        void paintHorizontalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        {
             // draw horizontal Level lines
             std::vector<int> NiceGainVect;
             std::vector<int> NiceGainY;
             int ret = getNiceGainVect(bounds.getHeight(), NiceGainVect, NiceGainY);
 
-            int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
-            thumbh = bounds.getHeight();
+            int newY2, newY41, newY42;
+            auto left = bounds.getX();
+            auto right = bounds.getRight();
             newY2 = bounds.getCentreY();
             g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
             g.setOpacity(gridOpacity);
@@ -748,7 +738,8 @@
                     scrollbar.setRangeLimits(newRange);
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
-                    paintGrid(g, wavZone);
+                    paintVerticalGrid(g, wavZone);
+                    paintHorizontalGrid(g, wavZone);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     xzoomticknb = createZoomVector(zoomVector);
@@ -767,7 +758,8 @@
                     {
                         thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         wavZone = getWaveZone(thumbArea);
-                        paintGrid(g, wavZone);
+                        paintVerticalGrid(g, wavZone);
+                        paintHorizontalGrid(g, wavZone);
                         g.setColour(wavFormColour);
                         thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, (float)ThumbYZoom);
                         bTriggered = false;
@@ -781,7 +773,8 @@
                     scrollbar.setRangeLimits(newRange);
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     wavZone = getWaveZone(thumbArea);
-                    paintGrid(g, wavZone);
+                    paintVerticalGrid(g, wavZone);
+                    paintHorizontalGrid(g, wavZone);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabels(g, thumbArea);
@@ -793,20 +786,23 @@
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
                     }
+                    
+                    xzoomticknb = createZoomVector(zoomVector);
                     thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
                     newRange.setEnd(thumbnailsize);
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     xzoomticknb = createZoomVector(zoomVector);
-                    //paintGrid(g, wavZone);
+                    //paintVerticalGrid(g, wavZone);
                     paintGridLin(g, wavZone);
+                    paintHorizontalGrid(g, wavZone);
                     g.setColour(wavFormColour);
                     ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    //drawYLabels(g, thumbArea);
+                    drawYLabels(g, thumbArea);
 
                     /*
                     juce::AudioBuffer<float>* eBuffer;
@@ -824,19 +820,15 @@
                     //newRange.setEnd(thumbnailsize);
                     //setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
-                    //paintGrid(g, wavZone);
+                    //paintVerticalGrid(g, wavZone);
                     paintGridLin(g, wavZone);
+                    paintHorizontalGrid(g, wavZone);
                     g.setColour(wavFormColour);
                     ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    //drawYLabels(g, thumbArea);
-
-                    /*
-                    juce::AudioBuffer<float>* eBuffer;
-                    unsigned long* wfStartAddr;
-                    unsigned long* wfTriggAddr;*/
+                    drawYLabels(g, thumbArea);
                     break;
                 }
             }
@@ -1090,7 +1082,7 @@
         juce::Range<double> visibleRange;
 
         double ThumbYZoom = 1.0f;
-        int YZoomIndex = 0;
+        int YZoomIndex = 8;
         const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
