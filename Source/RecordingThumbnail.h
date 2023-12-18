@@ -168,20 +168,15 @@
         //------------------------------------------------------------------------------
         std::vector<float>  getTimeLabels() {        }
         //----------------------------------------------------------------------------------
-        void paintGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            double zoomfactor = 128;
-
-            //auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
             auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
             double displayStartTime, displayEndTime, displayWidth;
 
             auto renderArea = bounds;
-            auto top = renderArea.getY();
-            auto bottom = renderArea.getBottom();
-            auto left = renderArea.getX();
-            auto right = renderArea.getRight();
-            auto width = renderArea.getWidth(); // width of Display zone in pixels
+            auto top = bounds.getY();
+            auto bottom = bounds.getBottom();
+            auto width = bounds.getWidth(); // width of Display zone in pixels
 
             double SampleSize = totlen * sampleRate; //size  of sample in points
             double Ratio = SampleSize / (double)width;
@@ -194,34 +189,50 @@
                 stepSize = newstepSize;
                 //DBG("paintGrid::stepSize = " << stepSize);
             }
-            std::vector<double> xs = getXs(); //create vector with nice positions for vert
 
             int newX1;
-
+            int centerX = timeToX(visRangeWidth * 0.5); // timeToX(viewSize * 0.5); get time center
+            std::vector<double> xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
+                        
             // draw vertical time lines
             g.setColour(gridColour);
             g.setOpacity(gridOpacity);
             for (auto x : xs)
             {
-                newX1 = timeToX(x); // get 
+                newX1 = centerX + timeToX(x); // get 
                 g.drawVerticalLine(newX1, top, bottom);
             }
-
-            int newY2, newY41, newY42, newY81, newY82, newY83, newY84, thumbh;
-            //thumbh = bounds.getHeight();
-            newY2 = bounds.getCentreY();
+            
+            paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
+            paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
+        }
+        //----------------------------------------------------------------------------------
+        void paintCentralHorizontalRedLine(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        {
             g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
             g.setOpacity(gridOpacity);
-            g.drawHorizontalLine(newY2, left, right);
-
+            g.drawHorizontalLine(bounds.getCentreY(), bounds.getX(), bounds.getRight());
+        }
+        //----------------------------------------------------------------------------------
+        void paintTriggerTimeAndLevel(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        {
+            auto renderArea = bounds;
+            auto top = renderArea.getY();
+            auto bottom = renderArea.getBottom();
+            auto left = renderArea.getX();
+            auto right = renderArea.getRight();
+            int newX1, newY2, thumbh;
+            newY2 = bounds.getCentreY();
+            thumbh = bounds.getHeight();
+            // Draw Trigger Vertical and Horizontal
             g.setColour(triggerColour);//Draw middle horizontal line
             g.setOpacity(triggerOpacity);
             newX1 = timeToX(viewSize * 0.5); // get time center
             g.drawVerticalLine(newX1, top, bottom);
             double yfact = ThumbYZoom;
             float thresholdPos = newY2 - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
-            newY2 = (int)thresholdPos;            
-            g.drawHorizontalLine(newY2, left, right);             
+            newY2 = (int)thresholdPos;
+            g.drawHorizontalLine(newY2, left, right);
         }
         //----------------------------------------------------------------------------------
         void paintVerticalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -261,10 +272,8 @@
             int newY2, newY41, newY42;
             auto left = bounds.getX();
             auto right = bounds.getRight();
-            newY2 = bounds.getCentreY();
-            g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
-            g.setOpacity(gridOpacity);
-            g.drawHorizontalLine(newY2, left, right);
+
+            paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line          
             //DBG("paintGrid:: Y2 = " << newY2); 
             // draw all other horizontal lines
             g.setColour(gridColour);
@@ -286,6 +295,8 @@
             float  	verticalZoomFactor
         )
         {
+            g.setColour(wavFormColour);
+
             if (startTimeSeconds < 0)
                 startTimeSeconds = 0;//catch stupid conditions
                         
@@ -414,22 +425,23 @@
                 g.strokePath(path, juce::PathStrokeType(1));
             }
 
-            // draw vertical time lines
+            // draw frame around WavZone
             g.setColour(testColour);
             g.setOpacity(gridOpacity);
-            g.drawLine(left, bottom, right, bottom);
-            g.drawLine(left, top, right, top);
+            g.drawHorizontalLine(top, left, right);
+            g.drawHorizontalLine(bottom, left, right);
             g.drawVerticalLine(left, top, bottom);
-            /*
+            g.drawVerticalLine(right, top, bottom);
+            /* debug stuff to make sure we are drawing stuff on the display)
             float nwx1, nwx2, nwy1, nwy2;
             nwx1 = 2 * (right - left) / 3;
             nwy1 = top + 0.25 * (bottom-top);
             nwy2 = top + 0.75 * (bottom - top);
-            g.drawVerticalLine((int)nwx1, nwy1, nwy2);*/
-            //g.drawLine(left, bottom, left, top);
-            g.drawLine(right, bottom, right, top);
-         //   g.drawLine(left, bottom, right, top);// diagonals for debug 
-         //   g.drawLine(left, top, right, bottom);// diagonals for debug
+            g.drawVerticalLine((int)nwx1, nwy1, nwy2);
+            //g.drawLine(left, bottom, left, top); 
+            //g.drawLine(left, bottom, right, top);// diagonals for debug 
+            //g.drawLine(left, top, right, bottom);// diagonals for debug
+         */
         }
         //----------------------------------------------------------------------------------
         void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -475,15 +487,19 @@
             auto left = textArea.getX();
             auto top = textArea.getY();
             auto right = left + textArea.getWidth();
-
-            std::vector<double> xs = getXs();
+            auto viewSize = textArea.getWidth(); ; // bounds.getWidth();
+            auto xCenter = viewSize / 2.0;
+            auto timeZoneHalf = visibleRange.getLength() / 2;
+            //std::vector<double> xs = getXs();
+            std::vector<double> xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
 
             int newX1;
             for (auto x : xs)
             {
                 juce::String str;
-                newX1 = timeToX(x); // get
-                str << x- timeOffset;
+                newX1 = timeToX(x);
+                newX1 = newX1 + xCenter; // get// get
+                str << x;
                 str.toDecimalStringWithSignificantFigures(x, 2);
                 juce::Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
@@ -564,8 +580,9 @@
         std::vector<double> getXs()
         {
             auto timeZoneStart = visibleRange.getStart();
-            auto timeZoneLen = visibleRange.getEnd();
-            std::vector<double> xs;
+            auto timeZoneLen = visibleRange.getEnd();           
+
+            std::vector<double> xs,xi;
             double x1;
             double digits;
             double mag{ 1 };
@@ -581,12 +598,48 @@
 
             x1 = floor(timeZoneStart / stepSize) * stepSize + stepSize;
             x1 = round_fl(x1, precision);
+            
             while (x1 <= timeZoneLen)
             {
                 xs.push_back(x1);
                 x1 += stepSize;
                 x1 = round_fl(x1, precision);
             }
+
+            return(xs);
+        }
+        //----------------------------------------------------------------------------------
+        std::vector<double> getXsCentered(double center)
+        {
+            auto timeZoneStart = visibleRange.getStart();
+            auto timeZoneLen = visibleRange.getEnd();
+            auto timeZoneHalf = visibleRange.getLength() / 2;
+
+            std::vector<double> xs;
+            double x1;
+            double digits;
+            double mag{ 1 };
+            double magfloor;
+            int precision;
+            double magRatio = log10(stepSize);
+
+            //DBG("getTimeStepSize::NextRatio = " << NextRatio);
+            magfloor = floor(magRatio);
+            precision = abs(magfloor);
+            stepSize = round_fl(stepSize, precision);
+            //mag = exp(log(10.0) * -1.0 * magfloor);
+            xs.push_back(0.0); //start by pushing center value
+            x1 = floor(timeZoneStart / stepSize) * stepSize + stepSize;
+            x1 = round_fl(x1, precision);
+            while (x1 <= timeZoneHalf)
+            {
+                xs.push_back(x1);
+                xs.push_back(-x1);
+                x1 += stepSize;
+                x1 = round_fl(x1, precision);
+            }
+            std::sort(xs.begin(), xs.end());
+            //std::sort(xs.begin(), xs.end(), std::smaller());// greater<double>());
             return(xs);
         }
         //----------------------------------------------------------------------------------
@@ -795,20 +848,14 @@
                     wavZone = getWaveZone(thumbArea);
                     xzoomticknb = createZoomVector(zoomVector);
                     //paintVerticalGrid(g, wavZone);
-                    paintGridLin(g, wavZone);
+                    paintTimeGridLin(g, wavZone);
                     paintHorizontalGrid(g, wavZone);
-                    g.setColour(wavFormColour);
-                    ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea);
-
-                    /*
-                    juce::AudioBuffer<float>* eBuffer;
-                    unsigned long* wfStartAddr;
-                    unsigned long* wfTriggAddr;*/
                     break;
+
                 case 5: //oscilloscope with trigger Zoom 
                     if (bTriggered)
                     {
@@ -821,10 +868,8 @@
                     //setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
-                    paintGridLin(g, wavZone);
+                    paintTimeGridLin(g, wavZone);
                     paintHorizontalGrid(g, wavZone);
-                    g.setColour(wavFormColour);
-                    ////thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, ThumbYZoom);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
