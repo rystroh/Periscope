@@ -322,6 +322,8 @@ namespace juce
                         thumbnail.addBlock(0, eScopeBuffer, paddingPtrinBuffer, paddingSmpNb);
                         thumbnail.addBlock(paddingSmpNb, eScopeBuffer, offsetInEScopeBuffer, smpCount);
                         eScopeBufferSize = 0; // reset flag for tests
+                        wfStartAddress = paddingPtrinBuffer;
+                        wfTriggAddress = triggAddress;
                     }
                     else //tail data wrapped 
                     {

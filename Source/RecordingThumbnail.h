@@ -138,7 +138,7 @@
             repaint();
         }
         //------------------------------------------------------------------------------
-        double  getTimeStepSize(int displayWidthPix, double wavDurationToDisplaySec)
+        double getTimeStepSize(int displayWidthPix, double wavDurationToDisplaySec)
         {
             std::vector<float>NiceTimeRatios{ 1.0 , 2.0 , 5.0 , 10.0 };
             const double minRectWidth{ 128.0 };
@@ -168,45 +168,6 @@
         //------------------------------------------------------------------------------
         std::vector<float>  getTimeLabels() {        }
         //----------------------------------------------------------------------------------
-        void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
-        {
-            auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
-            double displayStartTime, displayEndTime, displayWidth;
-
-            auto renderArea = bounds;
-            auto top = bounds.getY();
-            auto bottom = bounds.getBottom();
-            auto width = bounds.getWidth(); // width of Display zone in pixels
-
-            double SampleSize = totlen * sampleRate; //size  of sample in points
-            double Ratio = SampleSize / (double)width;
-            auto visRangeWidth = visibleRange.getLength();
-            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
-
-            double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
-            if (stepSize != newstepSize)
-            {
-                stepSize = newstepSize;
-                //DBG("paintGrid::stepSize = " << stepSize);
-            }
-
-            int newX1;
-            int centerX = timeToX(visRangeWidth * 0.5); // timeToX(viewSize * 0.5); get time center
-            std::vector<double> xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
-                        
-            // draw vertical time lines
-            g.setColour(gridColour);
-            g.setOpacity(gridOpacity);
-            for (auto x : xs)
-            {
-                newX1 = centerX + timeToX(x); // get 
-                g.drawVerticalLine(newX1, top, bottom);
-            }
-            
-            paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
-            paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
-        }
-        //----------------------------------------------------------------------------------
         void paintCentralHorizontalRedLine(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
             g.setColour(gridHorizontalCenterColour);//Draw middle horizontal line
@@ -233,6 +194,56 @@
             float thresholdPos = newY2 - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
             newY2 = (int)thresholdPos;
             g.drawHorizontalLine(newY2, left, right);
+        }
+        //----------------------------------------------------------------------------------
+        void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        {
+            auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
+            double displayStartTime, displayEndTime, displayWidth;
+
+            auto renderArea = bounds;
+            auto top = bounds.getY();
+            auto bottom = bounds.getBottom();
+            auto width = bounds.getWidth(); // width of Display zone in pixels
+
+            double SampleSize = totlen * sampleRate; //size  of sample in points
+            double Ratio = SampleSize / (double)width;
+            auto visRangeWidth = visibleRange.getLength();
+            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
+
+            double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
+            if (stepSize != newstepSize)
+            {
+                stepSize = newstepSize;
+                //DBG("paintGrid::stepSize = " << stepSize);
+            }
+            g.setColour(gridColour);
+            g.setOpacity(gridOpacity);
+            int newX1;
+            int centerX = timeToX(visRangeWidth * 0.5); // timeToX(viewSize * 0.5); get time center
+            std::vector<double> xs;
+
+            if (XZoomIndex == 0)
+            {
+                xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
+                // draw vertical time lines
+                for (auto x : xs)
+                {
+                    newX1 = centerX + timeToX(x); // get 
+                    g.drawVerticalLine(newX1, top, bottom);
+                }
+            }            
+            else
+            {
+                xs = getXs(); //create vector with nice positions for vert lines
+                for (auto x : xs)
+                {
+                    newX1 = timeToX(x); // get 
+                    g.drawVerticalLine(newX1, top, bottom);
+                }             
+            }                     
+            paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
+            paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
         }
         //----------------------------------------------------------------------------------
         void paintVerticalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -306,8 +317,12 @@
             mMinAudioPoints.clear();
 
             double wavPoint,wavMin,wavMax;
-            unsigned long* ptr;
-            ptr = wfTriggAddr;
+            // access to pointers set by the AudioRecorder part
+            unsigned long* ptrStart;
+            ptrStart = wfStartAddr;
+            unsigned long* ptrTrig;
+            ptrTrig = wfTriggAddr;
+
             juce::AudioBuffer<float> waveform = *eBuffer;
             auto ptNb = eBuffer->getNumSamples();
 
