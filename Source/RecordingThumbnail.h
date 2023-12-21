@@ -322,9 +322,26 @@
             ptrStart = wfStartAddr;
             unsigned long* ptrTrig;
             ptrTrig = wfTriggAddr;
-
-            juce::AudioBuffer<float> waveform = *eBuffer;
             auto ptNb = eBuffer->getNumSamples();
+
+            juce::AudioBuffer<float> waveform(1,ptNb);
+            unsigned long idxDest = 0;
+            unsigned long wavCount = 0;
+            float wavValue;
+            for (unsigned long idx = *ptrStart; idx < ptNb; idx++)
+            {
+                wavValue = eBuffer->getSample(0, idx);
+                waveform.setSample(0, idxDest++, wavValue);
+                wavCount++;
+            }
+            for (unsigned long idx = 0; idx < *ptrStart; idx++)
+            {
+                wavValue = eBuffer->getSample(0, idx);
+                waveform.setSample(0, idxDest++, wavValue);
+                wavCount++;
+            }
+
+            DBG("drawBuffer Nb of Point Copied = " << wavCount);            
 
             auto top = bounds.getY();
             auto bottom = bounds.getBottom();
@@ -352,7 +369,8 @@
                 {
                     idx = (int)sample;
                     idxEnd = idx + (int)ratio;                 
-                    wavMin = eBuffer->getSample(0, idx);
+                    //wavMin = eBuffer->getSample(0, idx);
+                    wavMin = waveform.getSample(0, idx);
                     wavMax = wavMin;
                     while (idx < idxEnd)
                     {
@@ -404,7 +422,8 @@
                 for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
                 {
                     idx = (int)sample;
-                    wavPoint = eBuffer->getSample(0, idx);
+                    //wavPoint = eBuffer->getSample(0, idx);
+                    wavPoint = waveform.getSample(0, idx);                    
                     mAudioPoints.push_back(wavPoint);
                 }
                 bool pathStarted = false;
