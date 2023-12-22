@@ -374,7 +374,8 @@
                     wavMax = wavMin;
                     while (idx < idxEnd)
                     {
-                        auto val = eBuffer->getSample(0, idx++);
+                        //auto val = eBuffer->getSample(0, idx++);
+                        auto val = waveform.getSample(0, idx++);
                         if (wavMax < val)
                             wavMax = val;
                         if (wavMin > val)

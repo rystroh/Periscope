@@ -3,8 +3,8 @@
 //#include "RampPos48000.h"
 //#include "Ramp48000Skipped2.h"
 //#include "Ramp48000Skipped3.h"
-//#include "Ramp120k.h"
-#include "Ramp_bleep120k.h"
+#include "Ramp120k.h"
+//#include "Ramp_bleep120k.h"
 namespace juce
 {
 #define audio_source 1
@@ -303,10 +303,16 @@ namespace juce
                     else //tail data wrapped 
                     {
                         smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
-                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+                        unsigned long copyStart = triggAddress - halfMaxSmpCount;
+                        thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
 
                         smpCount = maxSmpCount - smpCount;
-                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+                        copyStart = 0;
+                        thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
+
+                        eScopeBufferSize = 0; // reset flag for tests
+                        wfStartAddress = 0;
+                        wfTriggAddress = triggAddress;
                     }
                 }
                 else //head data wrapped or not enough data recorded before trigger point
