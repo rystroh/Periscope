@@ -273,26 +273,40 @@
             }            
         }
         //----------------------------------------------------------------------------------
-        void paintHorizontalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        void paintHorizontalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds, int mode)
         {
             // draw horizontal Level lines
             std::vector<int> NiceGainVect;
             std::vector<int> NiceGainY;
-            int ret = getNiceGainVect(bounds.getHeight(), NiceGainVect, NiceGainY);
+            int ret;
+            switch (mode)
+            {
+                case 0: // linear
+                    ret = getNiceGainVectLin(bounds.getHeight(), NiceGainVect, NiceGainY);
+                    break;
+                case 1: // in dB
+                    ret = getNiceGainVect(bounds.getHeight(), NiceGainVect, NiceGainY);
+                    break;
+                default: // linear
+                    break;
+            }
 
             int newY2, newY41, newY42;
             auto left = bounds.getX();
             auto right = bounds.getRight();
 
             paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line          
-            //DBG("paintGrid:: Y2 = " << newY2); 
+
             // draw all other horizontal lines
             g.setColour(gridColour);
             g.setOpacity(gridOpacity);
+            newY2 = bounds.getCentreY();
+            DBG("paintHGrid:: Y2 = " << newY2);
             for (auto y : NiceGainY)
             {
                 newY41 = newY2 - y;
                 g.drawHorizontalLine(newY41, left, right);
+                DBG("paintHGrid:: Y41 = " << newY41);
                 newY42 = newY2 + y;
                 g.drawHorizontalLine(newY42, left, right);
                 //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
@@ -549,7 +563,7 @@
             }
         }
         //----------------------------------------------------------------------------------
-        void drawYLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
+        void drawYLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds, int mode)
         {
             g.setColour(gridColour);
             g.setOpacity(1.0);
@@ -565,7 +579,7 @@
             auto right = left + textArea.getWidth();
 
             juce::Rectangle<int> rTxt;
-            juce::String strTxt;
+            juce::String strTxt, yUnits;
             strTxt << "-144 dB";
             auto txtWidth = g.getCurrentFont().getStringWidth(strTxt);
             rTxt.setSize(txtWidth, fontHeight);
@@ -573,18 +587,37 @@
             //std::vector<double> xs = getXs();
             std::vector<int> NiceGainVect;
             std::vector<int> NiceGainY;
-            int ret = getNiceGainVect(wavZone.getHeight(), NiceGainVect, NiceGainY);
+            int ret ; //= getNiceGainVect(wavZone.getHeight(), NiceGainVect, NiceGainY);
+
+            switch (mode)
+            {
+            case 0: // linear
+                ret = getNiceGainVectLin(textArea.getHeight(), NiceGainVect, NiceGainY);
+                yUnits << " %";
+                break;
+            case 1: // in dB
+                ret = getNiceGainVect(textArea.getHeight(), NiceGainVect, NiceGainY);
+                yUnits << " dB";
+                break;
+            default: // linear
+                ret = getNiceGainVectLin(textArea.getHeight(), NiceGainVect, NiceGainY);
+                yUnits << " %";
+                break;
+            }
+
+            
             int newY2, newY41, newY42;
             int newY1, newGain;
 
             newY2 = wavZone.getCentreY();
+            DBG("drawYLabels:: Y2 = " << newY2);
 
             for (int idx = 0; idx < NiceGainY.size(); idx++)
             {
                 juce::String str;
                 newY1 = newY2 - NiceGainY[idx] - fontHeight / 2.0;
-                newGain = NiceGainVect[idx]; // get
-                str << newGain << " dB";
+                newGain = NiceGainVect[idx]; // get value to be displayed
+                str << newGain << yUnits;
                 str.toDecimalStringWithSignificantFigures(newGain, 2);
                 juce::Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
@@ -600,9 +633,11 @@
                 newY1 = newY2 - NiceGainY[idx];
                 left = textArea.getTopLeft().getX();
                 g.drawHorizontalLine(newY1, left - 3, left);
+                DBG("drawYLabels:: Y1 = " << newY1);
                 //           DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
             }
         }
+
         //----------------------------------------------------------------------------------
         double round_fl(double x, int num_decimal_precision_digits)
         {
@@ -754,6 +789,57 @@
             return(0);//should never happen
         }
         //----------------------------------------------------------------------------------
+        int getNiceGainVectLin(int displayHeightPix, std::vector<int>& NiceGainVect,
+            std::vector<int>& NiceGainY)
+        {
+            const double minRectHeight{ 15.0 }; //nb of pixel min between horizontal lines
+            //std::vector<int> gaindB = getGains();
+            //std::vector<long double> gainMult = getZoomGainVect();
+            //std::vector<int> NiceGainVect;
+            //std::vector<int> NiceGainY;
+            //double previousYdB = 0;
+            //double previousYpix = 0;
+            //auto curYZoom = ThumbYZoom;
+
+            int curYZoomIndex = YZoomIndex;
+            const long double dBStep = 1.5;
+            double topGdB = 12.0 - curYZoomIndex * dBStep;
+
+            double gridRatio, linGain, topLinGain;
+
+            
+            topLinGain = pow(10.0, topGdB / 10.0);
+            topLinGain = round(topLinGain);
+
+            double halfHeightPix = floor((double)displayHeightPix / 2.0);
+            
+            double curY = halfHeightPix;
+            double ratio;
+            double gain, gain3;
+            double NiceY;
+            double yStep, perCentStep;
+
+            double log2Ratio,linRatio;
+            gridRatio = halfHeightPix / minRectHeight;
+            log2Ratio = log2(gridRatio);
+            log2Ratio = floor(log2Ratio);
+            linRatio = pow(2.0, log2Ratio);
+            yStep = halfHeightPix / linRatio;
+            perCentStep = 100.0 / linRatio;
+            gain = 100.0;
+            while (curY >= 0)
+            {
+                NiceY = curY;
+                NiceY = round(curY);
+                NiceGainY.push_back((int)NiceY);
+                curY -= yStep;
+                NiceGainVect.push_back(gain);
+                gain = gain - perCentStep;
+            }
+            return(0);//should never happen
+        }
+
+        //----------------------------------------------------------------------------------
         juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
         {
             //bounds.removeFromTop(12);
@@ -827,12 +913,12 @@
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     paintVerticalGrid(g, wavZone);
-                    paintHorizontalGrid(g, wavZone);
+                    paintHorizontalGrid(g, wavZone,1);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     xzoomticknb = createZoomVector(zoomVector);
                     drawXLabels(g, thumbArea);
-                    drawYLabels(g, thumbArea);
+                    drawYLabels(g, thumbArea,1);
                     break;
 
                 case 1: // recording mode (scrolling data)                
@@ -847,7 +933,7 @@
                         thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         wavZone = getWaveZone(thumbArea);
                         paintVerticalGrid(g, wavZone);
-                        paintHorizontalGrid(g, wavZone);
+                        paintHorizontalGrid(g, wavZone,1);
                         g.setColour(wavFormColour);
                         thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, (float)ThumbYZoom);
                         bTriggered = false;
@@ -862,11 +948,11 @@
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     wavZone = getWaveZone(thumbArea);
                     paintVerticalGrid(g, wavZone);
-                    paintHorizontalGrid(g, wavZone);
+                    paintHorizontalGrid(g, wavZone,1);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabels(g, thumbArea);
-                    drawYLabels(g, thumbArea);
+                    drawYLabels(g, thumbArea,1);
                     break;
                 case 4: //oscilloscope with trigger
                     if (bTriggered)
@@ -884,11 +970,11 @@
                     xzoomticknb = createZoomVector(zoomVector);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
-                    paintHorizontalGrid(g, wavZone);
-                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    paintHorizontalGrid(g, wavZone,0);
+                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    //drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    drawYLabels(g, thumbArea);
+                    drawYLabels(g, thumbArea, 0);
                     break;
 
                 case 5: //oscilloscope with trigger Zoom 
@@ -904,11 +990,11 @@
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
-                    paintHorizontalGrid(g, wavZone);
+                    paintHorizontalGrid(g, wavZone,0);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    drawYLabels(g, thumbArea);
+                    drawYLabels(g, thumbArea,0);
                     break;
                 }
             }

@@ -293,22 +293,28 @@ namespace juce
                 {
                     int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
                     int smpCount;
+                    int64 nbOfSmpInThumbnail;
                     if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
                         //thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, maxSmpCount);
                         thumbnail.addBlock(0, eScopeBuffer, offsetInEScopeBuffer, maxSmpCount);
+                        nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
                         eScopeBufferSize = 0; // reset flag for tests
                     }
                     else //tail data wrapped 
                     {
+                       
                         smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
                         unsigned long copyStart = triggAddress - halfMaxSmpCount;
                         thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
+                        nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
+
 
                         smpCount = maxSmpCount - smpCount;
                         copyStart = 0;
                         thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
+                        nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
 
                         eScopeBufferSize = 0; // reset flag for tests
                         wfStartAddress = 0;
