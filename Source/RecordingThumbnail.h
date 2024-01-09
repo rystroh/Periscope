@@ -52,6 +52,7 @@
         juce::AudioBuffer<float>* eBuffer;
         unsigned long *wfStartAddr ;
         unsigned long *wfTriggAddr ;
+        bool *bBufferReady;
         //----------------------------------------------------------------------------------
         bool* getTriggeredPtr(void) { return &bTriggered; }
         //----------------------------------------------------------------------------------
@@ -61,6 +62,8 @@
         void setBufferStartAddress(unsigned long* addr) { wfStartAddr = addr; }
         //----------------------------------------------------------------------------------
         void setBufferTriggAddress(unsigned long* addr) { wfTriggAddr = addr; }
+        //----------------------------------------------------------------------------------
+        void setBufferReadyAddress(bool* addr) { bBufferReady = addr; }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         {
@@ -197,52 +200,55 @@
         //----------------------------------------------------------------------------------
         void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
-            double displayStartTime, displayEndTime, displayWidth;
-
-            auto renderArea = bounds;
-            auto top = bounds.getY();
-            auto bottom = bounds.getBottom();
-            auto width = bounds.getWidth(); // width of Display zone in pixels
-
-            double SampleSize = totlen * sampleRate; //size  of sample in points
-            double Ratio = SampleSize / (double)width;
-            auto visRangeWidth = visibleRange.getLength();
-            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
-
-            double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
-            if (stepSize != newstepSize)
+            auto totlen = getSampleSize(); // thumbnail.getTotalLength(); //total length of sample in seconds
+            if (totlen > 0)
             {
-                stepSize = newstepSize;
-                //DBG("paintGrid::stepSize = " << stepSize);
-            }
-            g.setColour(gridColour);
-            g.setOpacity(gridOpacity);
-            int newX1;
-            int centerX = timeToX(visRangeWidth * 0.5); // timeToX(viewSize * 0.5); get time center
-            std::vector<double> xs;
+                double displayStartTime, displayEndTime, displayWidth;
 
-            if (XZoomIndex == 0)
-            {
-                xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
-                // draw vertical time lines
-                for (auto x : xs)
+                auto renderArea = bounds;
+                auto top = bounds.getY();
+                auto bottom = bounds.getBottom();
+                auto width = bounds.getWidth(); // width of Display zone in pixels
+
+                double SampleSize = totlen * sampleRate; //size  of sample in points
+                double Ratio = SampleSize / (double)width;
+                auto visRangeWidth = visibleRange.getLength();
+                double curRatio = Ratio / totlen * (double)visibleRange.getLength();
+
+                double newstepSize = getTimeStepSize(width, (double)visRangeWidth);
+                if (stepSize != newstepSize)
                 {
-                    newX1 = centerX + timeToX(x); // get 
-                    g.drawVerticalLine(newX1, top, bottom);
+                    stepSize = newstepSize;
+                    //DBG("paintGrid::stepSize = " << stepSize);
                 }
-            }            
-            else
-            {
-                xs = getXs(); //create vector with nice positions for vert lines
-                for (auto x : xs)
+                g.setColour(gridColour);
+                g.setOpacity(gridOpacity);
+                int newX1;
+                int centerX = timeToX(visRangeWidth * 0.5); // timeToX(viewSize * 0.5); get time center
+                std::vector<double> xs;
+
+                if (XZoomIndex == 0)
                 {
-                    newX1 = timeToX(x); // get 
-                    g.drawVerticalLine(newX1, top, bottom);
-                }             
-            }                     
-            paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
-            paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
+                    xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
+                    // draw vertical time lines
+                    for (auto x : xs)
+                    {
+                        newX1 = centerX + timeToX(x); // get 
+                        g.drawVerticalLine(newX1, top, bottom);
+                    }
+                }
+                else
+                {
+                    xs = getXs(); //create vector with nice positions for vert lines
+                    for (auto x : xs)
+                    {
+                        newX1 = timeToX(x); // get 
+                        g.drawVerticalLine(newX1, top, bottom);
+                    }
+                }
+                paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
+                paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
+            }            
         }
         //----------------------------------------------------------------------------------
         void paintVerticalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -532,11 +538,11 @@
             auto left = textArea.getX();
             auto top = textArea.getY();
             auto right = left + textArea.getWidth();
-            auto viewSize = textArea.getWidth(); ; // bounds.getWidth();
-            auto xCenter = viewSize / 2.0;
+            auto txtWidth = textArea.getWidth(); ; // bounds.getWidth();
+            auto xCenter = txtWidth / 2.0;
             auto timeZoneHalf = visibleRange.getLength() / 2;
             //std::vector<double> xs = getXs();
-            std::vector<double> xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
+            std::vector<double> xs = getXsCentered(txtWidth * 0.5); //create vector with nice positions for vert
 
             int newX1;
             for (auto x : xs)
@@ -831,7 +837,6 @@
             }
             return(0);//should never happen
         }
-
         //----------------------------------------------------------------------------------
         juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
         {
@@ -883,20 +888,20 @@
             g.setColour(wavBackgroundColour);
             g.fillRect(wavZone);
 
-            if (thumbnail.getTotalLength() > 0.0)
-            {
-                double startTime = 0.0f;
-                double  endTime = 1.0f;
-                double  endofrecording = 1.0f;
-                double currentlength = thumbnail.getTotalLength();
-                endofrecording = juce::jmax(10.0, currentlength);
-                juce::Range<double> newRange;
-                double thumbnailsize;
-                int xzoomticknb;
+            double startTime = 0.0f;
+            double  endTime = 1.0f;
+            double  endofrecording = 1.0f;
+            double currentlength = getSampleSize(); //thumbnail.getTotalLength();
+            endofrecording = juce::jmax(10.0, currentlength);
+            juce::Range<double> newRange;
+            double thumbnailsize;
+            int xzoomticknb;
 
-                switch (displayThumbMode)
+            switch (displayThumbMode)
+            {
+            case 0: //Full Thumb mode (expand recording data to window when stopping Recording
+                if (thumbnail.getTotalLength() > 0.0)
                 {
-                case 0: //Full Thumb mode (expand recording data to window when stopping Recording
                     endTime = thumbnail.getTotalLength();
                     scrollbar.setAutoHide(false);
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
@@ -906,34 +911,43 @@
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     paintVerticalGrid(g, wavZone);
-                    paintHorizontalGrid(g, wavZone,1);
+                    paintHorizontalGrid(g, wavZone, 1);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     xzoomticknb = createZoomVector(zoomVector);
                     drawXLabels(g, thumbArea);
-                    drawYLabels(g, thumbArea,1);
-                    break;
+                    drawYLabels(g, thumbArea, 1);
+                }
+                break;
 
-                case 1: // recording mode (scrolling data)                
+            case 1: // recording mode (scrolling data)
+                if (thumbnail.getTotalLength() > 0.0)
+                {
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), startTime, endofrecording, (float)ThumbYZoom);
-                    break;
+                }
+                break;
 
-                case 2: //oscilloscope dancing view                    
+            case 2: //oscilloscope dancing view
+                if (thumbnail.getTotalLength() > 0.0)
+                {
                     if (currentlength >= viewSize)
                     {
                         thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         wavZone = getWaveZone(thumbArea);
                         paintVerticalGrid(g, wavZone);
-                        paintHorizontalGrid(g, wavZone,1);
+                        paintHorizontalGrid(g, wavZone, 1);
                         g.setColour(wavFormColour);
                         thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, (float)ThumbYZoom);
                         bTriggered = false;
                     }
-                    break;
+                }
+                break;
 
-                case 3: // zooming mode                
+            case 3: // zooming mode
+                if (thumbnail.getTotalLength() > 0.0)
+                {
                     thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
                     newRange.setEnd(thumbnailsize);
@@ -941,62 +955,62 @@
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     wavZone = getWaveZone(thumbArea);
                     paintVerticalGrid(g, wavZone);
-                    paintHorizontalGrid(g, wavZone,1);
+                    paintHorizontalGrid(g, wavZone, 1);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabels(g, thumbArea);
-                    drawYLabels(g, thumbArea,1);
-                    break;
-                case 4: //oscilloscope with trigger
+                    drawYLabels(g, thumbArea, 1);
+                }
+                break;
+            case 4: //oscilloscope with trigger
+                if (*bBufferReady)
+                {
                     if (bTriggered)
                     {
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
                     }
-                    
                     xzoomticknb = createZoomVector(zoomVector);
-                    thumbnailsize = thumbnail.getTotalLength();
+                    //thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
-                    newRange.setEnd(thumbnailsize);
+                    newRange.setEnd(viewSize); // thumbnailsize);
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     xzoomticknb = createZoomVector(zoomVector);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
-                    paintHorizontalGrid(g, wavZone,0);
+                    paintHorizontalGrid(g, wavZone, 0);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, 0);
-                    break;
+                }
+                break;
 
-                case 5: //oscilloscope with trigger Zoom 
+            case 5: //oscilloscope with trigger Zoom
+                if (*bBufferReady)
+                {
                     if (bTriggered)
                     {
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
                     }
-                    thumbnailsize = thumbnail.getTotalLength();
+                    //thumbnailsize = thumbnail.getTotalLength();
                     //newRange.setStart(0.0);
                     //newRange.setEnd(thumbnailsize);
                     //setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
-                    paintHorizontalGrid(g, wavZone,0);
+                    paintHorizontalGrid(g, wavZone, 0);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    drawYLabels(g, thumbArea,0);
-                    break;
+                    drawYLabels(g, thumbArea, 0);
                 }
+                break;
             }
-            else
-            {
-                g.setFont(14.0f);
-                //g.drawFittedText ("(No file recorded)", getLocalBounds(), 
-                //Justification::centred, 2);
-            }
+            
         }
         //----------------------------------------------------------------------------------
         void resized() override
@@ -1019,56 +1033,61 @@
         int createZoomVector(std::vector<double>& Divider)
         {
             //auto vrange = visibleRange.getLength();
-            auto totlen = thumbnail.getTotalLength();
-            auto thumbArea = getLocalBounds();
-            auto wavWindowWidth = wavZone.getWidth();
+            auto totlen = getSampleSize(); //thumbnail.getTotalLength();
+            if (totlen > 0)
+            {
+                auto thumbArea = getLocalBounds();
+                auto wavWindowWidth = wavZone.getWidth();
 
-            //    auto SampleRate = 48000;
-            double SampleSize = totlen * sampleRate;
-            //double Ratio = SampleSize / thumbArea.getWidth();
-            double Ratio = (double)SampleSize / (double)wavWindowWidth;
-            double div = Ratio;
-            int it = 0;
-            int iteration = 0;
-            double seed = 1.0;
-            double sub1Tab[]{ 24.0, 16.0, 12.0, 8.0, 6.0 , 4.0, 3.0 , 2.0 };
+                //    auto SampleRate = 48000;
+                double SampleSize = totlen * sampleRate;
+                //double Ratio = SampleSize / thumbArea.getWidth();
+                double Ratio = (double)SampleSize / (double)wavWindowWidth;
+                double div = Ratio;
+                int it = 0;
+                int iteration = 0;
+                double seed = 1.0;
+                double sub1Tab[]{ 24.0, 16.0, 12.0, 8.0, 6.0 , 4.0, 3.0 , 2.0 };
 
-            std::vector<double> Divider2;// , Divider;
-            Divider.clear();
-            Divider2.clear();
-            for (double n : sub1Tab)
-            {
-                Divider2.push_back(1.0 / n);
-            }
-            while (div > 2)
-            {
-                div = div / 2;
-                iteration++;
-            }
-            Divider2.push_back(seed);
-            while (it < iteration)
-            {
-                seed *= 2;
-                if (seed < Ratio)
-                    Divider2.push_back(seed);
-                it++;
-            }
-            for (auto iter = Divider2.cbegin(); iter != Divider2.cend(); ++iter)
-            {
-                seed = *iter;
-                Divider.push_back(seed);
-                seed *= 3.0;
-                if (seed < Ratio)
+                std::vector<double> Divider2;// , Divider;
+                Divider.clear();
+                Divider2.clear();
+                for (double n : sub1Tab)
+                {
+                    Divider2.push_back(1.0 / n);
+                }
+                while (div > 2)
+                {
+                    div = div / 2;
+                    iteration++;
+                }
+                Divider2.push_back(seed);
+                while (it < iteration)
+                {
+                    seed *= 2;
+                    if (seed < Ratio)
+                        Divider2.push_back(seed);
+                    it++;
+                }
+                for (auto iter = Divider2.cbegin(); iter != Divider2.cend(); ++iter)
+                {
+                    seed = *iter;
                     Divider.push_back(seed);
+                    seed *= 3.0;
+                    if (seed < Ratio)
+                        Divider.push_back(seed);
+                }
+
+                std::sort(Divider.begin(), Divider.end());
+
+                if (Ratio > Divider[Divider.size() - 1])
+                    Divider.push_back(Ratio); //if Ratio is not already there, add it 
+                std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
+
+                return ((int)Divider.size());
             }
-
-            std::sort(Divider.begin(), Divider.end());
-
-            if (Ratio > Divider[Divider.size() - 1])
-                Divider.push_back(Ratio); //if Ratio is not already there, add it 
-            std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
-
-            return ((int)Divider.size());
+            else
+                return(0);
         }
         //----------------------------------------------------------------------------------
         void mouseDown(const juce::MouseEvent& event)
@@ -1080,7 +1099,8 @@
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override
         {
             juce::Point< int > Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
-            if (thumbnail.getTotalLength() > 0.0)
+            float sampleTimeInSeconde = getSampleSize(); //
+            if ((thumbnail.getTotalLength() > 0.0)|| (*bBufferReady))
             {
                 if ((juce::ModifierKeys::currentModifiers.isCtrlDown()) ||
                     (juce::ModifierKeys::currentModifiers.isAltDown())) //Y Zoom
@@ -1110,7 +1130,7 @@
                 {
                     auto newStart = visibleRange.getStart() -
                         wheel.deltaY * (visibleRange.getLength()) / 10.0;
-                    newStart = juce::jlimit(0.0, juce::jmax(0.0, thumbnail.getTotalLength() -
+                    newStart = juce::jlimit(0.0, juce::jmax(0.0, sampleTimeInSeconde -
                         (visibleRange.getLength())), newStart);
                     setRange({ newStart, newStart + visibleRange.getLength() });
                     repaint();
@@ -1119,10 +1139,19 @@
                 else //X Zoom Control
                 {
                     auto WheelDelta = wheel.deltaY;
-                    auto totlen = thumbnail.getTotalLength();
+                    float totlen;
                     auto vrange = visibleRange.getLength();
-                    if (totlen == vrange)
-                        XZoomIndex = 0;
+
+                    if (displayThumbMode == 3)
+                    {
+                        totlen = sampleTimeInSeconde;
+                        if (totlen == vrange)
+                            XZoomIndex = 0;
+                    }
+                    else
+                        totlen = viewSize;
+                    
+
                     double NewZoomFactor;
                     //DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " 
                     //<< zoomVector.size());
@@ -1146,8 +1175,8 @@
                         else
                             NewZoomFactor = zoomVector[0];
                     }
-                    //DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " 
-                    //<< zoomVector.size() << " NewZoom " << NewZoomFactor);
+                    DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " 
+                    << zoomVector.size() << " NewZoom " << NewZoomFactor);
                     setDisplayXZone(NewZoomFactor, Posi3);
                     sendChangeMessage();
                 }
@@ -1164,20 +1193,46 @@
             setDisplayXZone(zoomfactor, MousePosition);
         }
         //----------------------------------------------------------------------------------
+        float getSampleSize(void)
+        {
+            float sampleTimeInSecond = 0;
+            if (displayThumbMode > 3)// if was in triggered mode
+            {
+                if(sampleRate < 1 )
+                    return(sampleTimeInSecond);
+                else
+                {
+                    sampleTimeInSecond = (float)eBuffer->getNumSamples() / (float)sampleRate;
+                    return(sampleTimeInSecond);
+                }
+            }
+            else
+            {
+                return( thumbnail.getTotalLength());
+            }
+        }
+        //----------------------------------------------------------------------------------
         void setDisplayXZone(double zoomfactor, juce::Point< int >MousePosition)
         {
             displayFullThumb = false;
+            float waveLength = getSampleSize();
+
             if (displayThumbMode > 3)// if was in triggered mode
+            {
                 displayThumbMode = 5;
+            }                
             else
+            {
                 displayThumbMode = 3; //zoom mode
+            }
+                
          //auto Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
          //   repaint();
-            if (thumbnail.getTotalLength() > 0)
+            if (waveLength > 0)
             {
                 auto wavWindowWidth = wavZone.getWidth();//width in pixels 
 
-                auto totlen = thumbnail.getTotalLength(); //total length of sample in seconds
+                auto totlen = waveLength; //thumbnail.getTotalLength(); //total length of sample in seconds
                 double displayStartTime, displayEndTime, displayWidth;
 
                 auto thumbArea = getLocalBounds(); //bounds of display zone

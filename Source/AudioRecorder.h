@@ -135,6 +135,8 @@ namespace juce
         //----------------------------------------------------------------------------------
         unsigned long* getTriggAddrPtr() { return (&wfTriggAddress); }
         //----------------------------------------------------------------------------------
+        bool* getBufferReadyAddrPtr() { return (&wfBufferReady); }
+        //----------------------------------------------------------------------------------
         void setSampleRate(double smpRate) { sampleRate = smpRate; }
         //----------------------------------------------------------------------------------
         double getSampleRate(void) { return(sampleRate); }
@@ -258,10 +260,15 @@ namespace juce
                 writePosition %= eScopeBufferSize;
 
                 //now if we have enough samples, pass them to the Thumbnail for display
-                thumbnailWritten = WriteThumbnail(); // using numSamples ?
+                //thumbnailWritten = WriteThumbnail(); // using numSamples ?
                 // 
                 //check if we have enough sample if yes, flag display to update
-                //bufferWritten = PrepareBufferPointers();
+                bufferWritten = PrepareBufferPointers();
+
+                if (bufferWritten) // to allow tests / break points ONLY !
+                    wfBufferReady = true; 
+                else
+                    wfBufferReady = false;
             }
 
             if (activeWriter.load() != nullptr && chanID < numInputChannels)
@@ -330,6 +337,7 @@ namespace juce
                     }
                 }
                 currentSmpCount = 0;
+                thumbnail.reset(1, sampleRate, 0);
                 return(true);
             }
             else
@@ -505,9 +513,11 @@ namespace juce
 
         unsigned long wavaddr = 0;
         unsigned long wavidx = 0;
-
+        //following are shared by pointers between recorder and view
         unsigned long wfStartAddress = 0;
         unsigned long wfTriggAddress = 0;
+        bool wfBufferReady = false;
+        //end of shared
 
         const float *wavptr = nullptr;
         uint16 wavSize = 48000;

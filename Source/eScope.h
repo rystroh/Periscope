@@ -102,6 +102,8 @@
             recThumbnail.setBufferStartAddress(StartAddr);
             unsigned long* TriggAddr = recorder.getTriggAddrPtr();
             recThumbnail.setBufferTriggAddress(TriggAddr);
+            bool* BufferReady = recorder.getBufferReadyAddrPtr();
+            recThumbnail.setBufferReadyAddress(BufferReady);
         }
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) //override
