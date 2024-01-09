@@ -177,23 +177,22 @@
         //----------------------------------------------------------------------------------
         void paintTriggerTimeAndLevel(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            auto renderArea = bounds;
-            auto top = renderArea.getY();
-            auto bottom = renderArea.getBottom();
-            auto left = renderArea.getX();
-            auto right = renderArea.getRight();
-            int newX1, newY2, thumbh;
-            newY2 = bounds.getCentreY();
-            thumbh = bounds.getHeight();
+            int trigTime, trigY;
+            auto top = bounds.getY(); //bounds = render area
+            auto bottom = bounds.getBottom();
+            auto left = bounds.getX();
+            auto right = bounds.getRight();
+            auto thumbh = bounds.getHeight();
+              
             // Draw Trigger Vertical and Horizontal
             g.setColour(triggerColour);//Draw middle horizontal line
             g.setOpacity(triggerOpacity);
-            newX1 = timeToX(viewSize * 0.5); // get time center
-            g.drawVerticalLine(newX1, top, bottom);
-            double yfact = ThumbYZoom;
-            float thresholdPos = newY2 - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
-            newY2 = (int)thresholdPos;
-            g.drawHorizontalLine(newY2, left, right);
+            trigTime = timeToX(viewSize * 0.5); // get time center
+            g.drawVerticalLine(trigTime, top, bottom);
+            float trigLevel = bounds.getCentreY() - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
+            trigY = (int)trigLevel;
+            if ((trigY >= top) && (trigY <= bottom))
+                g.drawHorizontalLine(trigY, left, right);// only draw if in display area
         }
         //----------------------------------------------------------------------------------
         void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -301,23 +300,20 @@
             g.setColour(gridColour);
             g.setOpacity(gridOpacity);
             newY2 = bounds.getCentreY();
-            DBG("paintHGrid:: Y2 = " << newY2);
+            //DBG("paintHGrid:: Y2 = " << newY2);
             for (auto y : NiceGainY)
             {
                 newY41 = newY2 - y;
                 g.drawHorizontalLine(newY41, left, right);
-                DBG("paintHGrid:: Y41 = " << newY41);
+                //DBG("paintHGrid:: Y41 = " << newY41);
                 newY42 = newY2 + y;
                 g.drawHorizontalLine(newY42, left, right);
                 //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
             }
         }
         //----------------------------------------------------------------------------------
-        void drawBuffer(juce::Graphics& g,
-            const juce::Rectangle<int>& bounds,
-            double  startTimeSeconds,
-            double  endTimeSeconds,
-            float  	verticalZoomFactor
+        void drawBuffer(juce::Graphics& g, const juce::Rectangle<int>& bounds,
+            double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor
         )
         {
             g.setColour(wavFormColour);
@@ -604,13 +600,12 @@
                 yUnits << " %";
                 break;
             }
-
             
             int newY2, newY41, newY42;
             int newY1, newGain;
 
             newY2 = wavZone.getCentreY();
-            DBG("drawYLabels:: Y2 = " << newY2);
+            //DBG("drawYLabels:: Y2 = " << newY2);
 
             for (int idx = 0; idx < NiceGainY.size(); idx++)
             {
@@ -633,11 +628,9 @@
                 newY1 = newY2 - NiceGainY[idx];
                 left = textArea.getTopLeft().getX();
                 g.drawHorizontalLine(newY1, left - 3, left);
-                DBG("drawYLabels:: Y1 = " << newY1);
-                //           DBG("drawYLabels:: newY1 = " << newY1 << " gain = " << str);
+            //    DBG("drawYLabels:: Y1 = " << newY1);
             }
         }
-
         //----------------------------------------------------------------------------------
         double round_fl(double x, int num_decimal_precision_digits)
         {
@@ -971,8 +964,8 @@
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
                     paintHorizontalGrid(g, wavZone,0);
-                    thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    //drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, 0);
                     break;

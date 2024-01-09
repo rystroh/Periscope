@@ -110,6 +110,7 @@ namespace juce
             //wavptr = &Ramp48000Skipped3[0];
             wavptr = &Ramp120k[0];
             thumbnailWritten = false;
+            bufferWritten = false; 
         }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)
@@ -237,6 +238,7 @@ namespace juce
                 {
                     unsigned int triggerIndex;
                     if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
+                    //if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
                     {
                         bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &buffer);
                         *thumbnailTriggeredPtr = bTriggered;
@@ -257,13 +259,9 @@ namespace juce
 
                 //now if we have enough samples, pass them to the Thumbnail for display
                 thumbnailWritten = WriteThumbnail(); // using numSamples ?
-
-                /*         if (*thumbnailTriggeredPtr)
-                           {
-                               thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                               nextSampleNum += numSamples;
-                           }*/
-
+                // 
+                //check if we have enough sample if yes, flag display to update
+                //bufferWritten = PrepareBufferPointers();
             }
 
             if (activeWriter.load() != nullptr && chanID < numInputChannels)
@@ -280,6 +278,62 @@ namespace juce
             for (int i = 0; i < numOutputChannels; ++i)
                 if (outputChannelData[i] != nullptr)
                     FloatVectorOperations::clear(outputChannelData[i], numSamples);
+        }
+        //----------------------------------------------------------------------------------
+        bool PrepareBufferPointers(void)
+        {
+            if ((currentSmpCount >= halfMaxSmpCount) && (bufferWritten == false))
+            {
+                bufferWritten = true;
+                //copy data that are before the Threshold
+                if (triggAddress >= halfMaxSmpCount) //we have enough data before trig 
+                {
+                    int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
+                    int smpCount;
+                    int64 nbOfSmpInThumbnail;
+                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    {
+                        smpCount = triggAddress + halfMaxSmpCount;
+                        eScopeBufferSize = 0; // reset flag for tests
+                        wfStartAddress = smpCount;
+                        wfTriggAddress = triggAddress;
+                    }
+                    else //tail data wrapped 
+                    {
+
+                        smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
+                        unsigned long copyStart = triggAddress - halfMaxSmpCount;
+                        smpCount = maxSmpCount - smpCount;
+                        eScopeBufferSize = 0; // reset flag for tests
+                        wfStartAddress = smpCount;
+                        wfTriggAddress = triggAddress;
+                    }
+                }
+                else //head data wrapped or not enough data recorded before trigger point
+                {
+                    int offsetInEScopeBuffer = 0;
+                    int smpCount;
+                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    {
+                        smpCount = triggAddress + halfMaxSmpCount;
+                        int paddingSmpNb = halfMaxSmpCount - triggAddress;
+                        int paddingPtrinBuffer = eScopeBufferSize - paddingSmpNb;
+                        eScopeBufferSize = 0; // reset flag for tests
+                        wfStartAddress = paddingPtrinBuffer;
+                        wfTriggAddress = triggAddress;
+                    }
+                    else //should never happen
+                    {
+                        eScopeBufferSize = 0; // reset flag for tests
+                        wfStartAddress = 0;
+                        wfTriggAddress = triggAddress;
+                    }
+                }
+                currentSmpCount = 0;
+                return(true);
+            }
+            else
+                return(false);
         }
         //----------------------------------------------------------------------------------
         bool WriteThumbnail(void)
@@ -310,14 +364,14 @@ namespace juce
                         thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
                         nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
 
-
+                        int64 nextSmpNb = smpCount;
                         smpCount = maxSmpCount - smpCount;
                         copyStart = 0;
-                        thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
+                        thumbnail.addBlock(nextSmpNb, eScopeBuffer, copyStart, smpCount);
                         nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
 
                         eScopeBufferSize = 0; // reset flag for tests
-                        wfStartAddress = 0;
+                        wfStartAddress = smpCount;
                         wfTriggAddress = triggAddress;
                     }
                 }
@@ -458,6 +512,7 @@ namespace juce
         const float *wavptr = nullptr;
         uint16 wavSize = 48000;
         bool thumbnailWritten = false;
+        bool bufferWritten = false; 
     };
 };
 
