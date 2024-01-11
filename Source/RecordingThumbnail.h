@@ -377,6 +377,7 @@
             DBG("ptNb = " << ptNb << " width = " << width << " ratio = " << ratio << " verticalZoomFactor = " << verticalZoomFactor);
 
             int idx,idxEnd;
+            int blockID = 0;//for debug
             g.setColour(wavFormColour);
 
             if (ratio >=2)
@@ -384,14 +385,20 @@
                 for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
                 {
                     idx = (int)sample;
-                    idxEnd = idx + (int)ratio;                 
+                    idxEnd = idx + (int)ratio;
+                    if (idxEnd > endSample - 1)
+                        idxEnd = endSample - 1;
                     //wavMin = eBuffer->getSample(0, idx);
                     wavMin = waveform.getSample(0, idx);
+                    if (wavMin > 1)
+                        DBG("one point is out = " << wavMin << " " << idx);
                     wavMax = wavMin;
                     while (idx < idxEnd)
                     {
                         //auto val = eBuffer->getSample(0, idx++);
                         auto val = waveform.getSample(0, idx++);
+                        if (val > 1)
+                            DBG("one point is out = " << val << " " << idx);
                         if (wavMax < val)
                             wavMax = val;
                         if (wavMin > val)
@@ -399,6 +406,7 @@
                     }
                     mMaxAudioPoints.push_back(wavMax);
                     mMinAudioPoints.push_back(wavMin);
+                    blockID++; //for debug
                 }
                 bool pathStarted = false;
                 float pointMinScaled, pointMaxScaled;
@@ -407,6 +415,9 @@
                 {
                     pointMinScaled = mMinAudioPoints[sample] * verticalZoomFactor;
                     pointMaxScaled = mMaxAudioPoints[sample] * verticalZoomFactor;
+                    if(pointMaxScaled>1)
+                        DBG("one point is out = " << pointMinScaled << " " << pointMaxScaled);
+                
                     if ((pointMinScaled < -1) && (pointMaxScaled < -1))
                     {
                         DBG("first point is out = " << pointMinScaled << " " << pointMaxScaled);
@@ -981,7 +992,7 @@
                     paintTimeGridLin(g, wavZone);
                     paintHorizontalGrid(g, wavZone, 0);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, 0);
                 }
@@ -1004,7 +1015,7 @@
                     paintTimeGridLin(g, wavZone);
                     paintHorizontalGrid(g, wavZone, 0);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawBuffer(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, 0);
                 }

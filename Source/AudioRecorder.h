@@ -223,20 +223,19 @@ namespace juce
                 overwriteStreamWithTestWav(channelData, buffer.getNumSamples());
 #endif
                 // write in circulare buffer for later display
-                if (writePosition + numSamples > eScopeBufferSize)//need to wrap condition
-                {
-                    int nbOfSmpPossibleToCopy = eScopeBufferSize - writePosition;
-                    int remaning = numSamples - nbOfSmpPossibleToCopy;
-                    eScopeBuffer.copyFrom(0, writePosition, channelData, nbOfSmpPossibleToCopy);
-                    eScopeBuffer.copyFrom(0, 0, channelData + nbOfSmpPossibleToCopy, numSamples - nbOfSmpPossibleToCopy);
-                }
-                else  //no need to wrap : copy to circular buffer
+                if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
                 {
                     eScopeBuffer.copyFrom(0, writePosition, channelData, numSamples);
                 }
+                else//last partial buffer to copy
+                {
+                    int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
+                    eScopeBuffer.copyFrom(0, writePosition, channelData, nbOfSmpToCopy);
+                 }
+                
 
                 // check if any sample in this new block is above threshold -> triggering display
-                if (currentSmpCount == 0)
+                if (currentPostTriggerSmpCount == 0)
                 {
                     unsigned int triggerIndex;
                     if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
@@ -248,13 +247,13 @@ namespace juce
                         {
                             triggAddress = writePosition + triggerIndex;
                             triggAddress %= eScopeBufferSize; //wrap if needed
-                            currentSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+                            currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
                         }
                     }
                 }
-                else if (currentSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
+                else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
                 {
-                    currentSmpCount += numSamples;//keep count of samples recorded
+                    currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
                 }
                 writePosition += numSamples;
                 writePosition %= eScopeBufferSize;
@@ -289,7 +288,7 @@ namespace juce
         //----------------------------------------------------------------------------------
         bool PrepareBufferPointers(void)
         {
-            if ((currentSmpCount >= halfMaxSmpCount) && (bufferWritten == false))
+            if ((currentPostTriggerSmpCount >= halfMaxSmpCount) && (bufferWritten == false))
             {
                 bufferWritten = true;
                 //copy data that are before the Threshold
@@ -336,7 +335,7 @@ namespace juce
                         wfTriggAddress = triggAddress;
                     }
                 }
-                currentSmpCount = 0;
+                currentPostTriggerSmpCount = 0;
                 thumbnail.reset(1, sampleRate, 0);
                 return(true);
             }
@@ -346,7 +345,7 @@ namespace juce
         //----------------------------------------------------------------------------------
         bool WriteThumbnail(void)
         {
-            if ((currentSmpCount >= halfMaxSmpCount) && (thumbnailWritten == false))
+            if ((currentPostTriggerSmpCount >= halfMaxSmpCount) && (thumbnailWritten == false))
             {
                 thumbnailWritten = true;
                 thumbnail.reset(1, sampleRate, 0);
@@ -418,7 +417,7 @@ namespace juce
                 {
 
                 }
-                currentSmpCount = 0;
+                currentPostTriggerSmpCount = 0;
                 return(true);
             }
             else
@@ -470,7 +469,7 @@ namespace juce
         void overwriteStreamWithTestWav(float* chanDataptr, int numSmp)
         {
             int sample = 0;
-            while((wavidx <= BleepSize) && (sample < numSmp)) //only copy at the beginning of the stream (the size of the array) 
+            while((wavidx < BleepSize) && (sample < numSmp)) //only copy at the beginning of the stream (the size of the array) 
             {
                     *chanDataptr = *wavptr;
                     chanDataptr++;
@@ -503,13 +502,13 @@ namespace juce
         double thresholdTrigger = 1.0;
         bool* thumbnailTriggeredPtr; // <- declare ptr to flag accessible by display part
         juce::AudioBuffer<float>eScopeBuffer;
-        int  eScopeBufferSize;
-        int writePosition = 0;
-        int readPosition = 0;
+        int64  eScopeBufferSize;
+        int64 writePosition = 0;
+        int64 readPosition = 0;
         float triggerPlaceRatio = 0.5;
-        int currentSmpCount = 0;
-        int maxSmpCount = 0;
-        int halfMaxSmpCount = 0;
+        int64 currentPostTriggerSmpCount = 0;
+        int64 maxSmpCount = 0;
+        int64 halfMaxSmpCount = 0;
 
         unsigned long wavaddr = 0;
         unsigned long wavidx = 0;
