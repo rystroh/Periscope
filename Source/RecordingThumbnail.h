@@ -374,6 +374,8 @@
             ptNb = endSample - startSample;
             float ratio = (float)ptNb / (float)width;
 
+            unsigned long halfBuffer = eBuffer->getNumSamples() / 2;
+
             DBG("ptNb = " << ptNb << " width = " << width << " ratio = " << ratio << " verticalZoomFactor = " << verticalZoomFactor);
 
             int idx,idxEnd;
@@ -444,6 +446,29 @@
                         pathStarted = true;
                     }
                 }
+                
+
+                if (*ptrTrig < halfBuffer)
+                {
+                    unsigned long invalidDataAddr = halfBuffer - *ptrTrig;
+                    if (invalidDataAddr > startSample)
+                    {
+                        juce::Rectangle <int> invalidDataRect;
+                        float rectLength = float(invalidDataAddr - startSample) / ratio;
+                        int redlineY = bounds.getCentreY() / 2;
+                        int rectY = redlineY - bounds.getCentreY() / 4;
+                        invalidDataRect.setX(bounds.getX());
+                        invalidDataRect.setY(bounds.getY());
+                        invalidDataRect.setWidth(bounds.getX() + rectLength);
+                        invalidDataRect.setHeight(bounds.getHeight());
+                        g.setColour(wavFormColour);
+                        g.setOpacity(0.75);
+                        g.drawRect(invalidDataRect,1.0);
+                        g.setOpacity(0.25);
+                        g.fillRect(invalidDataRect);
+                    }
+                    
+                }
             } 
             else // more than 1 pixel per wav sample
             {
@@ -485,6 +510,26 @@
                     }                
                 }
                 g.strokePath(path, juce::PathStrokeType(1));
+                if (*ptrTrig < halfBuffer)
+                {
+                    unsigned long invalidDataAddr = halfBuffer - *ptrTrig;
+                    if (invalidDataAddr > startSample)
+                    {
+                        juce::Rectangle <int> invalidDataRect;
+                        float rectLength = float(invalidDataAddr - startSample) / ratio;
+                        int redlineY = bounds.getCentreY() / 2;
+                        int rectY = redlineY - bounds.getCentreY() / 4;
+                        invalidDataRect.setX(bounds.getX());
+                        invalidDataRect.setY(bounds.getY());
+                        invalidDataRect.setWidth(bounds.getX() + rectLength);
+                        invalidDataRect.setHeight(bounds.getHeight());
+                        g.setColour(wavFormColour);
+                        g.setOpacity(0.75);
+                        g.drawRect(invalidDataRect, 1.0);
+                        g.setOpacity(0.25);
+                        g.fillRect(invalidDataRect);
+                    }
+                }
             }
 
             // draw frame around WavZone
