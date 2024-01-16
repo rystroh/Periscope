@@ -357,7 +357,7 @@
                 wavCount++;
             }
 
-            DBG("drawBuffer Nb of Point Copied = " << wavCount);            
+            //DBG("drawBuffer Nb of Point Copied = " << wavCount);            
 
             auto top = bounds.getY();
             auto bottom = bounds.getBottom();
@@ -372,17 +372,18 @@
                 endSample = ptNb; //catch stupid conditions
 
             ptNb = endSample - startSample;
-            float ratio = (float)ptNb / (float)width;
+            double ratio = (double)ptNb / (double)width; //float ratio = (float)ptNb / (float)width;
+            double invRatio = (double)width / (double)ptNb;
 
             unsigned long halfBuffer = eBuffer->getNumSamples() / 2;
 
-            DBG("ptNb = " << ptNb << " width = " << width << " ratio = " << ratio << " verticalZoomFactor = " << verticalZoomFactor);
-
+            //DBG("ptNb = " << ptNb << " width = " << width << " ratio = " << ratio << " verticalZoomFactor = " << verticalZoomFactor);
+            DBG("drawBuffer: wavCount = " << wavCount << "start = " << startSample << " end = " << endSample << " width = " << width << " ratio = " << ratio << " invratio = " << invRatio);
             int idx,idxEnd;
             int blockID = 0;//for debug
             g.setColour(wavFormColour);
 
-            if (ratio >=2)
+            if (ratio >=1)
             {
                 for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
                 {
@@ -470,15 +471,47 @@
                     
                 }
             } 
-            else // more than 1 pixel per wav sample
+            else // more than 1 pixel per wav sample double ratio = (double)ptNb / (double)width;
             {
-                for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
+                ptNb = endSample - startSample;
+                ratio = (double)ptNb / (double)width; //float ratio = (float)ptNb / (float)width;
+                unsigned int iInvertedRatio;
+                iInvertedRatio = (int)(invRatio+0.5);
+                if (startSample + ptNb * iInvertedRatio > endSample)
+                    return;
+
+            //    DBG("start = " << startSample << " end = " << endSample << " width = " << width << " ratio = " << ratio << " invratio = " << invRatio);
+
+                if ((ratio > 0.15) && (ratio < 0.169))// && (startSample > 119800))
+                    DBG("shit will hit the fan ! ");
+                
+
+                juce::Rectangle<int> wavPt;
+                int pointSize = 4;
+                wavPt.setHeight(pointSize);
+                wavPt.setWidth(pointSize);
+
+                auto pointScaled = waveform.getSample(0, startSample) * verticalZoomFactor;
+                if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
+                    DBG("first point is out = " << pointScaled);
+                else
+                    wavPt.setCentre(left, pointScaled);
+
+                for (int idx = 1; idx < endSample - startSample; idx++)
+                {
+                    pointScaled = waveform.getSample(0, startSample+idx) * verticalZoomFactor;
+                    //wavPt.setCentre()
+                }
+                /*
+                for (float sample = (float)startSample; (int)sample < int((float)endSample-1 - ratio); sample += ratio)
                 {
                     idx = (int)sample;
                     //wavPoint = eBuffer->getSample(0, idx);
-                    wavPoint = waveform.getSample(0, idx);                    
+                    wavPoint = waveform.getSample(0, idx);
                     mAudioPoints.push_back(wavPoint);
                 }
+                if (mAudioPoints.size() > right )
+                    DBG("mAudioPoints.size too big " << mAudioPoints.size() << " ratio = " << ratio << " start =  " << startSample << "x limit = " << right);
                 bool pathStarted = false;
                 auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
                 juce::Path path;
@@ -500,6 +533,8 @@
                     else
                     {
                         auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
+                        if (sample > right)
+                            DBG("point with index " << sample << " is out of X range = " << right);
                         if (!pathStarted)
                         {
                             path.startNewSubPath(sample, point);
@@ -510,6 +545,7 @@
                     }                
                 }
                 g.strokePath(path, juce::PathStrokeType(1));
+                */
                 if (*ptrTrig < halfBuffer)
                 {
                     unsigned long invalidDataAddr = halfBuffer - *ptrTrig;
@@ -1032,7 +1068,6 @@
                     newRange.setEnd(viewSize); // thumbnailsize);
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
-                    xzoomticknb = createZoomVector(zoomVector);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
                     paintHorizontalGrid(g, wavZone, 0);
@@ -1108,10 +1143,6 @@
                 std::vector<double> Divider2;// , Divider;
                 Divider.clear();
                 Divider2.clear();
-                for (double n : sub1Tab)
-                {
-                    Divider2.push_back(1.0 / n);
-                }
                 while (div > 2)
                 {
                     div = div / 2;
@@ -1133,11 +1164,15 @@
                     if (seed < Ratio)
                         Divider.push_back(seed);
                 }
-
                 std::sort(Divider.begin(), Divider.end());
-
                 if (Ratio > Divider[Divider.size() - 1])
                     Divider.push_back(Ratio); //if Ratio is not already there, add it 
+
+                for (double n : sub1Tab)
+                {
+                    Divider.push_back(1.0 / n);
+                }
+
                 std::sort(Divider.begin(), Divider.end(), std::greater());// greater<double>());
 
                 return ((int)Divider.size());
