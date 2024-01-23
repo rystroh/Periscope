@@ -476,15 +476,15 @@
                 ptNb = endSample - startSample;
                 ratio = (double)ptNb / (double)width; //float ratio = (float)ptNb / (float)width;
                 unsigned int iInvertedRatio;
-                iInvertedRatio = (int)(invRatio+0.5);
+                iInvertedRatio = (int)(invRatio + 0.5);
+                //ratio = (double)1.0 / (double)iInvertedRatio;
+                /*
                 if (startSample + ptNb * iInvertedRatio > endSample)
-                    return;
-
-            //    DBG("start = " << startSample << " end = " << endSample << " width = " << width << " ratio = " << ratio << " invratio = " << invRatio);
-
-                if ((ratio > 0.15) && (ratio < 0.169))// && (startSample > 119800))
+                {
                     DBG("shit will hit the fan ! ");
-                
+                    //return;
+                }*/
+            //    DBG("start = " << startSample << " end = " << endSample << " width = " << width << " ratio = " << ratio << " invratio = " << invRatio);
 
                 juce::Rectangle<int> wavPt;
                 int pointSize = 4;
@@ -502,18 +502,24 @@
                     pointScaled = waveform.getSample(0, startSample+idx) * verticalZoomFactor;
                     //wavPt.setCentre()
                 }
-                /*
-                for (float sample = (float)startSample; (int)sample < int((float)endSample-1 - ratio); sample += ratio)
+                long smpCount = 0;
+                double sample; //declared outside of the loop for easiser debugging
+                //for (sample = (double)startSample; (int)sample < int((double)endSample-1 - ratio); sample += ratio)
+                for (sample = (double)startSample; smpCount< width; sample += ratio)
                 {
                     idx = (int)sample;
                     //wavPoint = eBuffer->getSample(0, idx);
                     wavPoint = waveform.getSample(0, idx);
                     mAudioPoints.push_back(wavPoint);
+                    smpCount++;
+                    if (smpCount> width)
+                        DBG("shit will hit the fan again! ");
                 }
                 if (mAudioPoints.size() > right )
                     DBG("mAudioPoints.size too big " << mAudioPoints.size() << " ratio = " << ratio << " start =  " << startSample << "x limit = " << right);
                 bool pathStarted = false;
-                auto pointScaled = mAudioPoints[0] * verticalZoomFactor;
+
+                pointScaled = mAudioPoints[0] * verticalZoomFactor;
                 juce::Path path;
                 path.clear();
                 if ((pointScaled < -1) || (pointScaled > 1)) //check if point is still within limits
@@ -545,7 +551,7 @@
                     }                
                 }
                 g.strokePath(path, juce::PathStrokeType(1));
-                */
+                
                 if (*ptrTrig < halfBuffer)
                 {
                     unsigned long invalidDataAddr = halfBuffer - *ptrTrig;
@@ -584,7 +590,7 @@
             //g.drawLine(left, bottom, left, top); 
             //g.drawLine(left, bottom, right, top);// diagonals for debug 
             //g.drawLine(left, top, right, bottom);// diagonals for debug
-         */
+        */
         }
         //----------------------------------------------------------------------------------
         void drawXLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -1138,7 +1144,7 @@
                 int it = 0;
                 int iteration = 0;
                 double seed = 1.0;
-                double sub1Tab[]{ 24.0, 16.0, 12.0, 8.0, 6.0 , 4.0, 3.0 , 2.0 };
+                double sub1Tab[]{ 32.0, 24.0, 16.0, 12.0, 8.0, 6.0 , 4.0, 3.0 , 2.0 };
 
                 std::vector<double> Divider2;// , Divider;
                 Divider.clear();
@@ -1321,6 +1327,9 @@
          //   repaint();
             if (waveLength > 0)
             {
+                float invZoom;
+                if (zoomfactor < 1)
+                    invZoom = 1.0 / zoomfactor;
                 auto wavWindowWidth = wavZone.getWidth();//width in pixels 
 
                 auto totlen = waveLength; //thumbnail.getTotalLength(); //total length of sample in seconds
@@ -1344,9 +1353,18 @@
                 displayEndTime = displayStartTime + displayWidth;
                 //   DBG("Mouse.x = " << Posi3.x << " PosixRatio = " << PosixRatioPix << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
                 if (displayStartTime < 0)
+                {
+                    DBG("setDisplayXZone:displayStartTime = " << displayStartTime);
                     displayStartTime = 0; // prevent stupid cases
+                    displayEndTime = displayStartTime + displayWidth;
+                    
+                }
                 if (displayEndTime > totlen)
+                {
+                    DBG("setDisplayXZone:displayEndTime = " << displayEndTime);
                     displayEndTime = totlen;// prevent stupid cases
+                    displayStartTime = displayEndTime - displayWidth;
+                }
                 setRange({ displayStartTime, displayEndTime });
             }
             else
