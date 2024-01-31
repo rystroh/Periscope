@@ -230,7 +230,8 @@
                 double xOffset = width / 2.0;
                 xOffset = xOffset * Ratio / curRatio;
                 
-                std::vector<double> xs,xc;
+                std::vector<double> xs;
+                std::vector<long> xc;
 
                 if (XZoomIndex == 0)
                 {
@@ -242,6 +243,7 @@
                         newX1 = centerX + timeToX(x); // get 
                         g.drawVerticalLine(newX1, top, bottom);
                     }
+                    xc = getXpRatio(tRatio, width);
                 }
                 else
                 {
@@ -253,6 +255,7 @@
                         newX1 += xOffset;
                         g.drawVerticalLine(newX1, top, bottom);
                     }
+                    xc = getXpRatio(tRatio, width);
                 }
                 paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
                 paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
@@ -647,18 +650,19 @@
             auto txtWidth = textArea.getWidth(); ; // bounds.getWidth();
             auto xCenter = txtWidth / 2.0;
             auto timeZoneHalf = visibleRange.getLength() / 2;
+            auto width = bounds.getWidth();
+
             //std::vector<double> xs = getXs();
             double tRatio = 0.5;
             std::vector<double> xs = getXsRatio(tRatio);//getXsCentered(txtWidth * 0.5); //create vector with nice positions for vert
-
+            std::vector<long> xc = getXpRatio(tRatio, width);
             int newX1;
-            for (auto x : xs)
+            for (int idx = 0; idx < xs.size(); idx++)//for (auto x : xs)
             {
                 juce::String str;
-                newX1 = timeToX(x);
-                newX1 = newX1 + xCenter; // get// get
-                str << x;
-                str.toDecimalStringWithSignificantFigures(x, 2);
+                newX1 = xc[idx];
+                str << xs[idx];
+                str.toDecimalStringWithSignificantFigures(xs[idx], 2);
                 juce::Rectangle<int> r;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
                 r.setSize(textWidth, fontHeight);
@@ -862,6 +866,30 @@
             //sort(vec.begin(), vec.end());
             //vec.erase(unique(vec.begin(), vec.end()), vec.end());
             return(xs);
+        }
+        //----------------------------------------------------------------------------------
+        std::vector<long> getXpRatio(double ratio, long width) //generate vector of positions in pixels
+        {
+            //auto width = bounds.getWidth(); // width of Display zone in pixels
+            auto totlen = getSampleSize();
+            double SampleSize = totlen * sampleRate; //size  of sample in points
+            double Ratio = SampleSize / (double)width;
+            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
+            double tRatio = 0.5;
+            double xOffset = width / 2.0;
+            xOffset = xOffset * Ratio / curRatio;
+
+            long newX1;
+            std::vector<double> xs;
+            std::vector<long> xp;
+            xs = getXsRatio(tRatio);
+            for (auto x : xs)
+            {
+                newX1 = timeToX(x); // get 
+                newX1 += xOffset;
+                xp.push_back(newX1);
+            }
+            return(xp);
         }
         //----------------------------------------------------------------------------------
         std::vector<int> getGains()//called by std::vector<int>getNiceGainVect
