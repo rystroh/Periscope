@@ -648,7 +648,8 @@
             auto xCenter = txtWidth / 2.0;
             auto timeZoneHalf = visibleRange.getLength() / 2;
             //std::vector<double> xs = getXs();
-            std::vector<double> xs = getXsCentered(txtWidth * 0.5); //create vector with nice positions for vert
+            double tRatio = 0.5;
+            std::vector<double> xs = getXsRatio(tRatio);//getXsCentered(txtWidth * 0.5); //create vector with nice positions for vert
 
             int newX1;
             for (auto x : xs)
@@ -821,9 +822,11 @@
         std::vector<double> getXsRatio(double ratio)
         {
             auto timeZoneStart = visibleRange.getStart();
-            auto timeZoneLen = visibleRange.getEnd();
-            double timeZoneBefore = visibleRange.getLength() * ratio;
-            double timeZoneAfter = visibleRange.getLength() - timeZoneBefore;
+            auto timeZoneEnd = visibleRange.getEnd();
+            double currentlength = getSampleSize();
+            double midTime = currentlength * ratio;  //(visibleRange.getStart() + visibleRange.getEnd())* ratio;
+            double timeZoneBefore = timeZoneStart - midTime;//visibleRange.getLength() * ratio;
+            double timeZoneAfter = timeZoneEnd - midTime;//visibleRange.getLength() - timeZoneBefore;
 
             std::vector<double> xs;
             double x1;
@@ -840,7 +843,7 @@
             //mag = exp(log(10.0) * -1.0 * magfloor);
             //xs.push_back(0.0); //start by pushing center value
             x1 = 0;
-            while (x1 >= -timeZoneBefore)//(x1 <= timeZoneHalf)
+            while (x1 >= timeZoneBefore)//(x1 <= timeZoneHalf)
             {
                 xs.push_back(x1);
                 x1 -= stepSize;
