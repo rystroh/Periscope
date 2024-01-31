@@ -224,12 +224,18 @@
                 g.setColour(gridColour);
                 g.setOpacity(gridOpacity);
                 int newX1;
-                int centerX = timeToX(visRangeWidth * 0.5); // timeToX(viewSize * 0.5); get time center
-                std::vector<double> xs;
+                double tRatio = 0.5;
+                int centerX = timeToX(visRangeWidth * tRatio); // timeToX(viewSize * 0.5); get time center
+                double trigTime = visRangeWidth * tRatio;
+                double xOffset = width / 2.0;
+                xOffset = xOffset * Ratio / curRatio;
+                
+                std::vector<double> xs,xc;
 
                 if (XZoomIndex == 0)
                 {
-                    xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
+                    //xs = getXsCentered(trigTime); //xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
+                    xs = getXsRatio(tRatio);
                     // draw vertical time lines
                     for (auto x : xs)
                     {
@@ -239,10 +245,12 @@
                 }
                 else
                 {
-                    xs = getXs(); //create vector with nice positions for vert lines
+                    //xs = getXs(); //create vector with nice positions for vert lines
+                    xs = getXsRatio(tRatio);
                     for (auto x : xs)
                     {
                         newX1 = timeToX(x); // get 
+                        newX1 += xOffset;
                         g.drawVerticalLine(newX1, top, bottom);
                     }
                 }
@@ -378,7 +386,7 @@
             unsigned long halfBuffer = eBuffer->getNumSamples() / 2;
 
             //DBG("ptNb = " << ptNb << " width = " << width << " ratio = " << ratio << " verticalZoomFactor = " << verticalZoomFactor);
-            DBG("drawBuffer: wavCount = " << wavCount << "start = " << startSample << " end = " << endSample << " width = " << width << " ratio = " << ratio << " invratio = " << invRatio);
+            //DBG("drawBuffer: wavCount = " << wavCount << "start = " << startSample << " end = " << endSample << " width = " << width << " ratio = " << ratio << " invratio = " << invRatio);
             int idx,idxEnd;
             int blockID = 0;//for debug
             g.setColour(wavFormColour);
@@ -780,7 +788,7 @@
         {
             auto timeZoneStart = visibleRange.getStart();
             auto timeZoneLen = visibleRange.getEnd();
-            auto timeZoneHalf = visibleRange.getLength() / 2;
+            //auto timeZoneHalf = visibleRange.getLength() / 2;
 
             std::vector<double> xs;
             double x1;
@@ -798,7 +806,7 @@
             xs.push_back(0.0); //start by pushing center value
             x1 = floor(timeZoneStart / stepSize) * stepSize + stepSize;
             x1 = round_fl(x1, precision);
-            while (x1 <= timeZoneHalf)
+            while (x1 <= center)//(x1 <= timeZoneHalf)
             {
                 xs.push_back(x1);
                 xs.push_back(-x1);
@@ -807,6 +815,49 @@
             }
             std::sort(xs.begin(), xs.end());
             //std::sort(xs.begin(), xs.end(), std::smaller());// greater<double>());
+            return(xs);
+        }
+        //----------------------------------------------------------------------------------
+        std::vector<double> getXsRatio(double ratio)
+        {
+            auto timeZoneStart = visibleRange.getStart();
+            auto timeZoneLen = visibleRange.getEnd();
+            double timeZoneBefore = visibleRange.getLength() * ratio;
+            double timeZoneAfter = visibleRange.getLength() - timeZoneBefore;
+
+            std::vector<double> xs;
+            double x1;
+            double digits;
+            double mag{ 1 };
+            double magfloor;
+            int precision;
+            double magRatio = log10(stepSize);
+
+            //DBG("getTimeStepSize::NextRatio = " << NextRatio);
+            magfloor = floor(magRatio);
+            precision = abs(magfloor);
+            stepSize = round_fl(stepSize, precision);
+            //mag = exp(log(10.0) * -1.0 * magfloor);
+            //xs.push_back(0.0); //start by pushing center value
+            x1 = 0;
+            while (x1 >= -timeZoneBefore)//(x1 <= timeZoneHalf)
+            {
+                xs.push_back(x1);
+                x1 -= stepSize;
+                x1 = round_fl(x1, precision);
+            }
+            x1 = 0;
+            while (x1 <= timeZoneAfter )//(x1 <= timeZoneHalf)
+            {               
+                xs.push_back(x1);
+                x1 += stepSize;
+                x1 = round_fl(x1, precision);
+            }
+            std::sort(xs.begin(), xs.end());
+            //std::sort(xs.begin(), xs.end(), std::smaller());// greater<double>());
+            xs.erase(std::unique(xs.begin(), xs.end()), xs.end());//erase doubles 
+            //sort(vec.begin(), vec.end());
+            //vec.erase(unique(vec.begin(), vec.end()), vec.end());
             return(xs);
         }
         //----------------------------------------------------------------------------------
@@ -1106,8 +1157,7 @@
                     drawYLabels(g, thumbArea, 0);
                 }
                 break;
-            }
-            
+            }            
         }
         //----------------------------------------------------------------------------------
         void resized() override
@@ -1272,9 +1322,11 @@
                         else
                             NewZoomFactor = zoomVector[0];
                     }
-                    DBG("XZoomIndex = " << XZoomIndex << " vectorSize = " 
-                    << zoomVector.size() << " NewZoom " << NewZoomFactor);
                     setDisplayXZone(NewZoomFactor, Posi3);
+                    DBG("mouseWh:XZoomIndex = " << XZoomIndex << " vectorSize = "
+                        << zoomVector.size() << " NewZoom " << NewZoomFactor << " Range = ["
+                        << visibleRange.getStart() << " , " << visibleRange.getEnd()
+                        << "] Pos = [" << Posi3.x << " , " << Posi3.y << " ]");
                     sendChangeMessage();
                 }
             }
