@@ -48,6 +48,7 @@ private:
     grape::Slider oscWinSizeSlider{ "Win size", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
     // This button issues a window size command
     grape::Slider ThesholdSlider{ "Threshold", grape::Slider::HORIZONTAL2, "", THRESHOLD_LEVEL };
+    grape::Slider yScaleSlider{ "Y Scale", grape::Slider::HORIZONTAL2, "", Y_SCALE };
 
  //-------------------------------------------------------------------------------------
     //void openButtonClicked();

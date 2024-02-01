@@ -106,6 +106,10 @@
             recThumbnail.setBufferReadyAddress(BufferReady);
         }
         //----------------------------------------------------------------------------------
+        void setYScale(int scale) {
+            recThumbnail.setYScale(scale);
+        }
+        //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) //override
         {
             sendChangeMessage();

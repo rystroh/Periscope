@@ -70,6 +70,10 @@
             viewSize = dispTime;
         }
         //----------------------------------------------------------------------------------
+        void setYScale(int scale) {
+            yScale = scale;
+        }
+        //----------------------------------------------------------------------------------
         bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
         //----------------------------------------------------------------------------------
         void prepareToPlay(int smpPerBlockExpected, double smpRate)
@@ -991,7 +995,7 @@
 
             
             topLinGain = pow(10.0, topGdB / 10.0);
-            topLinGain = round(topLinGain);
+            //topLinGain = round(topLinGain);
 
             double halfHeightPix = floor((double)displayHeightPix / 2.0);
             
@@ -1008,7 +1012,7 @@
             linRatio = pow(2.0, log2Ratio);
             yStep = halfHeightPix / linRatio;
             perCentStep = 100.0 / linRatio;
-            gain = 100.0;
+            gain = 100.0 / topLinGain;
             while (curY >= 0)
             {
                 NiceY = curY;
@@ -1094,7 +1098,7 @@
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     paintVerticalGrid(g, wavZone);
-                    paintHorizontalGrid(g, wavZone, 1);
+                    paintHorizontalGrid(g, wavZone, yScale);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     xzoomticknb = createZoomVector(zoomVector);
@@ -1120,7 +1124,7 @@
                         thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         wavZone = getWaveZone(thumbArea);
                         paintVerticalGrid(g, wavZone);
-                        paintHorizontalGrid(g, wavZone, 1);
+                        paintHorizontalGrid(g, wavZone, yScale);
                         g.setColour(wavFormColour);
                         thumbnail.drawChannels(g, wavZone.reduced(2), currentlength - viewSize, currentlength, (float)ThumbYZoom);
                         bTriggered = false;
@@ -1138,7 +1142,7 @@
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     wavZone = getWaveZone(thumbArea);
                     paintVerticalGrid(g, wavZone);
-                    paintHorizontalGrid(g, wavZone, 1);
+                    paintHorizontalGrid(g, wavZone, yScale);
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabels(g, thumbArea);
@@ -1161,11 +1165,11 @@
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
-                    paintHorizontalGrid(g, wavZone, 0);
+                    paintHorizontalGrid(g, wavZone, yScale);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    drawYLabels(g, thumbArea, 0);
+                    drawYLabels(g, thumbArea, yScale);
                 }
                 break;
 
@@ -1184,11 +1188,11 @@
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
-                    paintHorizontalGrid(g, wavZone, 0);
+                    paintHorizontalGrid(g, wavZone, yScale);
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
-                    drawYLabels(g, thumbArea, 0);
+                    drawYLabels(g, thumbArea, yScale);
                 }
                 break;
             }            
@@ -1489,7 +1493,7 @@
 
         juce::ScrollBar scrollbar{ false };
         juce::Range<double> visibleRange;
-
+        int yScale = 0; //0 = linear // 1 = dB
         double ThumbYZoom = 1.0f;
         int YZoomIndex = 8;
         const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click

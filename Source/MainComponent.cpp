@@ -98,6 +98,7 @@ usingCustomDeviceManager(false)
     addCommand(SAVE_SETTINGS, "Save settings");
     addCommand(GO_LIVE,"Go Live");
     addCommand(THRESHOLD_LEVEL,"Threshold Level");
+    addCommand(Y_SCALE, "Y Scale");
 
     // setSize(1800, 1000);
 #if option == 1
@@ -314,6 +315,13 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         eScope[0]->setThreshold(thresholdValue);
         return true;
     }
+    case Y_SCALE:
+    {
+        int scale = source->getControlValue();
+        eScope[0]->setYScale(scale);
+        return true;
+    }
+
     default:
         return false;
     }

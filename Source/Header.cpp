@@ -34,6 +34,10 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     ThesholdSlider.setValue(0.5f);
     addAndMakeVisible(LiveButton);
 
+    addAndMakeVisible(yScaleSlider);
+    yScaleSlider.setRange(0, 1, 1);
+    yScaleSlider.setValue(0);
+
     setWidth(300, 600, 10000);
     setHeight(50, 50, 50);
 }
@@ -49,17 +53,19 @@ void Header::resized()
 {
     auto area = getLocalBounds();
     double width;
-    recordButton.setBounds(area.removeFromTop(40).removeFromLeft(100).reduced(10));
-    LiveButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    recordButton.setBounds(area.removeFromTop(40).removeFromLeft(80).reduced(10));
+    LiveButton.setBounds(recordButton.getX() + recordButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
 
-    openButton.setBounds(LiveButton.getX() + LiveButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    width = 1.5 * (float)recordButton.getWidth();
+    openButton.setBounds(LiveButton.getX() + LiveButton.getWidth() + 10, recordButton.getY(), recordButton.getWidth()+20, recordButton.getHeight());
+    width = 2.0 * (float)recordButton.getWidth();
     menu.setBounds(openButton.getX() + openButton.getWidth() + menu.getLabel()->getWidth() + 10, recordButton.getY(),(int)width, recordButton.getHeight());
 
     oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + oscWinSizeSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
     ThesholdSlider.setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + ThesholdSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
+    yScaleSlider.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + yScaleSlider.getLabel()->getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     
-    load_button.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
-    save_button.setBounds(load_button.getX() + load_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    load_button.setBounds(yScaleSlider.getX() + yScaleSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
+    //load_button.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    save_button.setBounds(load_button.getX() + load_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
     
 }
