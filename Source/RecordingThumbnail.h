@@ -644,13 +644,14 @@
             const int fontHeight = 10;
             g.setFont(fontHeight);
             auto textArea = getHTextZone(bounds);// getRenderZone(bounds);
+            auto wavZone = getWaveZone(bounds);
             auto left = textArea.getX();
             auto top = textArea.getY();
             auto right = left + textArea.getWidth();
             auto txtWidth = textArea.getWidth(); ; // bounds.getWidth();
             auto xCenter = txtWidth / 2.0;
             auto timeZoneHalf = visibleRange.getLength() / 2;
-            auto width = bounds.getWidth();
+            auto width = wavZone.getWidth();
 
             //std::vector<double> xs = getXs();
             double tRatio = 0.5;
@@ -882,12 +883,14 @@
             long newX1;
             std::vector<double> xs;
             std::vector<long> xp;
+            //DBG("GetXpRatio: ---------- ");
             xs = getXsRatio(tRatio);
             for (auto x : xs)
             {
                 newX1 = timeToX(x); // get 
                 newX1 += xOffset;
                 xp.push_back(newX1);
+                //DBG("GetXpRatio: " << newX1);
             }
             return(xp);
         }
