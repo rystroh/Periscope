@@ -169,7 +169,7 @@
             }
             else
                 return(1);//should never happen
-        }
+        }        
         //------------------------------------------------------------------------------
         std::vector<double> getTimeLineX()  {        }
         //------------------------------------------------------------------------------
@@ -311,7 +311,7 @@
                     break;
             }
 
-            int newY2, newY41, newY42;
+            int centralY, newY41, newY42;
             auto left = bounds.getX();
             auto right = bounds.getRight();
 
@@ -320,14 +320,14 @@
             // draw all other horizontal lines
             g.setColour(gridColour);
             g.setOpacity(gridOpacity);
-            newY2 = bounds.getCentreY();
+            centralY = bounds.getCentreY();
             //DBG("paintHGrid:: Y2 = " << newY2);
             for (auto y : NiceGainY)
             {
-                newY41 = newY2 - y;
+                newY41 = centralY - y;
                 g.drawHorizontalLine(newY41, left, right);
                 //DBG("paintHGrid:: Y41 = " << newY41);
-                newY42 = newY2 + y;
+                newY42 = centralY + y;
                 g.drawHorizontalLine(newY42, left, right);
                 //DBG("paintGrid:: Y41 = " << newY41<< " Y42 = " << newY42);
             }
@@ -403,7 +403,9 @@
                 for (float sample = (float)startSample; sample < (float)endSample - ratio; sample += ratio)
                 {
                     idx = (int)sample;
-                    idxEnd = idx + (int)ratio;
+                    idxEnd = int(sample + ratio + 0.5);
+                    if (blockID==1039)
+                        DBG("last block");
                     if (idxEnd > endSample - 1)
                         idxEnd = endSample - 1;
                     //wavMin = eBuffer->getSample(0, idx);
@@ -411,7 +413,7 @@
                     if (wavMin > 1)
                         DBG("one point is out = " << wavMin << " " << idx);
                     wavMax = wavMin;
-                    while (idx < idxEnd)
+                    while (idx <= idxEnd)
                     {
                         //auto val = eBuffer->getSample(0, idx++);
                         auto val = waveform.getSample(0, idx++);
@@ -723,21 +725,33 @@
                 break;
             }
             
-            int newY2, newY41, newY42;
+            int centralY, newY41, newY42;
             int newY1, newGain;
 
-            newY2 = wavZone.getCentreY();
+            centralY = wavZone.getCentreY();
             //DBG("drawYLabels:: Y2 = " << newY2);
 
             for (int idx = 0; idx < NiceGainY.size(); idx++)
             {
-                juce::String str;
-                newY1 = newY2 - NiceGainY[idx] - fontHeight / 2.0;
+                juce::String str, strm;
+                newY1 = centralY - NiceGainY[idx] - fontHeight / 2.0;
+                newY42 = centralY + NiceGainY[idx] - fontHeight / 2.0;
                 newGain = NiceGainVect[idx]; // get value to be displayed
                 str << newGain << yUnits;
+                if (mode == 0)
+                {
+                    strm << "-" << newGain << yUnits;
+                }
+                else
+                {
+                    strm << newGain << yUnits;
+                }
                 str.toDecimalStringWithSignificantFigures(newGain, 2);
-                juce::Rectangle<int> r;
+                strm.toDecimalStringWithSignificantFigures(newGain, 2);
+
+                juce::Rectangle<int> r,rm;
                 auto textWidth = g.getCurrentFont().getStringWidth(str);
+                auto textWidthm = g.getCurrentFont().getStringWidth(strm);
                 int left, top, right, butt;
 
                 left = maxright - textWidth - 10;
@@ -745,11 +759,21 @@
                 r.setLeft(left);
                 r.setY(newY1);
                 r.setSize(textWidth, fontHeight);
+
+                rm.setLeft(left);
+                rm.setY(newY42);
+                rm.setSize(textWidth, fontHeight);
                 //            r.setY(textArea.getY());
                 g.drawFittedText(str, r, juce::Justification::centredLeft, 1);
-                newY1 = newY2 - NiceGainY[idx];
+                if (NiceGainY[idx] > 0)
+                    g.drawFittedText(strm, rm, juce::Justification::centredLeft, 1);
+
+                newY1 = centralY - NiceGainY[idx];
+                newY42 = centralY + NiceGainY[idx];
                 left = textArea.getTopLeft().getX();
                 g.drawHorizontalLine(newY1, left - 3, left);
+                if(NiceGainY[idx]>0)
+                    g.drawHorizontalLine(newY42, left - 3, left);
             //    DBG("drawYLabels:: Y1 = " << newY1);
             }
         }
@@ -986,33 +1010,27 @@
             //double previousYdB = 0;
             //double previousYpix = 0;
             //auto curYZoom = ThumbYZoom;
-
             int curYZoomIndex = YZoomIndex;
             const long double dBStep = 1.5;
             double topGdB = 12.0 - curYZoomIndex * dBStep;
 
-            double gridRatio, linGain, topLinGain;
-
-            
-            topLinGain = pow(10.0, topGdB / 10.0);
+            double gridRatio, linGain, topLinGain;            
+            topLinGain = pow(10.0, topGdB / 20.0);
             //topLinGain = round(topLinGain);
+            double halfHeightPix = floor((double)displayHeightPix / 2.0);                       
+            double ratio,gain, gain3, NiceY, log2Ratio, linRatio;
+            double yStep, perCentStep, yStepNb;
 
-            double halfHeightPix = floor((double)displayHeightPix / 2.0);
-            
-            double curY = halfHeightPix;
-            double ratio;
-            double gain, gain3;
-            double NiceY;
-            double yStep, perCentStep;
-
-            double log2Ratio,linRatio;
             gridRatio = halfHeightPix / minRectHeight;
             log2Ratio = log2(gridRatio);
             log2Ratio = floor(log2Ratio);
             linRatio = pow(2.0, log2Ratio);
             yStep = halfHeightPix / linRatio;
             perCentStep = 100.0 / linRatio;
-            gain = 100.0 / topLinGain;
+            gain = 100.0 * topLinGain;
+
+            double yPercentStep = getAmplitudeStepSize(gain/ gridRatio);
+            /*
             while (curY >= 0)
             {
                 NiceY = curY;
@@ -1021,8 +1039,55 @@
                 curY -= yStep;
                 NiceGainVect.push_back(gain);
                 gain = gain - perCentStep;
+            }*/
+            int idx = 0;
+            float curYPercentAmp = 0.0;
+            while (curYPercentAmp <= gain)
+            {
+                NiceGainVect.push_back(curYPercentAmp);
+                curYPercentAmp += yPercentStep;
+                idx++;
             }
-            return(0);//should never happen
+            if (curYPercentAmp != gain)
+            {
+                //NiceGainVect.push_back(curYPercentAmp);
+                //idx++;
+            }
+            std::sort(NiceGainVect.begin(), NiceGainVect.end(), std::less());
+            double pixelPerStep = halfHeightPix / gain * yPercentStep;
+            yStep = halfHeightPix / float(idx-1);
+            double curY = 0;
+            while (curY <= halfHeightPix)
+            {
+                NiceY = curY;
+                NiceY = round(curY);
+                NiceGainY.push_back((int)NiceY);
+                curY += pixelPerStep;
+            }
+            return(0);
+        }
+        //------------------------------------------------------------------------------
+        double getAmplitudeStepSize(double ratio)
+        {
+            std::vector<float>NicePercentSteps { 1.0 , 2.0 , 2.5 , 5.0 , 10.0 , 12.5,20,25,50,100};
+            
+            int i{ 0 };
+            if (ratio >= 1.0)
+            {
+                while (NicePercentSteps[i] < ratio)
+                    i++;
+                return(NicePercentSteps[i]);
+            }
+            else
+                return(1);//should never happen
+            /*
+            //                                12dB          9dB         6dB         3dB         0dB        -3dB        -6dB
+            //                                  0      1     2     3     4     5     6     7     8     9    10    11    12    13  
+            std::vector<float>PercentYSteps{  50.0,  50.0, 50.0, 25.0, 25.0, 25.0, 20.0, 20.0, 12.5, 10.0, 10.0, 10.0,  5.0,  5.0};
+            int curYZoomIndex = YZoomIndex;
+            double step;
+            step = PercentYSteps[curYZoomIndex];
+            return(step);*/
         }
         //----------------------------------------------------------------------------------
         juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
