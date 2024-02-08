@@ -194,7 +194,7 @@
             // Draw Trigger Vertical and Horizontal
             g.setColour(triggerColour);//Draw middle horizontal line
             g.setOpacity(triggerOpacity);
-            trigTime = timeToX(viewSize * 0.5); // get time center
+            trigTime = left + timeToX(viewSize * 0.5); // get time center
             g.drawVerticalLine(trigTime, top, bottom);
             float trigLevel = bounds.getCentreY() - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
             trigY = (int)trigLevel;
@@ -227,11 +227,12 @@
                 }
                 g.setColour(gridColour);
                 g.setOpacity(gridOpacity);
-                int newX1;
+                int newX1, txtZoneOffset;
+                txtZoneOffset = renderArea.getTopLeft().getX();
                 double tRatio = 0.5;
-                int centerX = timeToX(visRangeWidth * tRatio); // timeToX(viewSize * 0.5); get time center
+                int centerX = txtZoneOffset + timeToX(visRangeWidth * tRatio); // timeToX(viewSize * 0.5); get time center
                 double trigTime = visRangeWidth * tRatio;
-                double xOffset = width / 2.0;
+                double xOffset = txtZoneOffset + width / 2.0;
                 xOffset = xOffset * Ratio / curRatio;
                 
                 std::vector<double> xs;
@@ -460,7 +461,7 @@
                         if (wavbottom - wavtop < 1)
                             wavbottom = wavtop + 1; //set thickness to 1 at least*/
                         //g.drawVerticalLine(sample, wavtop, wavbottom);
-                        g.drawVerticalLine(sample, wavbottom, wavtop);
+                        g.drawVerticalLine(left+sample, wavbottom, wavtop);
                         pathStarted = true;
                     }
                 }
@@ -544,7 +545,7 @@
                 else
                 {
                     auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
-                    path.startNewSubPath(0, point);
+                    path.startNewSubPath(left, point);
                     pathStarted = true;
                 }
 
@@ -560,11 +561,11 @@
                             DBG("point with index " << sample << " is out of X range = " << right);
                         if (!pathStarted)
                         {
-                            path.startNewSubPath(sample, point);
+                            path.startNewSubPath(left+sample, point);
                             pathStarted = true;
                         }
                         else
-                            path.lineTo(sample, point);
+                            path.lineTo(left+sample, point);
                     }                
                 }
                 g.strokePath(path, juce::PathStrokeType(1));
@@ -663,11 +664,12 @@
             double tRatio = 0.5;
             std::vector<double> xs = getXsRatio(tRatio);//getXsCentered(txtWidth * 0.5); //create vector with nice positions for vert
             std::vector<long> xc = getXpRatio(tRatio, width);
-            int newX1;
+            int newX1, txtZoneOffset;
+            txtZoneOffset = textArea.getTopLeft().getX();
             for (int idx = 0; idx < xs.size(); idx++)//for (auto x : xs)
             {
                 juce::String str;
-                newX1 = xc[idx];
+                newX1 = xc[idx] + txtZoneOffset;
                 str << xs[idx];
                 str.toDecimalStringWithSignificantFigures(xs[idx], 2);
                 juce::Rectangle<int> r;
@@ -680,6 +682,7 @@
 
                 r.setY(textArea.getY());
                 g.drawFittedText(str, r, juce::Justification::centred, 1);
+                
             }
         }
         //----------------------------------------------------------------------------------
@@ -1069,8 +1072,7 @@
         //------------------------------------------------------------------------------
         double getAmplitudeStepSize(double ratio)
         {
-            std::vector<float>NicePercentSteps { 1.0 , 2.0 , 2.5 , 5.0 , 10.0 , 12.5,20,25,50,100};
-            
+            std::vector<float>NicePercentSteps { 1.0 , 2.0 , 2.5 , 5.0 , 10.0 , 12.5,20,25,50,100};            
             int i{ 0 };
             if (ratio >= 1.0)
             {
@@ -1080,14 +1082,6 @@
             }
             else
                 return(1);//should never happen
-            /*
-            //                                12dB          9dB         6dB         3dB         0dB        -3dB        -6dB
-            //                                  0      1     2     3     4     5     6     7     8     9    10    11    12    13  
-            std::vector<float>PercentYSteps{  50.0,  50.0, 50.0, 25.0, 25.0, 25.0, 20.0, 20.0, 12.5, 10.0, 10.0, 10.0,  5.0,  5.0};
-            int curYZoomIndex = YZoomIndex;
-            double step;
-            step = PercentYSteps[curYZoomIndex];
-            return(step);*/
         }
         //----------------------------------------------------------------------------------
         juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
@@ -1100,9 +1094,11 @@
         juce::Rectangle<int> getHTextZone(juce::Rectangle<int> bounds)
         {
             auto wavRect = getWaveZone(bounds);
+            auto left = wavRect.getTopLeft().getX();
             bounds.removeFromTop(4);
             bounds.removeFromBottom(wavRect.getHeight() + 2);
             bounds.setRight(wavRect.getRight());
+            bounds.setLeft(left);
             return bounds;
         }
         //----------------------------------------------------------------------------------
@@ -1123,6 +1119,7 @@
             bounds.removeFromTop(16);//make space for time labels
             bounds.removeFromBottom(4);
             bounds.removeFromRight(yScaleZoneWidth);
+            bounds.removeFromLeft(100);//new for panel buttons february 2024
             return bounds;
         }
         //----------------------------------------------------------------------------------
