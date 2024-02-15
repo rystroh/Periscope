@@ -29,11 +29,11 @@ usingCustomDeviceManager(false)
     // Create eScope instances and populate channel rack
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
-        eScope[idx] = std::make_unique<EScope>("Channel" + juce::String(idx));
+        eScope[idx] = std::make_unique<EScope>("Channel " + juce::String(idx));
         eScope[idx]->setChannelID(idx);
         eScope[idx]->recThumbnail.addChangeListener(this);
         eScope[idx]->setDisplayThumbnailMode(recmode);
-        channel_rack->addPanel(eScope[idx].get(), RESIZER + SWITCHABLE);
+        channel_rack->addPanel(eScope[idx].get(), NULL);// VSCROLLABLE + HSCROLLABLE); // RESIZER);// +SWITCHABLE);
     }
     channel_rack->computeSizeFromChildren(true, true);
 

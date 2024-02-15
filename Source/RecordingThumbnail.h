@@ -18,6 +18,64 @@
             scrollbar.addListener(this);
             formatManager.registerBasicFormats();
             thumbnail.addChangeListener(this);
+            
+            xGridModeLabel.setColour(juce::Label::textColourId, gridColour);
+            xGridModeLabel.setText("X Mode", juce::dontSendNotification);
+            
+            yGridModeLabel.setColour(juce::Label::textColourId, gridColour);
+            yGridModeLabel.setText("Y Mode", juce::dontSendNotification);
+
+            GroupeLabel.setColour(juce::Label::textColourId, gridColour);
+            GroupeLabel.setText("Groupe", juce::dontSendNotification);
+
+            addAndMakeVisible(xGridModeLabel);            
+            addAndMakeVisible(yGridModeLabel);
+            addAndMakeVisible(GroupeLabel);
+            chkBoxXLink.setColour(juce::Label::textColourId, gridColour);
+            chkBoxXLink.setButtonText("x link");
+            
+            chkBoxYLink.setColour(juce::Label::textColourId, gridColour);            
+            chkBoxYLink.setButtonText("y link");
+                         
+            //cmbBoxXMode.reset(new juce::ComboBox("y Mode"));
+            
+            //cmbBoxXMode.setButtonText(TRANS("x Mode"));
+            cmbBoxXMode.setEditableText(false);
+            cmbBoxXMode.setJustificationType(juce::Justification::centredLeft);
+            cmbBoxXMode.setTextWhenNothingSelected(juce::String());
+            cmbBoxXMode.setTextWhenNoChoicesAvailable("(no choices)");
+            cmbBoxXMode.addItem("Absolute", 1);
+            cmbBoxXMode.addItem("Relative to Trigger", 2);
+            /*
+            chkBoxXLink.addListener(this);
+            chkBoxYLink.addListener(this);
+            cmbBoxXMode.addListener(this);
+            cmbBoxYMode.addListener(this);
+            cmbBoxGroupe.addListener(this);*/
+
+            cmbBoxYMode.setEditableText(false);
+            cmbBoxYMode.setJustificationType(juce::Justification::centredLeft);
+            cmbBoxYMode.setTextWhenNothingSelected(juce::String());
+            cmbBoxYMode.setTextWhenNoChoicesAvailable("(no choices)");
+            cmbBoxYMode.addItem("Linear", 1);
+            cmbBoxYMode.addItem("Log dB", 2);            
+
+            cmbBoxGroupe.setEditableText(false);
+            cmbBoxGroupe.setJustificationType(juce::Justification::centredLeft);
+            cmbBoxGroupe.setTextWhenNothingSelected(juce::String());
+            cmbBoxGroupe.setTextWhenNoChoicesAvailable("(no choices)");
+            cmbBoxGroupe.addItem("None", 16);
+            cmbBoxGroupe.addItem("1", 1);
+            cmbBoxGroupe.addItem("2", 2);
+            cmbBoxGroupe.addItem("3", 3);
+            cmbBoxGroupe.addItem("4", 4);
+                      
+           
+            addAndMakeVisible(cmbBoxXMode);
+            addAndMakeVisible(cmbBoxYMode);
+            addAndMakeVisible(cmbBoxGroupe);
+            addAndMakeVisible(chkBoxXLink);
+            addAndMakeVisible(chkBoxYLink);
         }
 
         ~RecordingThumbnail() override
@@ -37,6 +95,9 @@
         juce::Colour gridHorizontalCenterColour = juce::Colours::red;
         juce::Colour triggerColour = juce::Colours::yellow;
         juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
+
+        int spareWidth = 160;//width 
+
         double gridOpacity = 0.5; //grid opacity
         double triggerOpacity = 0.75; //trigger lines opacity
 
@@ -1119,7 +1180,7 @@
             bounds.removeFromTop(16);//make space for time labels
             bounds.removeFromBottom(4);
             bounds.removeFromRight(yScaleZoneWidth);
-            bounds.removeFromLeft(100);//new for panel buttons february 2024
+            bounds.removeFromLeft(spareWidth);//new for panel buttons february 2024
             return bounds;
         }
         //----------------------------------------------------------------------------------
@@ -1274,6 +1335,21 @@
             bounds.setWidth(wavZone.getWidth());
             //scrollbar.setBounds(getLocalBounds().removeFromBottom(14).reduced(2));
             scrollbar.setBounds(bounds);*/
+            //xGridModeSlider.setBounds(5 + xGridModeLabel.getWidth(), 20, 60, 20);
+            //yGridModeSlider.setBounds(5 + yGridModeLabel.getWidth(), 50 , 60, 20);
+
+            GroupeLabel.setBounds(5, 20, 50, 20);
+            //cmbBoxGroupe.setBounds(80, 20, 64, 24);
+            cmbBoxGroupe.setBounds(5 + GroupeLabel.getWidth(), 20, 87, 24);
+            chkBoxXLink.setBounds(5, 50, 64, 24);
+            chkBoxYLink.setBounds(80, 50, 64, 24);
+
+            xGridModeLabel.setBounds(5, 80, 50, 20);            
+            yGridModeLabel.setBounds(5, 110, 50, 20);           
+
+            cmbBoxXMode.setBounds(5 + xGridModeLabel.getWidth(), 80, 87, 24);
+            cmbBoxYMode.setBounds(5 + yGridModeLabel.getWidth(), 110, 87, 24);            
+            
             xzoomticknb = createZoomVector(zoomVector);
         }
         //----------------------------------------------------------------------------------
@@ -1555,6 +1631,19 @@
 
         juce::ScrollBar scrollbar{ false };
         juce::Range<double> visibleRange;
+        
+        //juce::Slider xGridModeSlider;
+        juce::Label xGridModeLabel;
+        //juce::Slider yGridModeSlider;
+        juce::Label yGridModeLabel;
+        juce::Label GroupeLabel;
+
+        juce::ToggleButton chkBoxXLink;
+        juce::ToggleButton chkBoxYLink;
+        juce::ComboBox cmbBoxXMode;
+        juce::ComboBox cmbBoxYMode;
+        juce::ComboBox cmbBoxGroupe;
+
         int yScale = 0; //0 = linear // 1 = dB
         double ThumbYZoom = 1.0f;
         int YZoomIndex = 8;
@@ -1562,6 +1651,7 @@
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
         double thresholdTrigger;
+
 
         //----------------------------------------------------------------------------------
         float timeToX(const double time) const
