@@ -18,16 +18,25 @@
             scrollbar.addListener(this);
             formatManager.registerBasicFormats();
             thumbnail.addChangeListener(this);
+
+            juce::String chanTxt;
+
+            chanTxt << "Channel " << chanID;
+
+            eScopeChannelLabel.setColour(juce::Label::textColourId, gridColour);
+            eScopeChannelLabel.setText(chanTxt, juce::dontSendNotification);
             
             xGridModeLabel.setColour(juce::Label::textColourId, gridColour);
-            xGridModeLabel.setText("X Mode", juce::dontSendNotification);
+            xGridModeLabel.setText("X Scale", juce::dontSendNotification);
             
             yGridModeLabel.setColour(juce::Label::textColourId, gridColour);
-            yGridModeLabel.setText("Y Mode", juce::dontSendNotification);
+            yGridModeLabel.setText("Y Scale", juce::dontSendNotification);
 
             GroupeLabel.setColour(juce::Label::textColourId, gridColour);
             GroupeLabel.setText("Groupe", juce::dontSendNotification);
 
+
+            addAndMakeVisible(eScopeChannelLabel);
             addAndMakeVisible(xGridModeLabel);            
             addAndMakeVisible(yGridModeLabel);
             addAndMakeVisible(GroupeLabel);
@@ -46,13 +55,7 @@
             cmbBoxXMode.setTextWhenNoChoicesAvailable("(no choices)");
             cmbBoxXMode.addItem("Absolute", 1);
             cmbBoxXMode.addItem("Relative to Trigger", 2);
-            /*
-            chkBoxXLink.addListener(this);
-            chkBoxYLink.addListener(this);
-            cmbBoxXMode.addListener(this);
-            cmbBoxYMode.addListener(this);
-            cmbBoxGroupe.addListener(this);*/
-
+          
             cmbBoxYMode.setEditableText(false);
             cmbBoxYMode.setJustificationType(juce::Justification::centredLeft);
             cmbBoxYMode.setTextWhenNothingSelected(juce::String());
@@ -69,6 +72,56 @@
             cmbBoxGroupe.addItem("2", 2);
             cmbBoxGroupe.addItem("3", 3);
             cmbBoxGroupe.addItem("4", 4);
+
+            sliderOffset.setRange(-600, 600, 1);
+            sliderOffset.setValue(0);
+            sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
+            sliderLabel.setColour(juce::Label::textColourId, gridColour);
+            sliderLabel.setText("Offset", juce::dontSendNotification);
+            addAndMakeVisible(sliderOffset);
+            addAndMakeVisible(sliderLabel);
+
+            sliderOffset.onValueChange = [this] {
+                currentOffset = sliderOffset.getValue();
+                repaint();
+            };
+            sliderXOffset.setRange(0, 200, 1);
+            sliderXOffset.setValue(0);
+            sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
+            sliderXLabel.setColour(juce::Label::textColourId, gridColour);
+            sliderXLabel.setText("Width", juce::dontSendNotification);
+            addAndMakeVisible(sliderXOffset);
+            addAndMakeVisible(sliderXLabel);
+
+            sliderXOffset.onValueChange = [this] {
+                spareWidth = sliderXOffset.getValue();
+                repaint();
+            };
+
+
+            cmbBoxXMode.onChange = [this]()
+            {
+                auto idx = cmbBoxXMode.getSelectedItemIndex();
+                auto thatTrackGroup = cmbBoxXMode.getItemText(idx);
+                auto thatID = cmbBoxXMode.getItemId(idx);
+            };
+            cmbBoxYMode.onChange = [this]()
+            {
+                auto idx = cmbBoxYMode.getSelectedItemIndex();
+                auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
+                auto thatID = cmbBoxYMode.getItemId(idx);
+            };
+            cmbBoxGroupe.onChange = [this]()
+            {
+                auto idx = cmbBoxGroupe.getSelectedItemIndex();
+                auto thatTrackGroup = cmbBoxGroupe.getItemText(idx);
+                auto thatID = cmbBoxGroupe.getItemId(idx);
+            };
+/*
+            sliderOffset.onChange = [this]()
+            {
+                currentOffset = (float)sliderOffset.getValue();
+            };*/
                       
            
             addAndMakeVisible(cmbBoxXMode);
@@ -96,7 +149,7 @@
         juce::Colour triggerColour = juce::Colours::yellow;
         juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
 
-        int spareWidth = 160;//width 
+        int spareWidth = 0;//width of zone used to display eScope controls 
 
         double gridOpacity = 0.5; //grid opacity
         double triggerOpacity = 0.75; //trigger lines opacity
@@ -106,7 +159,8 @@
         int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
         std::vector<float> mAudioPoints;
         std::vector<float> mMaxAudioPoints;
-        std::vector<float> mMinAudioPoints;        
+        std::vector<float> mMinAudioPoints;
+        juce::Point< int > Posi3;
         //-------------------------------------------------------------------
         //following elements are passed between RecTumbnail and AudioRecorder
         bool bTriggered = false;
@@ -245,7 +299,7 @@
         //----------------------------------------------------------------------------------
         void paintTriggerTimeAndLevel(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            int trigTime, trigY;
+            int trigTime, trigY, trigX;
             auto top = bounds.getY(); //bounds = render area
             auto bottom = bounds.getBottom();
             auto left = bounds.getX();
@@ -255,8 +309,14 @@
             // Draw Trigger Vertical and Horizontal
             g.setColour(triggerColour);//Draw middle horizontal line
             g.setOpacity(triggerOpacity);
-            trigTime = left + timeToX(viewSize * 0.5); // get time center
-            g.drawVerticalLine(trigTime, top, bottom);
+            trigX = timeToX(viewSize * 0.5);
+            trigTime = currentOffset + trigX;//+left; // get time center
+            if ((trigTime >= left) && (trigTime <= right))
+            {
+                g.drawVerticalLine(trigTime, top, bottom);
+                if (visibleRange != visibleRangePrevious)
+                    DBG("paintTrigTime::viewSize = " << viewSize << " trigX = "<< trigX << " trigTime = " << trigTime);
+            }
             float trigLevel = bounds.getCentreY() - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
             trigY = (int)trigLevel;
             if ((trigY >= top) && (trigY <= bottom))
@@ -265,7 +325,7 @@
         //----------------------------------------------------------------------------------
         void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            auto totlen = getSampleSize(); // thumbnail.getTotalLength(); //total length of sample in seconds
+            double totlen = getSampleSize(); // thumbnail.getTotalLength(); //total length of sample in seconds
             if (totlen > 0)
             {
                 double displayStartTime, displayEndTime, displayWidth;
@@ -273,6 +333,8 @@
                 auto renderArea = bounds;
                 auto top = bounds.getY();
                 auto bottom = bounds.getBottom();
+                auto left = bounds.getX();
+                auto right = bounds.getRight();
                 auto width = bounds.getWidth(); // width of Display zone in pixels
 
                 double SampleSize = totlen * sampleRate; //size  of sample in points
@@ -290,14 +352,21 @@
                 g.setOpacity(gridOpacity);
                 int newX1, txtZoneOffset;
                 txtZoneOffset = renderArea.getTopLeft().getX();
+                if (visibleRange != visibleRangePrevious)
+                    DBG("paintGrid::txtZoneOffset = " << txtZoneOffset);
                 double tRatio = 0.5;
-                int centerX = txtZoneOffset + timeToX(visRangeWidth * tRatio); // timeToX(viewSize * 0.5); get time center
+                txtZoneOffset = spareWidth;
+                float center_t = totlen * tRatio;// timeToX(visRangeWidth * tRatio);  //+ txtZoneOffset; // timeToX(viewSize * 0.5); get time center
                 double trigTime = visRangeWidth * tRatio;
                 double xOffset = txtZoneOffset + width / 2.0;
                 xOffset = xOffset * Ratio / curRatio;
-                
+                if (visibleRange != visibleRangePrevious)
+                    DBG("paintGrid::xOffset = " << xOffset <<" center_t = " << center_t);
+                if (visibleRange != visibleRangePrevious)
+                    DBG("paintGrid::visibleRange = " << visibleRange.getStart()<<" End = "<< visibleRange.getEnd());
                 std::vector<double> xs;
                 std::vector<long> xc;
+                double xx;
 
                 if (XZoomIndex == 0)
                 {
@@ -306,8 +375,11 @@
                     // draw vertical time lines
                     for (auto x : xs)
                     {
-                        newX1 = centerX + timeToX(x); // get 
+                        xx = timeToX(x + center_t);
+                        newX1 =  xx - txtZoneOffset; // get 
                         g.drawVerticalLine(newX1, top, bottom);
+                        if (visibleRange != visibleRangePrevious)
+                            DBG("paintGrid0: x = " << x << " xx = " << xx << " newX1 = " << newX1);
                     }
                     xc = getXpRatio(tRatio, width);
                 }
@@ -317,15 +389,28 @@
                     xs = getXsRatio(tRatio);
                     for (auto x : xs)
                     {
-                        newX1 = timeToX(x); // get 
-                        newX1 += xOffset;
+                        xx = timeToX(x + center_t);
+                        //newX1 = xOffset + xx;
+                        newX1 = xx - txtZoneOffset;
                         g.drawVerticalLine(newX1, top, bottom);
+                        if (visibleRange != visibleRangePrevious)
+                            DBG("paintGridi: x = " << x << " xx = " << xx << " newX1 = " << newX1);
                     }
                     xc = getXpRatio(tRatio, width);
                 }
                 paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
                 paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
             }            
+        }
+        //----------------------------------------------------------------------------------
+        bool isGraphicContextNew()
+        {
+            bool isNew;
+            if (visibleRange == visibleRangePrevious)
+                isNew = false;
+            else
+                isNew = true;
+            return(isNew);
         }
         //----------------------------------------------------------------------------------
         void paintVerticalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -466,8 +551,12 @@
                 {
                     idx = (int)sample;
                     idxEnd = int(sample + ratio + 0.5);
-                    if (blockID==1039)
-                        DBG("last block");
+                    if (blockID == 1039)
+                    {
+                        if (visibleRange != visibleRangePrevious)
+                            DBG("last block");
+                    }
+                        
                     if (idxEnd > endSample - 1)
                         idxEnd = endSample - 1;
                     //wavMin = eBuffer->getSample(0, idx);
@@ -1187,6 +1276,7 @@
         void paint(juce::Graphics& g) override
         {
             //g.fillAll(Colours::dimgrey);
+            
             auto thumbArea = getLocalBounds();
             juce::Rectangle<int> extZone = getRenderZone(thumbArea);
             g.setColour(digitPanelColour);
@@ -1279,7 +1369,8 @@
                     {
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
-                    }
+                    }                    
+                    //drawMousePosLabels(g);
                     xzoomticknb = createZoomVector(zoomVector);
                     //thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
@@ -1293,6 +1384,11 @@
                     drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, yScale);
+                    if (visibleRange != visibleRangePrevious)
+                    {
+                        visibleRangePrevious = visibleRange;
+                        DBG("---------------");
+                    }
                 }
                 break;
 
@@ -1304,10 +1400,12 @@
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
                     }
+                    
                     //thumbnailsize = thumbnail.getTotalLength();
                     //newRange.setStart(0.0);
                     //newRange.setEnd(thumbnailsize);
                     //setRange(newRange);
+                    //drawMousePosLabels(g);
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
@@ -1316,9 +1414,15 @@
                     drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, yScale);
+                    if (visibleRange != visibleRangePrevious)
+                    {
+                        visibleRangePrevious = visibleRange;
+                        DBG("---------------");
+                    }
                 }
                 break;
-            }            
+            }
+            drawMousePosLabels(g);
         }
         //----------------------------------------------------------------------------------
         void resized() override
@@ -1338,18 +1442,27 @@
             //xGridModeSlider.setBounds(5 + xGridModeLabel.getWidth(), 20, 60, 20);
             //yGridModeSlider.setBounds(5 + yGridModeLabel.getWidth(), 50 , 60, 20);
 
-            GroupeLabel.setBounds(5, 20, 50, 20);
+            eScopeChannelLabel.setBounds(5, 20, 80, 20);
+            GroupeLabel.setBounds(5, 60, 50, 20);
             //cmbBoxGroupe.setBounds(80, 20, 64, 24);
-            cmbBoxGroupe.setBounds(5 + GroupeLabel.getWidth(), 20, 87, 24);
-            chkBoxXLink.setBounds(5, 50, 64, 24);
-            chkBoxYLink.setBounds(80, 50, 64, 24);
-
-            xGridModeLabel.setBounds(5, 80, 50, 20);            
-            yGridModeLabel.setBounds(5, 110, 50, 20);           
-
-            cmbBoxXMode.setBounds(5 + xGridModeLabel.getWidth(), 80, 87, 24);
-            cmbBoxYMode.setBounds(5 + yGridModeLabel.getWidth(), 110, 87, 24);            
+            cmbBoxGroupe.setBounds(5 + GroupeLabel.getWidth(), 60, 87, 24);
+            chkBoxXLink.setBounds(5, 90, 64, 24);
+            chkBoxYLink.setBounds(80, 90, 64, 24);
             
+            xGridModeLabel.setBounds(5, 120, 50, 20);            
+            yGridModeLabel.setBounds(5, 150, 50, 20);           
+
+            cmbBoxXMode.setBounds(5 + xGridModeLabel.getWidth(), 120, 87, 24);
+            cmbBoxYMode.setBounds(5 + yGridModeLabel.getWidth(), 150, 87, 24);
+
+            sliderLabel.setBounds(5, 180, 50, 20);
+            sliderOffset.setBounds(5 + sliderLabel.getWidth(), 180,100, 20);
+            sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderOffset.getTextBoxHeight());
+
+            sliderXLabel.setBounds(5, 210, 50, 20);
+            sliderXOffset.setBounds(5 + sliderXLabel.getWidth(), 210, 100, 20);
+            sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderXOffset.getTextBoxHeight());
+
             xzoomticknb = createZoomVector(zoomVector);
         }
         //----------------------------------------------------------------------------------
@@ -1413,15 +1526,51 @@
                 return(0);
         }
         //----------------------------------------------------------------------------------
+        void drawMousePosLabels(juce::Graphics& g)
+        {
+            auto thumbArea = getLocalBounds();
+            juce::Rectangle<int> extZone = getRenderZone(thumbArea);
+            
+            if((Posi3.getX()>= extZone.getX()) && (Posi3.getX()<= extZone.getX()+ extZone.getWidth()) )
+            {
+            g.setColour(juce::Colours::whitesmoke);
+            g.setOpacity(1.0);
+            const int fontHeight = 12;
+            g.setFont(fontHeight);       
+            juce::String str;            
+            str << "x = " << Posi3.getX()<< " y = "<<Posi3.getY();
+            //str.toDecimalStringWithSignificantFigures(x, 2);
+            juce::Rectangle<int> r;
+            auto textWidth = g.getCurrentFont().getStringWidth(str);
+            r.setSize(textWidth, fontHeight);
+            r.setCentre(static_cast<int>(Posi3.getX()), 0);
+            r.setY(Posi3.getY() - 1 * fontHeight);
+            g.drawFittedText(str, r, juce::Justification::centred, 1);
+            float timex = mouseXToTime(Posi3.getX());
+            str.clear();
+            str << "t = " << timex <<" s";
+            textWidth = g.getCurrentFont().getStringWidth(str);
+            r.setY(Posi3.getY() + 1 * fontHeight);
+            g.drawFittedText(str, r, juce::Justification::centred, 1);
+            }
+        }
+        //----------------------------------------------------------------------------------
+        void mouseMove(const juce::MouseEvent& event)
+        {
+            Posi3 = getMouseXYRelative(); // Read Mouse  position
+            repaint();
+        }
         void mouseDown(const juce::MouseEvent& event)
         {
-            auto Posi3 = getMouseXYRelative(); // Read Mouse click position
+             Posi3 = getMouseXYRelative(); // Read Mouse click position
+             repaint();
             //DBG("Mouse.x = " << Posi3.getX());            
         }
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override
         {
-            juce::Point< int > Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
+            //drawMousePosLabels(Posit3);
             float sampleTimeInSeconde = getSampleSize(); //
             if ((thumbnail.getTotalLength() > 0.0)|| (*bBufferReady))
             {
@@ -1631,8 +1780,10 @@
 
         juce::ScrollBar scrollbar{ false };
         juce::Range<double> visibleRange;
+        juce::Range<double> visibleRangePrevious;
         
         //juce::Slider xGridModeSlider;
+        juce::Label eScopeChannelLabel;
         juce::Label xGridModeLabel;
         //juce::Slider yGridModeSlider;
         juce::Label yGridModeLabel;
@@ -1644,6 +1795,14 @@
         juce::ComboBox cmbBoxYMode;
         juce::ComboBox cmbBoxGroupe;
 
+        juce::Slider sliderOffset;
+        juce::Label sliderLabel;
+
+        juce::Slider sliderXOffset;
+        juce::Label sliderXLabel;
+
+        int currentOffset = 0;
+
         int yScale = 0; //0 = linear // 1 = dB
         double ThumbYZoom = 1.0f;
         int YZoomIndex = 8;
@@ -1651,9 +1810,8 @@
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
         double thresholdTrigger;
-
-
         //----------------------------------------------------------------------------------
+        // timeToX converts absolute time (expressed in seconds) into x position (in pixels)
         float timeToX(const double time) const
         {
             if (visibleRange.getLength() <= 0)
@@ -1661,15 +1819,32 @@
             //auto width = getWidth();
             auto width = wavZone.getWidth();
 
-            return (float)width * (float)((time - visibleRange.getStart()) /
-                visibleRange.getLength());
+            float newX;
+            
+            newX = (float)width * (float)((time - visibleRange.getStart()) / visibleRange.getLength());
+            newX += spareWidth;
+
+            newX = time / (visibleRange.getLength()) * (float) width;
+
+            return newX;
         }
         //----------------------------------------------------------------------------------
+        // xToTime converts absolute x position (expressed in pixels) into time (in seconds)
         double xToTime(const float x) const
         {
             //auto width = getWidth();
+            auto width = wavZone.getWidth();//display width in pixels
+            double time = ((x - spareWidth) / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
+            time = (float)x / (float)width * visibleRange.getLength();
+
+            return time;
+        }
+        //----------------------------------------------------------------------------------
+        double mouseXToTime(const float x) const //identical to xToTime but separated for debug purposes
+        {
+            //auto width = getWidth();
             auto width = wavZone.getWidth();
-            return (x / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
+            return ((x - spareWidth) / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
         }
         //----------------------------------------------------------------------------------
         void scrollBarMoved(juce::ScrollBar* scrollBarThatHasMoved, double newRangeStart)

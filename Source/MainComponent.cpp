@@ -33,7 +33,8 @@ usingCustomDeviceManager(false)
         eScope[idx]->setChannelID(idx);
         eScope[idx]->recThumbnail.addChangeListener(this);
         eScope[idx]->setDisplayThumbnailMode(recmode);
-        channel_rack->addPanel(eScope[idx].get(), NULL);// VSCROLLABLE + HSCROLLABLE); // RESIZER);// +SWITCHABLE);
+        //channel_rack->addPanel(eScope[idx].get(), NULL);// VSCROLLABLE + HSCROLLABLE); // RESIZER);// +SWITCHABLE);
+        channel_rack->addPanel(eScope[idx].get(), VSCROLLABLE + HSCROLLABLE + RESIZER + SWITCHABLE);
     }
     channel_rack->computeSizeFromChildren(true, true);
 
