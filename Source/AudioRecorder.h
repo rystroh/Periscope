@@ -7,7 +7,7 @@
 //#include "Ramp_bleep120k.h"
 namespace juce
 {
-#define audio_source 1
+//#define audio_source 1
 //#define modify_triggers 1
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
@@ -222,6 +222,7 @@ namespace juce
 #if audio_source == 1 //overwrite stream with test wav file
                 overwriteStreamWithTestWav(channelData, buffer.getNumSamples());
 #endif
+                TestChannelID();
                 // write in circulare buffer for later display
                 if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
                 {
@@ -265,11 +266,14 @@ namespace juce
                 bufferWritten = PrepareBufferPointers();
 
                 if (bufferWritten) // to allow tests / break points ONLY !
-                    wfBufferReady = true; 
+                {
+                    wfBufferReady = true;
+                    sendChangeMessage();
+                }
                 else
                     wfBufferReady = false;
             }
-
+            //Mode "Recording continuously" 
             if (activeWriter.load() != nullptr && chanID < numInputChannels)
             {
                 activeWriter.load()->write(&inputChannelData[chanID], numSamples);
@@ -460,6 +464,40 @@ namespace juce
 #else
             thresholdTrigger = threshold;
 #endif
+        }
+        //-------------------------------------
+        void TestChannelID() // for debugging multiple channel sessions
+        {
+            int channel;
+            switch (chanID)
+            {
+            case 0:
+                channel = 0;
+                break;
+            case 1:
+                channel = 1;
+                break;
+            case 2:
+                channel = 2;
+                break;
+            case 3:
+                channel = 3;
+                break;
+            case 4:
+                channel = 4;
+                break;
+            case 5:
+                channel = 5;
+                break;
+            case 6:
+                channel = 6;
+                break;
+            case 7:
+                channel = 7;
+                break;
+            default:
+                channel = 10;
+            }
         }
         //----------------------------------------------------------------------------------
         void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}

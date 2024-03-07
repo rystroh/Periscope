@@ -6,12 +6,16 @@
 #include "eScope.h"
 #include "Header.h"
 
-#define option 1
+#define option 2 //1 2 or 8
 #if option == 1
 const int eScopeChanNb = 1;
 #endif // option = 1
 
 #if option == 2
+const int eScopeChanNb = 2;
+#endif // option = 1
+
+#if option == 8
 const int eScopeChanNb = 8;
 #endif // option = 1
 

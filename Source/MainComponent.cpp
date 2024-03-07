@@ -53,6 +53,22 @@ usingCustomDeviceManager(false)
 #endif
 
 #if option == 2 
+
+    juce::XmlElement xxw("DEVICESETUP");
+    xxw.setAttribute("deviceType", "ASIO");
+    xxw.setAttribute("audioOutputDeviceName", "ASIO Fireface USB");
+    xxw.setAttribute("audioInputDeviceName", "ASIO Fireface USB");
+    xxw.setAttribute("audioDeviceRate", "48000.0");
+    xxw.setAttribute("audioDeviceBufferSize", "480.0");
+    /*
+    xxw.setAttribute("audioDeviceRate", "44100.0");
+    xxw.setAttribute("audioDeviceBufferSize", "512.0");*/
+
+    xxw.setAttribute("audioDeviceInChans", "11111111");
+    deviceManager.initialise(eScopeChanNb, 2, &xxw, true);
+#endif
+
+#if option == 8 
     
     juce::XmlElement xxw("DEVICESETUP");
     xxw.setAttribute("deviceType", "ASIO");
@@ -106,8 +122,12 @@ usingCustomDeviceManager(false)
     setSize(1200, 400);
 #endif
 #if option == 2
+    setSize(1200, 800);
+#endif
+#if option == 8
     setSize(1200, 1000);
 #endif
+
     formatManager.registerBasicFormats();
 }
 
@@ -202,12 +222,27 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
     int eScopeID = src->chanID;
     auto visibRange = src->getVisibleRange();
     auto xZoom = src->getXZoom();
+    auto yZoom = src->getDisplayYZoom();
+    auto broadcasterZoomGroup = src->getZoomGroup();
     for (int idx = 0; idx < eScopeChanNb; idx++)
     {
         if (idx != eScopeID)
         {
-            eScope[idx]->setXZoom(xZoom);
-            eScope[idx]->setVisibleRange(visibRange);
+            int targetZoomGroup= eScope[idx]->getZoomGroup();
+            int targetXZoomFlag = eScope[idx]->getXZoomFlag();
+            int targetYZoomFlag = eScope[idx]->getYZoomFlag();
+            if (targetZoomGroup == broadcasterZoomGroup)
+            {
+                if (targetXZoomFlag != 0)
+                {
+                    eScope[idx]->setXZoom(xZoom);
+                    eScope[idx]->setVisibleRange(visibRange);
+                }
+                if (targetYZoomFlag != 0)
+                    eScope[idx]->setDisplayYZoom(yZoom);
+                
+            }
+
         }
     }
 }

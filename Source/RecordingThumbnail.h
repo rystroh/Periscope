@@ -18,8 +18,8 @@
             scrollbar.addListener(this);
             formatManager.registerBasicFormats();
             thumbnail.addChangeListener(this);
-
-            juce::String chanTxt;
+            
+                        juce::String chanTxt;
 
             chanTxt << "Channel " << chanID;
 
@@ -98,7 +98,16 @@
                 repaint();
             };
 
-
+            chkBoxXLink.onClick = [this]()
+            {
+                auto idx = chkBoxXLink.getToggleState();
+                xZoomFlag = idx;
+            };
+            chkBoxYLink.onClick = [this]()
+            {
+                auto idx = chkBoxYLink.getToggleState();
+                yZoomFlag = idx;
+            };
             cmbBoxXMode.onChange = [this]()
             {
                 auto idx = cmbBoxXMode.getSelectedItemIndex();
@@ -116,7 +125,9 @@
                 auto idx = cmbBoxGroupe.getSelectedItemIndex();
                 auto thatTrackGroup = cmbBoxGroupe.getItemText(idx);
                 auto thatID = cmbBoxGroupe.getItemId(idx);
+                zoomGroup = thatID;
             };
+            
 /*
             sliderOffset.onChange = [this]()
             {
@@ -148,11 +159,10 @@
         juce::Colour gridHorizontalCenterColour = juce::Colours::red;
         juce::Colour triggerColour = juce::Colours::yellow;
         juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
-
-        int spareWidth = 0;//width of zone used to display eScope controls 
-
         double gridOpacity = 0.5; //grid opacity
         double triggerOpacity = 0.75; //trigger lines opacity
+        
+        int spareWidth = 0;//width of zone used to display eScope controls 
 
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
@@ -160,7 +170,7 @@
         std::vector<float> mAudioPoints;
         std::vector<float> mMaxAudioPoints;
         std::vector<float> mMinAudioPoints;
-        juce::Point< int > Posi3;
+        juce::Point< int > Posi3;        
         //-------------------------------------------------------------------
         //following elements are passed between RecTumbnail and AudioRecorder
         bool bTriggered = false;
@@ -253,6 +263,8 @@
             repaint();
         }
         //----------------------------------------------------------------------------------
+        double getDisplayYZoom() { return(ThumbYZoom); }
+        //----------------------------------------------------------------------------------
         void setRange(juce::Range<double> newRange)
         {
             visibleRange = newRange;
@@ -325,7 +337,7 @@
         //----------------------------------------------------------------------------------
         void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
         {
-            double totlen = getSampleSize(); // thumbnail.getTotalLength(); //total length of sample in seconds
+            auto totlen = getSampleSize(); // thumbnail.getTotalLength(); //total length of sample in seconds
             if (totlen > 0)
             {
                 double displayStartTime, displayEndTime, displayWidth;
@@ -352,13 +364,14 @@
                 g.setOpacity(gridOpacity);
                 int newX1, txtZoneOffset;
                 txtZoneOffset = renderArea.getTopLeft().getX();
+                txtZoneOffset = spareWidth;
                 if (visibleRange != visibleRangePrevious)
                     DBG("paintGrid::txtZoneOffset = " << txtZoneOffset);
                 double tRatio = 0.5;
-                txtZoneOffset = spareWidth;
                 float center_t = totlen * tRatio;// timeToX(visRangeWidth * tRatio);  //+ txtZoneOffset; // timeToX(viewSize * 0.5); get time center
+                int centerX = timeToX(visRangeWidth * tRatio); // timeToX(viewSize * 0.5); get time center
                 double trigTime = visRangeWidth * tRatio;
-                double xOffset = txtZoneOffset + width / 2.0;
+                double xOffset = width / 2.0;
                 xOffset = xOffset * Ratio / curRatio;
                 if (visibleRange != visibleRangePrevious)
                     DBG("paintGrid::xOffset = " << xOffset <<" center_t = " << center_t);
@@ -366,7 +379,7 @@
                     DBG("paintGrid::visibleRange = " << visibleRange.getStart()<<" End = "<< visibleRange.getEnd());
                 std::vector<double> xs;
                 std::vector<long> xc;
-                double xx;
+                double xx = 0;
 
                 if (XZoomIndex == 0)
                 {
@@ -375,8 +388,7 @@
                     // draw vertical time lines
                     for (auto x : xs)
                     {
-                        xx = timeToX(x + center_t);
-                        newX1 =  xx - txtZoneOffset; // get 
+                        newX1 = centerX + timeToX(x); // get 
                         g.drawVerticalLine(newX1, top, bottom);
                         if (visibleRange != visibleRangePrevious)
                             DBG("paintGrid0: x = " << x << " xx = " << xx << " newX1 = " << newX1);
@@ -389,9 +401,8 @@
                     xs = getXsRatio(tRatio);
                     for (auto x : xs)
                     {
-                        xx = timeToX(x + center_t);
-                        //newX1 = xOffset + xx;
-                        newX1 = xx - txtZoneOffset;
+                        newX1 = timeToX(x); // get 
+                        newX1 += xOffset;
                         g.drawVerticalLine(newX1, top, bottom);
                         if (visibleRange != visibleRangePrevious)
                             DBG("paintGridi: x = " << x << " xx = " << xx << " newX1 = " << newX1);
@@ -401,16 +412,6 @@
                 paintCentralHorizontalRedLine(g, bounds); // draw Red horizontal venter line            
                 paintTriggerTimeAndLevel(g, bounds);  // Draw Trigger Vertical and Horizontal
             }            
-        }
-        //----------------------------------------------------------------------------------
-        bool isGraphicContextNew()
-        {
-            bool isNew;
-            if (visibleRange == visibleRangePrevious)
-                isNew = false;
-            else
-                isNew = true;
-            return(isNew);
         }
         //----------------------------------------------------------------------------------
         void paintVerticalGrid(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -551,12 +552,11 @@
                 {
                     idx = (int)sample;
                     idxEnd = int(sample + ratio + 0.5);
-                    if (blockID == 1039)
                     {
+                        /*
                         if (visibleRange != visibleRangePrevious)
-                            DBG("last block");
+                            DBG("last block");*/
                     }
-                        
                     if (idxEnd > endSample - 1)
                         idxEnd = endSample - 1;
                     //wavMin = eBuffer->getSample(0, idx);
@@ -611,7 +611,7 @@
                         if (wavbottom - wavtop < 1)
                             wavbottom = wavtop + 1; //set thickness to 1 at least*/
                         //g.drawVerticalLine(sample, wavtop, wavbottom);
-                        g.drawVerticalLine(left+sample, wavbottom, wavtop);
+                        g.drawVerticalLine(sample, wavbottom, wavtop);
                         pathStarted = true;
                     }
                 }
@@ -695,7 +695,7 @@
                 else
                 {
                     auto point = juce::jmap<float>(pointScaled, -1.0f, 1.0f, bottom, top);
-                    path.startNewSubPath(left, point);
+                    path.startNewSubPath(0, point);
                     pathStarted = true;
                 }
 
@@ -711,11 +711,11 @@
                             DBG("point with index " << sample << " is out of X range = " << right);
                         if (!pathStarted)
                         {
-                            path.startNewSubPath(left+sample, point);
+                            path.startNewSubPath(sample, point);
                             pathStarted = true;
                         }
                         else
-                            path.lineTo(left+sample, point);
+                            path.lineTo(sample, point);
                     }                
                 }
                 g.strokePath(path, juce::PathStrokeType(1));
@@ -814,12 +814,11 @@
             double tRatio = 0.5;
             std::vector<double> xs = getXsRatio(tRatio);//getXsCentered(txtWidth * 0.5); //create vector with nice positions for vert
             std::vector<long> xc = getXpRatio(tRatio, width);
-            int newX1, txtZoneOffset;
-            txtZoneOffset = textArea.getTopLeft().getX();
+            int newX1;
             for (int idx = 0; idx < xs.size(); idx++)//for (auto x : xs)
             {
                 juce::String str;
-                newX1 = xc[idx] + txtZoneOffset;
+                newX1 = xc[idx];
                 str << xs[idx];
                 str.toDecimalStringWithSignificantFigures(xs[idx], 2);
                 juce::Rectangle<int> r;
@@ -832,7 +831,6 @@
 
                 r.setY(textArea.getY());
                 g.drawFittedText(str, r, juce::Justification::centred, 1);
-                
             }
         }
         //----------------------------------------------------------------------------------
@@ -1222,7 +1220,7 @@
         //------------------------------------------------------------------------------
         double getAmplitudeStepSize(double ratio)
         {
-            std::vector<float>NicePercentSteps { 1.0 , 2.0 , 2.5 , 5.0 , 10.0 , 12.5,20,25,50,100};            
+            std::vector<float>NicePercentSteps { 1.0 , 2.0 , 2.5 , 5.0 , 10.0 , 12.5,20,25,50,100};
             int i{ 0 };
             if (ratio >= 1.0)
             {
@@ -1231,7 +1229,7 @@
                 return(NicePercentSteps[i]);
             }
             else
-                return(1);//should never happen
+                return(1);//should never happen 
         }
         //----------------------------------------------------------------------------------
         juce::Rectangle<int> getRenderZone(juce::Rectangle<int> bounds)
@@ -1369,8 +1367,7 @@
                     {
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
-                    }                    
-                    //drawMousePosLabels(g);
+                    }
                     xzoomticknb = createZoomVector(zoomVector);
                     //thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
@@ -1400,12 +1397,10 @@
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                         bTriggered = false;
                     }
-                    
                     //thumbnailsize = thumbnail.getTotalLength();
                     //newRange.setStart(0.0);
                     //newRange.setEnd(thumbnailsize);
                     //setRange(newRange);
-                    //drawMousePosLabels(g);
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
                     paintTimeGridLin(g, wavZone);
@@ -1421,8 +1416,7 @@
                     }
                 }
                 break;
-            }
-            drawMousePosLabels(g);
+            }            
         }
         //----------------------------------------------------------------------------------
         void resized() override
@@ -1526,6 +1520,12 @@
                 return(0);
         }
         //----------------------------------------------------------------------------------
+        void mouseDown_old(const juce::MouseEvent& event)
+        {
+            auto Posi3 = getMouseXYRelative(); // Read Mouse click position
+            //DBG("Mouse.x = " << Posi3.getX());            
+        }
+        //----------------------------------------------------------------------------------
         void drawMousePosLabels(juce::Graphics& g)
         {
             auto thumbArea = getLocalBounds();
@@ -1570,7 +1570,7 @@
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override
         {
             Posi3 = getMouseXYRelative(); // Read Hoverin Mouse position
-            //drawMousePosLabels(Posit3);
+            
             float sampleTimeInSeconde = getSampleSize(); //
             if ((thumbnail.getTotalLength() > 0.0)|| (*bBufferReady))
             {
@@ -1597,6 +1597,7 @@
                         }
                     }
                     DBG("mouseWh:YZoomIndex = " << YZoomIndex << " ThumbYZoom = " << ThumbYZoom);
+                    sendChangeMessage();
                 }
                 else if (juce::ModifierKeys::currentModifiers.isShiftDown())//X Move
                 {
@@ -1659,6 +1660,7 @@
         //----------------------------------------------------------------------------------
         void setDisplayXZoom(double zoomfactor)
         {
+            int eScopeID = chanID;
             auto thumbArea = getLocalBounds(); //bounds of display zone
             auto width = getWidth(); // width of Display zone in pixels
             juce::Point< int >MousePosition;
@@ -1688,6 +1690,7 @@
         //----------------------------------------------------------------------------------
         void setDisplayXZone(double zoomfactor, juce::Point< int >MousePosition)
         {
+            int eScopeID = chanID;
             displayFullThumb = false;
             float waveLength = getSampleSize();
 
@@ -1760,6 +1763,9 @@
         juce::Range<double> getVisibleRange() { return(visibleRange); }
         //----------------------------------------------------------------------------------
         double getXZoom() { return(ThumbXZoom); }
+        int getZoomGroup() { return(zoomGroup); }
+        bool getXZoomFlag() { return(xZoomFlag); }
+        bool getYZoomFlag() { return(yZoomFlag); }
         //----------------------------------------------------------------------------------
     private:
         juce::AudioFormatManager formatManager;
@@ -1774,6 +1780,11 @@
         int displayThumbMode;
 
         double ThumbXZoom = 1.0f;
+
+        int zoomGroup = 0;
+        bool xZoomFlag = false ;
+        bool yZoomFlag = false;
+
         int XZoomIndex = 0;
         double stepSize = 0; //stores the graduation step size (usually in s)
         std::vector<double> zoomVector;
@@ -1811,7 +1822,6 @@
         juce::Rectangle<int> wavZone;
         double thresholdTrigger;
         //----------------------------------------------------------------------------------
-        // timeToX converts absolute time (expressed in seconds) into x position (in pixels)
         float timeToX(const double time) const
         {
             if (visibleRange.getLength() <= 0)
@@ -1819,25 +1829,15 @@
             //auto width = getWidth();
             auto width = wavZone.getWidth();
 
-            float newX;
-            
-            newX = (float)width * (float)((time - visibleRange.getStart()) / visibleRange.getLength());
-            newX += spareWidth;
-
-            newX = time / (visibleRange.getLength()) * (float) width;
-
-            return newX;
+            return (float)width * (float)((time - visibleRange.getStart()) /
+                visibleRange.getLength());
         }
         //----------------------------------------------------------------------------------
-        // xToTime converts absolute x position (expressed in pixels) into time (in seconds)
         double xToTime(const float x) const
         {
             //auto width = getWidth();
-            auto width = wavZone.getWidth();//display width in pixels
-            double time = ((x - spareWidth) / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
-            time = (float)x / (float)width * visibleRange.getLength();
-
-            return time;
+            auto width = wavZone.getWidth();
+            return (x / (float)width) * (visibleRange.getLength()) + visibleRange.getStart();
         }
         //----------------------------------------------------------------------------------
         double mouseXToTime(const float x) const //identical to xToTime but separated for debug purposes

@@ -19,27 +19,16 @@
             setWidth(300, 600, 10000);
             setHeight(50, 100, 500);
         }
-        ~EScope()
-        {
-
-        }
+        ~EScope() {        }
         RecordingThumbnail recThumbnail;
         juce::AudioRecorder recorder{ recThumbnail.getAudioThumbnail() };
-
-
-        void EScope::paint(juce::Graphics& g) override
-        {
-            recThumbnail.paint(g);
-        }
-
+        void EScope::paint(juce::Graphics& g) override { recThumbnail.paint(g); }
         void EScope::resized()
         {
             auto area = getLocalBounds();
             recThumbnail.setBounds(area); //this triggers a recThumbnail.resized();
-        }
-  
+        }  
         juce::AudioIODeviceCallback* getAudioIODeviceCallBack() { return &recorder; }
-
         void startRecording(const juce::File& file) { recorder.startRecording(file); }
         bool isRecording() { return recorder.isRecording(); }
         void audioDeviceAboutToStart(juce::AudioIODevice* device)//needs refactorisation
@@ -50,21 +39,17 @@
             recThumbnail.setSampleRate(smpRate);
            
         }
-
-
         void setDisplayThumbnailMode(int displayMode)
         {
             recThumbnail.setDisplayThumbnailMode(displayMode);
             recThumbnail.repaint();
         }
         bool setSource(juce::InputSource* newSource) { return(recThumbnail.setSource(newSource)); }
-
         void prepareToPlay(int samplesPerBlockExpected, double sampleRate)
         {
             recorder.prepareToPlay(samplesPerBlockExpected, sampleRate);
             recThumbnail.prepareToPlay(samplesPerBlockExpected, sampleRate);
         }
-
         void setSampleRate(double smpRate) //called by prepareToPlay
         {
             recorder.setSampleRate(smpRate);
@@ -76,13 +61,11 @@
             //recThumbnail.setBufferSize(smpRate);
         }
         void setDisplayYZoom(double yZoom) { recThumbnail.setDisplayYZoom(yZoom); }
- 
-
+        double getDisplayYZoom() { recThumbnail.getDisplayYZoom(); }
         int getChannelID(void)
         {
             return(recorder.getChannelID());
         }
-
         void setChannelID(int chanID)
         {
             recorder.setChannelID(chanID);
@@ -106,9 +89,7 @@
             recThumbnail.setBufferReadyAddress(BufferReady);
         }
         //----------------------------------------------------------------------------------
-        void setYScale(int scale) {
-            recThumbnail.setYScale(scale);
-        }
+        void setYScale(int scale) { recThumbnail.setYScale(scale); }
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) //override
         {
@@ -119,20 +100,16 @@
         {
             recThumbnail.mouseDown(event);
         }
-        void setVisibleRange(juce::Range<double> newRange)
-        {
-            recThumbnail.setRange(newRange);
-        }
-        void setXZoom(double zoomfactor)
-        {
-            //recThumbnail.setDisplayXZone(zoomfactor);
-            recThumbnail.setDisplayXZoom(zoomfactor);
-        }
+        void setVisibleRange(juce::Range<double> newRange) { recThumbnail.setRange(newRange); }
+        void setXZoom(double zoomfactor) { recThumbnail.setDisplayXZoom(zoomfactor); }
         void setThreshold(double threshold)
         {
             recorder.setThreshold(threshold);
             recThumbnail.setThreshold(threshold);
-        }
+        }     
+        int getZoomGroup() { return(recThumbnail.getZoomGroup()); }
+        int getXZoomFlag() { return(recThumbnail.getXZoomFlag()); }
+        int getYZoomFlag() { return(recThumbnail.getYZoomFlag()); }
     private:
 
 
