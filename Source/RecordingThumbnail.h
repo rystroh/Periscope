@@ -19,26 +19,25 @@
             formatManager.registerBasicFormats();
             thumbnail.addChangeListener(this);
             
-                        juce::String chanTxt;
+            juce::String chanTxt;
 
             chanTxt << "Channel " << chanID;
-
+            /*
             eScopeChannelLabel.setColour(juce::Label::textColourId, gridColour);
             eScopeChannelLabel.setText(chanTxt, juce::dontSendNotification);
-            
+            addAndMakeVisible(eScopeChannelLabel);
+            //----------------------------------------------------------------
             xGridModeLabel.setColour(juce::Label::textColourId, gridColour);
             xGridModeLabel.setText("X Scale", juce::dontSendNotification);
             
             yGridModeLabel.setColour(juce::Label::textColourId, gridColour);
             yGridModeLabel.setText("Y Scale", juce::dontSendNotification);
-
+            
+            addAndMakeVisible(xGridModeLabel);            
+            addAndMakeVisible(yGridModeLabel);*/
+            /*
             GroupeLabel.setColour(juce::Label::textColourId, gridColour);
             GroupeLabel.setText("Groupe", juce::dontSendNotification);
-
-
-            addAndMakeVisible(eScopeChannelLabel);
-            addAndMakeVisible(xGridModeLabel);            
-            addAndMakeVisible(yGridModeLabel);
             addAndMakeVisible(GroupeLabel);
             chkBoxXLink.setColour(juce::Label::textColourId, gridColour);
             chkBoxXLink.setButtonText("x link");
@@ -127,19 +126,19 @@
                 auto thatID = cmbBoxGroupe.getItemId(idx);
                 zoomGroup = thatID;
             };
-            
+            */
 /*
             sliderOffset.onChange = [this]()
             {
                 currentOffset = (float)sliderOffset.getValue();
             };*/
                       
-           
+           /*
             addAndMakeVisible(cmbBoxXMode);
             addAndMakeVisible(cmbBoxYMode);
             addAndMakeVisible(cmbBoxGroupe);
             addAndMakeVisible(chkBoxXLink);
-            addAndMakeVisible(chkBoxYLink);
+            addAndMakeVisible(chkBoxYLink);*/
         }
 
         ~RecordingThumbnail() override
@@ -191,13 +190,9 @@
         void setBufferReadyAddress(bool* addr) { bBufferReady = addr; }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
-        {
-            viewSize = dispTime;
-        }
+        { viewSize = dispTime;}
         //----------------------------------------------------------------------------------
-        void setYScale(int scale) {
-            yScale = scale;
-        }
+        void setYScale(int scale) { yScale = scale; }
         //----------------------------------------------------------------------------------
         bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
         //----------------------------------------------------------------------------------
@@ -1436,7 +1431,9 @@
             //xGridModeSlider.setBounds(5 + xGridModeLabel.getWidth(), 20, 60, 20);
             //yGridModeSlider.setBounds(5 + yGridModeLabel.getWidth(), 50 , 60, 20);
 
+            /*
             eScopeChannelLabel.setBounds(5, 20, 80, 20);
+            
             GroupeLabel.setBounds(5, 60, 50, 20);
             //cmbBoxGroupe.setBounds(80, 20, 64, 24);
             cmbBoxGroupe.setBounds(5 + GroupeLabel.getWidth(), 60, 87, 24);
@@ -1456,7 +1453,7 @@
             sliderXLabel.setBounds(5, 210, 50, 20);
             sliderXOffset.setBounds(5 + sliderXLabel.getWidth(), 210, 100, 20);
             sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderXOffset.getTextBoxHeight());
-
+            */
             xzoomticknb = createZoomVector(zoomVector);
         }
         //----------------------------------------------------------------------------------
@@ -1793,6 +1790,7 @@
         juce::Range<double> visibleRange;
         juce::Range<double> visibleRangePrevious;
         
+        /*
         //juce::Slider xGridModeSlider;
         juce::Label eScopeChannelLabel;
         juce::Label xGridModeLabel;
@@ -1811,7 +1809,7 @@
 
         juce::Slider sliderXOffset;
         juce::Label sliderXLabel;
-
+        */
         int currentOffset = 0;
 
         int yScale = 0; //0 = linear // 1 = dB

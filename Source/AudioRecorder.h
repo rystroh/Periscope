@@ -7,7 +7,7 @@
 //#include "Ramp_bleep120k.h"
 namespace juce
 {
-//#define audio_source 1
+#define audio_source 1
 //#define modify_triggers 1
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
@@ -428,15 +428,9 @@ namespace juce
                 return(false);            
         }
         //----------------------------------------------------------------------------------
-        int getChannelID(void)
-        {
-            return(chanID);
-        }
+        int getChannelID(void)  {  return(chanID);  }
         //----------------------------------------------------------------------------------
-        void setChannelID(int setChanID)
-        {
-            chanID = setChanID;
-        }
+        void setChannelID(int setChanID) {  chanID = setChanID; }
         //----------------------------------------------------------------------------------
         void setThreshold(double threshold)
         {
@@ -519,7 +513,7 @@ namespace juce
 #endif
         //----------------------------------------------------------------------------------
     private:
-        AudioThumbnail& thumbnail;
+        AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
         int thumbnailSize = 0;
 
         // the thread that will write our audio data to disk

@@ -34,7 +34,14 @@ usingCustomDeviceManager(false)
         eScope[idx]->recThumbnail.addChangeListener(this);
         eScope[idx]->setDisplayThumbnailMode(recmode);
         //channel_rack->addPanel(eScope[idx].get(), NULL);// VSCROLLABLE + HSCROLLABLE); // RESIZER);// +SWITCHABLE);
-        channel_rack->addPanel(eScope[idx].get(), VSCROLLABLE + HSCROLLABLE + RESIZER + SWITCHABLE);
+        thumbnail_rack[idx] = std::make_unique<grape::Rack>("Channel " + juce::String(idx),false); // false for horizontal rack, true for vertical
+        //channel_rack->addPanel(eScope[idx].get(), VSCROLLABLE + HSCROLLABLE + RESIZER + SWITCHABLE);
+        
+        channelControl[idx] = std::make_unique<ChannelControl>("Channel Control" + juce::String(idx));
+        thumbnail_rack[idx]->addPanel(channelControl[idx].get(), COLLAPSIBLE);
+        thumbnail_rack[idx]->addPanel(eScope[idx].get());
+        thumbnail_rack[idx]->computeSizeFromChildren();
+        channel_rack->addPanel(thumbnail_rack[idx].get(), VSCROLLABLE + HSCROLLABLE + RESIZER + SWITCHABLE);
     }
     channel_rack->computeSizeFromChildren(true, true);
 

@@ -22,6 +22,7 @@
         ~EScope() {        }
         RecordingThumbnail recThumbnail;
         juce::AudioRecorder recorder{ recThumbnail.getAudioThumbnail() };
+
         void EScope::paint(juce::Graphics& g) override { recThumbnail.paint(g); }
         void EScope::resized()
         {
