@@ -2,3 +2,6 @@
 **\JuceLibraryCode
 **/Builds
 **/JuceLibraryCode
+*.wav
+*.sfk
+Source/Ramp120k.h.bak
