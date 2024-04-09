@@ -77,7 +77,11 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
 
     std::unique_ptr<Header> header;
-    std::unique_ptr<EScope> eScope[eScopeChanNb];
+    std::unique_ptr<EScope> eScope[eScopeChanNb]; //[ToBeChanged]
+
+    RecordingThumbnail recThumbnail[eScopeChanNb];
+    juce::AudioRecorder recorder{ recThumbnail[0].getAudioThumbnail()};
+
     std::unique_ptr<Rack> display_rack; // this is a horizontal rack for placing a vertical panel switch bar
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
                                         // in a vertical rack inside the parent vertical rack
@@ -113,13 +117,25 @@ private:
             auto* reader = formatManager.createReaderFor(line);
 
             if (reader != nullptr)
-            {
+            {   //[ToBeChanged]
                 auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
                 eScope[idx]->setSource(new juce::FileInputSource(line));
                 eScope[idx]->setSampleRate(reader->sampleRate);
                 eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
                 eScope[idx]->setDisplayYZoom(1.0);
                 eScope[idx]->resized();
+                //[inTheProcess]
+                recThumbnail->setSource(new juce::FileInputSource(line));
+                recorder.setSampleRate(reader->sampleRate); //eScope[idx]->setSampleRate(reader->sampleRate);[1]
+                recThumbnail[idx].setSampleRate(reader->sampleRate);//eScope[idx]->setSampleRate(reader->sampleRate);[2]
+
+                recThumbnail[idx].setDisplayThumbnailMode(0);
+                recThumbnail[idx].repaint();
+
+                recThumbnail[idx].setDisplayYZoom(1.0);
+
+                auto area = getLocalBounds();
+                recThumbnail[idx].setBounds(area);
                 idx++;
             }
         }
@@ -153,10 +169,15 @@ private:
         //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
+            //[ToBeChanged]
             eScope[idx]->setSampleRate(smpRate);
             lastRecording[idx] = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
             eScope[idx]->startRecording(lastRecording[idx]);
             eScope[idx]->setDisplayThumbnailMode(recmode);
+            //[inTheProcess]
+            recorder.setSampleRate(smpRate);
+            recThumbnail[idx].setSampleRate(smpRate);
+
         }
         //grape// header->recordButton.setButtonText("Stop");
     }
@@ -165,7 +186,9 @@ private:
     {
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
-            eScope[idx]->recorder.stop();
+            eScope[idx]->recorder.stop();//[ToBeChanged]
+            //[inTheProcess]
+            recorder.stop();
         }
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
@@ -187,9 +210,14 @@ private:
 #endif
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
+            //[ToBeChanged]
             lastRecording[idx] = juce::File();
             eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
             eScope[idx]->setDisplayYZoom(1.0);
+            //[inTheProcess]
+            recThumbnail[idx].setDisplayThumbnailMode(0);
+            recThumbnail[idx].repaint();
+            recThumbnail[idx].setDisplayYZoom(1.0);
         }
         //grape// header->recordButton.setButtonText("Record");
         
