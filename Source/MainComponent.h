@@ -77,7 +77,7 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
 
     std::unique_ptr<Header> header;
-    std::unique_ptr<EScope> eScope[eScopeChanNb]; //[ToBeChanged]
+    //std::unique_ptr<EScope> eScope[eScopeChanNb]; //[ToBeChanged]
 
     RecordingThumbnail recThumbnail[eScopeChanNb];
     juce::AudioRecorder recorder{ recThumbnail[0].getAudioThumbnail()};
@@ -88,7 +88,7 @@ private:
                                         // to offer a global scrollbar for all channels at once
     std::unique_ptr<Rack> thumbnail_rack[8];
     std::unique_ptr<ChannelControl> channelControl[8];
-
+    std::unique_ptr<Panel> channelDisplay[8];
 
     std::unique_ptr<grape::DREAMLookAndFeel> laf;
 
@@ -119,11 +119,11 @@ private:
             if (reader != nullptr)
             {   //[ToBeChanged]
                 auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                eScope[idx]->setSource(new juce::FileInputSource(line));
-                eScope[idx]->setSampleRate(reader->sampleRate);
-                eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                eScope[idx]->setDisplayYZoom(1.0);
-                eScope[idx]->resized();
+                //eScope[idx]->setSource(new juce::FileInputSource(line));
+                //eScope[idx]->setSampleRate(reader->sampleRate);
+                //eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+                //eScope[idx]->setDisplayYZoom(1.0);
+                //eScope[idx]->resized();
                 //[inTheProcess]
                 recThumbnail->setSource(new juce::FileInputSource(line));
                 recorder.setSampleRate(reader->sampleRate); //eScope[idx]->setSampleRate(reader->sampleRate);[1]
@@ -170,13 +170,17 @@ private:
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
             //[ToBeChanged]
-            eScope[idx]->setSampleRate(smpRate);
+            //eScope[idx]->setSampleRate(smpRate);
             lastRecording[idx] = parentDir.getNonexistentChildFile("eScope Recording", ".wav");
-            eScope[idx]->startRecording(lastRecording[idx]);
-            eScope[idx]->setDisplayThumbnailMode(recmode);
+            //eScope[idx]->startRecording(lastRecording[idx]);
+            //eScope[idx]->setDisplayThumbnailMode(recmode);
             //[inTheProcess]
-            recorder.setSampleRate(smpRate);
-            recThumbnail[idx].setSampleRate(smpRate);
+            recorder.startRecording(lastRecording[idx]); //eScope[idx]->startRecording(lastRecording[idx]);            
+            recThumbnail[idx].setDisplayThumbnailMode(recmode);//eScope[idx]->setDisplayThumbnailMode(recmode); [1]
+            recThumbnail[idx].repaint();                       //eScope[idx]->setDisplayThumbnailMode(recmode); [2]
+
+            //recorder.setSampleRate(smpRate);
+            //recThumbnail[idx].setSampleRate(smpRate);
 
         }
         //grape// header->recordButton.setButtonText("Stop");
@@ -186,7 +190,7 @@ private:
     {
         for (int idx = 0; idx < eScopeChanNb; idx++)
         {
-            eScope[idx]->recorder.stop();//[ToBeChanged]
+            //eScope[idx]->recorder.stop();//[ToBeChanged]
             //[inTheProcess]
             recorder.stop();
         }
@@ -212,11 +216,11 @@ private:
         {
             //[ToBeChanged]
             lastRecording[idx] = juce::File();
-            eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-            eScope[idx]->setDisplayYZoom(1.0);
+            //eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
+            //eScope[idx]->setDisplayYZoom(1.0);
             //[inTheProcess]
-            recThumbnail[idx].setDisplayThumbnailMode(0);
-            recThumbnail[idx].repaint();
+            recThumbnail[idx].setDisplayThumbnailMode(0); //eScope[idx]->setDisplayThumbnailMode(0); [1]
+            recThumbnail[idx].repaint();                  //eScope[idx]->setDisplayThumbnailMode(0); [2]
             recThumbnail[idx].setDisplayYZoom(1.0);
         }
         //grape// header->recordButton.setButtonText("Record");
