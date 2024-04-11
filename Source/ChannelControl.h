@@ -4,6 +4,8 @@
 #include <JuceHeader.h>
 #include <string>
 //#include "eScope.h"
+#include "AudioRecorder.h"
+#include "RecordingThumbnail.h"
 #include "CommandList.h"
 #include "..\GRAPE\Source\GRAPE.h"
 

@@ -5,19 +5,19 @@
 //#include "Ramp48000Skipped3.h"
 #include "Ramp120k.h"
 //#include "Ramp_bleep120k.h"
-namespace juce
-{
+//namespace juce
+//{
 #define audio_source 1
 //#define modify_triggers 1
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
                               and writes the incoming audio data to a WAV file.          */
-    class AudioRecorder : public AudioIODeviceCallback,
+    class AudioRecorder : public juce::AudioIODeviceCallback,
         public juce::ChangeBroadcaster
     {
     public:
-        AudioRecorder(AudioThumbnail& thumbnailToUpdate)
-            : thumbnail(thumbnailToUpdate)
+        AudioRecorder(juce::AudioThumbnail& thumbnailToUpdate)
+            //: thumbnail(thumbnailToUpdate)
         {
             backgroundThread.startThread();
         }
@@ -26,9 +26,16 @@ namespace juce
         {
             stop();
         }
-
         //---------------------------------------------------------------------------------
-        void startRecording(const File& file)
+        void AttachThumbnail(juce::AudioThumbnail** ptr, int channelNumber) // thumbnail To Update)
+        {
+            for (int idx = 0; idx < channelNumber; idx++)
+            {
+                thmbNail[idx] = *ptr++;
+            }
+        }
+        //---------------------------------------------------------------------------------
+        void startRecording(const juce::File& file)
         {
             stop();
 
@@ -37,10 +44,10 @@ namespace juce
                 // Create an OutputStream to write to our destination file...
                 file.deleteFile();
 
-                if (auto fileStream = std::unique_ptr<FileOutputStream>(file.createOutputStream()))
+                if (auto fileStream = std::unique_ptr<juce::FileOutputStream>(file.createOutputStream()))
                 {
                     // Now create a WAV writer object that writes to our output stream...
-                    WavAudioFormat wavFormat;
+                    juce::WavAudioFormat wavFormat;
 
                     if (auto writer = wavFormat.createWriterFor(fileStream.get(), sampleRate, chanNb, bitDepth, {}, 0))
                     {
@@ -49,15 +56,16 @@ namespace juce
 
                         // Now we'll create one of these helper objects which will act as a FIFO
                         // buffer, and will write the data to disk on our background thread.
-                        threadedWriter.reset(new AudioFormatWriter::ThreadedWriter(writer, backgroundThread, 32768));
+                        threadedWriter.reset(new juce::AudioFormatWriter::ThreadedWriter(writer, backgroundThread, 32768));
 
                         // Reset our recording thumbnail
-                        thumbnail.reset(writer->getNumChannels(), writer->getSampleRate());
+                        //thumbnail.reset(writer->getNumChannels(), writer->getSampleRate());
+                        thmbNail[0]->reset(writer->getNumChannels(), writer->getSampleRate());
                         nextSampleNum = 0;
 
                         // And now, swap over our active writer pointer so that the audio 
                         //callback will start using it..
-                        const ScopedLock sl(writerLock);
+                        const juce::ScopedLock sl(writerLock);
                         activeWriter = threadedWriter.get();
                     }
                 }
@@ -68,7 +76,7 @@ namespace juce
         {
             // 1st, clear this pter to stop the audio callback from using our writer object..
             {
-                const ScopedLock sl(writerLock);
+                const juce::ScopedLock sl(writerLock);
                 activeWriter = nullptr;
             }
             // Now we can delete the writer object. It's done in this order because the deletion
@@ -82,7 +90,7 @@ namespace juce
             return activeWriter.load() != nullptr;
         }
         //----------------------------------------------------------------------------------
-        void audioDeviceAboutToStart(AudioIODevice* device) override
+        void audioDeviceAboutToStart(juce::AudioIODevice* device) override
         {
             sampleRate = device->getCurrentSampleRate();
             samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
@@ -90,17 +98,21 @@ namespace juce
         //----------------------------------------------------------------------------------
         void prepareToPlay(int smpPerBlockExpected, double smpRate)
         {
+            int eScopeChanNb = 8;
             sampleRate = smpRate;
             samplesPerBlockExpected = smpPerBlockExpected;
 
-            eScopeBufferSize = maxSmpCount;// (int)(smpRate * 2.0); //2 seconds
+            eScopBufferSize = maxSmpCount;// (int)(smpRate * 2.0); //2 seconds
 
             double divider;
             int    remainer;
-            divider = (double)eScopeBufferSize / (double)smpPerBlockExpected;
-            remainer = (int)eScopeBufferSize % (int)smpPerBlockExpected;
-            eScopeBuffer.setSize(1, (int)eScopeBufferSize);
-            eScopeBuffer.clear();
+            divider = (double)eScopBufferSize / (double)smpPerBlockExpected;
+            remainer = (int)eScopBufferSize % (int)smpPerBlockExpected;
+            for (int idx = 0; idx < eScopeChanNb; idx++)
+            {
+                eScopeBuffer[idx].setSize(1, (int)eScopBufferSize);
+                eScopeBuffer[idx].clear();
+            }
             writePosition = 0;
             wavaddr = 0;
             wavidx = 0;
@@ -129,7 +141,7 @@ namespace juce
             }
         }
         //----------------------------------------------------------------------------------
-        juce::AudioBuffer<float>* getBufferPtr() { return (&eScopeBuffer); }
+        juce::AudioBuffer<float>* getBufferPtr(int trackID) { return (&eScopeBuffer[trackID]); }
         //----------------------------------------------------------------------------------
         unsigned long* getStartAddrPtr() { return (&wfStartAddress); }
         //----------------------------------------------------------------------------------
@@ -166,7 +178,7 @@ namespace juce
         //----------------------------------------------------------------------------------
         void audioDeviceStopped() override { sampleRate = 0; }
         //----------------------------------------------------------------------------------
-        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, AudioBuffer<float>* buffer)
+        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, juce::AudioBuffer<float>* buffer)
         {
             // check trigger condition in block of samples
             bool triggerConditionFound = false;
@@ -195,11 +207,12 @@ namespace juce
             float* const* outputChannelData,
             int numOutputChannels,
             int numSamples,
-            const AudioIODeviceCallbackContext& context) override
+            const juce::AudioIODeviceCallbackContext& context) override
         {
+            int idx = 0;
             ignoreUnused(context);
             //sendSynchronousChangeMessage(); https://docs.juce.com/master/classMessageManagerLock.html#details
-            const ScopedLock sl(writerLock);
+            const juce::ScopedLock sl(writerLock);
             /*
                         if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
                         {
@@ -210,13 +223,13 @@ namespace juce
                             thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
                             nextSampleNum += numSamples;
                         }*/
-            if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopeBufferSize>0)
+            if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopBufferSize>0)
             {
                 //activeWriter.load()->write(&inputChannelData[chanID], numSamples);
                 //
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
-                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+                juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
                 auto* channelData = buffer.getWritePointer(0);
 
 #if audio_source == 1 //overwrite stream with test wav file
@@ -226,12 +239,12 @@ namespace juce
                 // write in circulare buffer for later display
                 if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
                 {
-                    eScopeBuffer.copyFrom(0, writePosition, channelData, numSamples);
+                    eScopeBuffer[idx].copyFrom(0, writePosition, channelData, numSamples);
                 }
                 else//last partial buffer to copy
                 {
                     int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
-                    eScopeBuffer.copyFrom(0, writePosition, channelData, nbOfSmpToCopy);
+                    eScopeBuffer[idx].copyFrom(0, writePosition, channelData, nbOfSmpToCopy);
                  }
                 
 
@@ -247,7 +260,7 @@ namespace juce
                         if (bTriggered)
                         {
                             triggAddress = writePosition + triggerIndex;
-                            triggAddress %= eScopeBufferSize; //wrap if needed
+                            triggAddress %= eScopBufferSize; //wrap if needed
                             currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
                         }
                     }
@@ -257,7 +270,7 @@ namespace juce
                     currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
                 }
                 writePosition += numSamples;
-                writePosition %= eScopeBufferSize;
+                writePosition %= eScopBufferSize;
 
                 //now if we have enough samples, pass them to the Thumbnail for display
                 //thumbnailWritten = WriteThumbnail(); // using numSamples ?
@@ -279,15 +292,16 @@ namespace juce
                 activeWriter.load()->write(&inputChannelData[chanID], numSamples);
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
-                AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-                thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+                //thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                thmbNail[0]->addBlock(nextSampleNum, buffer, 0, numSamples);
                 nextSampleNum += numSamples;
             }
 
             // We need to clear the output buffers, in case they're full of junk..
             for (int i = 0; i < numOutputChannels; ++i)
                 if (outputChannelData[i] != nullptr)
-                    FloatVectorOperations::clear(outputChannelData[i], numSamples);
+                    juce::FloatVectorOperations::clear(outputChannelData[i], numSamples);
         }
         //----------------------------------------------------------------------------------
         bool PrepareBufferPointers(void)
@@ -300,21 +314,21 @@ namespace juce
                 {
                     int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
                     int smpCount;
-                    int64 nbOfSmpInThumbnail;
-                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    juce::int64 nbOfSmpInThumbnail;
+                    if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
-                        eScopeBufferSize = 0; // reset flag for tests
+                        eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = smpCount;
                         wfTriggAddress = triggAddress;
                     }
                     else //tail data wrapped 
                     {
 
-                        smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
+                        smpCount = eScopBufferSize - triggAddress + halfMaxSmpCount;
                         unsigned long copyStart = triggAddress - halfMaxSmpCount;
                         smpCount = maxSmpCount - smpCount;
-                        eScopeBufferSize = 0; // reset flag for tests
+                        eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = smpCount;
                         wfTriggAddress = triggAddress;
                     }
@@ -323,24 +337,25 @@ namespace juce
                 {
                     int offsetInEScopeBuffer = 0;
                     int smpCount;
-                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
                         int paddingSmpNb = halfMaxSmpCount - triggAddress;
-                        int paddingPtrinBuffer = eScopeBufferSize - paddingSmpNb;
-                        eScopeBufferSize = 0; // reset flag for tests
+                        int paddingPtrinBuffer = eScopBufferSize - paddingSmpNb;
+                        eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = paddingPtrinBuffer;
                         wfTriggAddress = triggAddress;
                     }
                     else //should never happen
                     {
-                        eScopeBufferSize = 0; // reset flag for tests
+                        eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = 0;
                         wfTriggAddress = triggAddress;
                     }
                 }
                 currentPostTriggerSmpCount = 0;
-                thumbnail.reset(1, sampleRate, 0);
+                //thumbnail.reset(1, sampleRate, 0); //[ToBeChanged]
+                thmbNail[0]->reset(1, sampleRate, 0);
                 return(true);
             }
             else
@@ -349,39 +364,48 @@ namespace juce
         //----------------------------------------------------------------------------------
         bool WriteThumbnail(void)
         {
+            int idx = 0;
             if ((currentPostTriggerSmpCount >= halfMaxSmpCount) && (thumbnailWritten == false))
             {
                 thumbnailWritten = true;
-                thumbnail.reset(1, sampleRate, 0);
+                //thumbnail.reset(1, sampleRate, 0);
+                thmbNail[0]->reset(1, sampleRate, 0);
                 //copy data that are before the Threshold
                 if (triggAddress >= halfMaxSmpCount) //head data not wrapped 
                 {
                     int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
                     int smpCount;
-                    int64 nbOfSmpInThumbnail;
-                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    juce::int64 nbOfSmpInThumbnail;
+                    if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
                         //thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, maxSmpCount);
-                        thumbnail.addBlock(0, eScopeBuffer, offsetInEScopeBuffer, maxSmpCount);
-                        nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
-                        eScopeBufferSize = 0; // reset flag for tests
+                        ///thumbnail.addBlock(0, eScopeBuffer, offsetInEScopeBuffer, maxSmpCount);
+                        ///nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
+                        thmbNail[0]->addBlock(0, eScopeBuffer[idx], offsetInEScopeBuffer, maxSmpCount);
+                        nbOfSmpInThumbnail = thmbNail[0]->getNumSamplesFinished();
+                        eScopBufferSize = 0; // reset flag for tests
                     }
                     else //tail data wrapped 
                     {
                        
-                        smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
+                        smpCount = eScopBufferSize - triggAddress + halfMaxSmpCount;
                         unsigned long copyStart = triggAddress - halfMaxSmpCount;
-                        thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
-                        nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
+                        //thumbnail.addBlock(0, eScopeBuffer, copyStart, smpCount);
+                        //nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
+                        thmbNail[0]->addBlock(0, eScopeBuffer[idx], copyStart, smpCount);
+                        nbOfSmpInThumbnail = thmbNail[0]->getNumSamplesFinished();
 
-                        int64 nextSmpNb = smpCount;
+                        juce::int64 nextSmpNb = smpCount;
                         smpCount = maxSmpCount - smpCount;
                         copyStart = 0;
-                        thumbnail.addBlock(nextSmpNb, eScopeBuffer, copyStart, smpCount);
-                        nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
+                        //thumbnail.addBlock(nextSmpNb, eScopeBuffer, copyStart, smpCount);
+                        thmbNail[0]->addBlock(nextSmpNb, eScopeBuffer[idx], copyStart, smpCount);
 
-                        eScopeBufferSize = 0; // reset flag for tests
+                        //nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
+                        nbOfSmpInThumbnail = thmbNail[0]->getNumSamplesFinished();
+
+                        eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = smpCount;
                         wfTriggAddress = triggAddress;
                     }
@@ -390,30 +414,33 @@ namespace juce
                 {
                     int offsetInEScopeBuffer = 0;
                     int smpCount;
-                    if (triggAddress + halfMaxSmpCount <= eScopeBufferSize)//tail data not wrapped
+                    if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
                     {
                         smpCount = triggAddress + halfMaxSmpCount;
                         int paddingSmpNb = halfMaxSmpCount - triggAddress;
-                        int paddingPtrinBuffer = eScopeBufferSize - paddingSmpNb;
+                        int paddingPtrinBuffer = eScopBufferSize - paddingSmpNb;
                         //thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, maxSmpCount);
-                        thumbnail.addBlock(0, eScopeBuffer, paddingPtrinBuffer, paddingSmpNb);
-                        thumbnail.addBlock(paddingSmpNb, eScopeBuffer, offsetInEScopeBuffer, smpCount);
-                        eScopeBufferSize = 0; // reset flag for tests
+                        ///thumbnail.addBlock(0, eScopeBuffer, paddingPtrinBuffer, paddingSmpNb);
+                        ///thumbnail.addBlock(paddingSmpNb, eScopeBuffer, offsetInEScopeBuffer, smpCount);
+                        thmbNail[0]->addBlock(0, eScopeBuffer[idx], paddingPtrinBuffer, paddingSmpNb);
+                        thmbNail[0]->addBlock(paddingSmpNb, eScopeBuffer[idx], offsetInEScopeBuffer, smpCount);
+                        eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = paddingPtrinBuffer;
                         wfTriggAddress = triggAddress;
                     }
                     else //tail data wrapped 
                     {
-                        smpCount = eScopeBufferSize - triggAddress + halfMaxSmpCount;
-                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
-
+                        smpCount = eScopBufferSize - triggAddress + halfMaxSmpCount;
+                        ///thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+                        thmbNail[0]->addBlock(offsetInEScopeBuffer, eScopeBuffer[idx], triggAddress, smpCount);
                         smpCount = maxSmpCount - smpCount;
-                        thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+                        ///thumbnail.addBlock(offsetInEScopeBuffer, eScopeBuffer, triggAddress, smpCount);
+                        thmbNail[0]->addBlock(offsetInEScopeBuffer, eScopeBuffer[idx], triggAddress, smpCount);
                     }
 
                 }
                 //copy data aftert the Threshold
-                if (eScopeBufferSize - triggAddress >= halfMaxSmpCount)//data not wrapped ?
+                if (eScopBufferSize - triggAddress >= halfMaxSmpCount)//data not wrapped ?
                 {
                     //thumbnail.addBlock(nextSampleNum, eScopeBuffer, 0, numSamples);
                 }
@@ -513,34 +540,35 @@ namespace juce
 #endif
         //----------------------------------------------------------------------------------
     private:
-        AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
+        //AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
+        juce::AudioThumbnail* thmbNail[8]; // pointer to thumbnails associated with the recorder;
         int thumbnailSize = 0;
 
         // the thread that will write our audio data to disk
-        TimeSliceThread backgroundThread{ "Audio Recorder Thread" };
+        juce::TimeSliceThread backgroundThread{ "Audio Recorder Thread" };
         // the FIFO used to buffer the incoming data
-        std::unique_ptr<AudioFormatWriter::ThreadedWriter> threadedWriter;
+        std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter> threadedWriter;
         double sampleRate = 0.0;
         int samplesPerBlockExpected = 0;
         int triggAddress = 0;
 
         int chanNb = 1;
         int bitDepth = 24;
-        int64 nextSampleNum = 0;
-        CriticalSection writerLock;
-        std::atomic<AudioFormatWriter::ThreadedWriter*> activeWriter{ nullptr };
+        juce::int64 nextSampleNum = 0;
+        juce::CriticalSection writerLock;
+        std::atomic<juce::AudioFormatWriter::ThreadedWriter*> activeWriter{ nullptr };
 
         int chanID = 0; // default channel selected in multi channel audio interface is first one
         double thresholdTrigger = 1.0;
         bool* thumbnailTriggeredPtr; // <- declare ptr to flag accessible by display part
-        juce::AudioBuffer<float>eScopeBuffer;
-        int64  eScopeBufferSize;
-        int64 writePosition = 0;
-        int64 readPosition = 0;
+        juce::AudioBuffer<float>eScopeBuffer[8];
+        juce::int64  eScopBufferSize;
+        juce::int64 writePosition = 0;
+        juce::int64 readPosition = 0;
         float triggerPlaceRatio = 0.5;
-        int64 currentPostTriggerSmpCount = 0;
-        int64 maxSmpCount = 0;
-        int64 halfMaxSmpCount = 0;
+        juce::int64 currentPostTriggerSmpCount = 0;
+        juce::int64 maxSmpCount = 0;
+        juce::int64 halfMaxSmpCount = 0;
 
         unsigned long wavaddr = 0;
         unsigned long wavidx = 0;
@@ -551,9 +579,9 @@ namespace juce
         //end of shared
 
         const float *wavptr = nullptr;
-        uint16 wavSize = 48000;
+        juce::uint16 wavSize = 48000;
         bool thumbnailWritten = false;
         bool bufferWritten = false; 
     };
-};
+//};
 

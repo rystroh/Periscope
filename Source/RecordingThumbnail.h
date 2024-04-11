@@ -4,13 +4,23 @@
 #include <algorithm>
 #include "..\grape\source\grape.h"
     //=====================================================================================
-    class RecordingThumbnail : public juce::Component,
+    //class RecordingThumbnail : public juce::Component, 
+    class RecordingThumbnail : public grape::Panel,
         private juce::ChangeListener,
         private juce::ScrollBar::Listener,
         public juce::ChangeBroadcaster
     {
     public:
-        RecordingThumbnail()
+        /* RecordingThumbnail()
+        {
+            addAndMakeVisible(scrollbar);
+            scrollbar.setRangeLimits(visibleRange);
+            scrollbar.setAutoHide(true);
+            scrollbar.addListener(this);
+            formatManager.registerBasicFormats();
+            thumbnail.addChangeListener(this);
+        }*/
+        RecordingThumbnail(const juce::String& id) : Panel(id)
         {
             addAndMakeVisible(scrollbar);
             scrollbar.setRangeLimits(visibleRange);
@@ -19,126 +29,11 @@
             formatManager.registerBasicFormats();
             thumbnail.addChangeListener(this);
             
-            juce::String chanTxt;
-
-            chanTxt << "Channel " << chanID;
-            /*
-            eScopeChannelLabel.setColour(juce::Label::textColourId, gridColour);
-            eScopeChannelLabel.setText(chanTxt, juce::dontSendNotification);
-            addAndMakeVisible(eScopeChannelLabel);
-            //----------------------------------------------------------------
-            xGridModeLabel.setColour(juce::Label::textColourId, gridColour);
-            xGridModeLabel.setText("X Scale", juce::dontSendNotification);
+ /*           juce::String chanTxt;
+            chanTxt << "Channel " << chanID;*/
             
-            yGridModeLabel.setColour(juce::Label::textColourId, gridColour);
-            yGridModeLabel.setText("Y Scale", juce::dontSendNotification);
-            
-            addAndMakeVisible(xGridModeLabel);            
-            addAndMakeVisible(yGridModeLabel);*/
-            /*
-            GroupeLabel.setColour(juce::Label::textColourId, gridColour);
-            GroupeLabel.setText("Groupe", juce::dontSendNotification);
-            addAndMakeVisible(GroupeLabel);
-            chkBoxXLink.setColour(juce::Label::textColourId, gridColour);
-            chkBoxXLink.setButtonText("x link");
-            
-            chkBoxYLink.setColour(juce::Label::textColourId, gridColour);            
-            chkBoxYLink.setButtonText("y link");
-                         
-            //cmbBoxXMode.reset(new juce::ComboBox("y Mode"));
-            
-            //cmbBoxXMode.setButtonText(TRANS("x Mode"));
-            cmbBoxXMode.setEditableText(false);
-            cmbBoxXMode.setJustificationType(juce::Justification::centredLeft);
-            cmbBoxXMode.setTextWhenNothingSelected(juce::String());
-            cmbBoxXMode.setTextWhenNoChoicesAvailable("(no choices)");
-            cmbBoxXMode.addItem("Absolute", 1);
-            cmbBoxXMode.addItem("Relative to Trigger", 2);
-          
-            cmbBoxYMode.setEditableText(false);
-            cmbBoxYMode.setJustificationType(juce::Justification::centredLeft);
-            cmbBoxYMode.setTextWhenNothingSelected(juce::String());
-            cmbBoxYMode.setTextWhenNoChoicesAvailable("(no choices)");
-            cmbBoxYMode.addItem("Linear", 1);
-            cmbBoxYMode.addItem("Log dB", 2);            
-
-            cmbBoxGroupe.setEditableText(false);
-            cmbBoxGroupe.setJustificationType(juce::Justification::centredLeft);
-            cmbBoxGroupe.setTextWhenNothingSelected(juce::String());
-            cmbBoxGroupe.setTextWhenNoChoicesAvailable("(no choices)");
-            cmbBoxGroupe.addItem("None", 16);
-            cmbBoxGroupe.addItem("1", 1);
-            cmbBoxGroupe.addItem("2", 2);
-            cmbBoxGroupe.addItem("3", 3);
-            cmbBoxGroupe.addItem("4", 4);
-
-            sliderOffset.setRange(-600, 600, 1);
-            sliderOffset.setValue(0);
-            sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-            sliderLabel.setColour(juce::Label::textColourId, gridColour);
-            sliderLabel.setText("Offset", juce::dontSendNotification);
-            addAndMakeVisible(sliderOffset);
-            addAndMakeVisible(sliderLabel);
-
-            sliderOffset.onValueChange = [this] {
-                currentOffset = sliderOffset.getValue();
-                repaint();
-            };
-            sliderXOffset.setRange(0, 200, 1);
-            sliderXOffset.setValue(0);
-            sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-            sliderXLabel.setColour(juce::Label::textColourId, gridColour);
-            sliderXLabel.setText("Width", juce::dontSendNotification);
-            addAndMakeVisible(sliderXOffset);
-            addAndMakeVisible(sliderXLabel);
-
-            sliderXOffset.onValueChange = [this] {
-                spareWidth = sliderXOffset.getValue();
-                repaint();
-            };
-
-            chkBoxXLink.onClick = [this]()
-            {
-                auto idx = chkBoxXLink.getToggleState();
-                xZoomFlag = idx;
-            };
-            chkBoxYLink.onClick = [this]()
-            {
-                auto idx = chkBoxYLink.getToggleState();
-                yZoomFlag = idx;
-            };
-            cmbBoxXMode.onChange = [this]()
-            {
-                auto idx = cmbBoxXMode.getSelectedItemIndex();
-                auto thatTrackGroup = cmbBoxXMode.getItemText(idx);
-                auto thatID = cmbBoxXMode.getItemId(idx);
-            };
-            cmbBoxYMode.onChange = [this]()
-            {
-                auto idx = cmbBoxYMode.getSelectedItemIndex();
-                auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
-                auto thatID = cmbBoxYMode.getItemId(idx);
-            };
-            cmbBoxGroupe.onChange = [this]()
-            {
-                auto idx = cmbBoxGroupe.getSelectedItemIndex();
-                auto thatTrackGroup = cmbBoxGroupe.getItemText(idx);
-                auto thatID = cmbBoxGroupe.getItemId(idx);
-                zoomGroup = thatID;
-            };
-            */
-/*
-            sliderOffset.onChange = [this]()
-            {
-                currentOffset = (float)sliderOffset.getValue();
-            };*/
-                      
-           /*
-            addAndMakeVisible(cmbBoxXMode);
-            addAndMakeVisible(cmbBoxYMode);
-            addAndMakeVisible(cmbBoxGroupe);
-            addAndMakeVisible(chkBoxXLink);
-            addAndMakeVisible(chkBoxYLink);*/
+            setWidth(300, 600, 10000);
+            setHeight(50, 100, 500);
         }
 
         ~RecordingThumbnail() override

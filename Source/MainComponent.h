@@ -3,7 +3,9 @@
 #include <JuceHeader.h>
 #include <sstream>
 #include <string>
-#include "eScope.h"
+//#include "eScope.h"
+#include "AudioRecorder.h"
+#include "RecordingThumbnail.h"
 #include "ChannelControl.h"
 #include "Header.h"
 
@@ -79,8 +81,17 @@ private:
     std::unique_ptr<Header> header;
     //std::unique_ptr<EScope> eScope[eScopeChanNb]; //[ToBeChanged]
 
-    RecordingThumbnail recThumbnail[eScopeChanNb];
-    juce::AudioRecorder recorder{ recThumbnail[0].getAudioThumbnail()};
+    //RecordingThumbnail recThumbnail[eScopeChanNb];
+    std::unique_ptr<RecordingThumbnail> escopeThumbnail[eScopeChanNb];
+
+
+    //juce::AudioRecorder recorder{ recThumbnail[0].getAudioThumbnail()};
+   //escopeThumbnail[0]->getAudioThumbnail();
+    //juce::AudioThumbnail placeHolderThumbnail;
+    juce::AudioThumbnail* ptrToRecThumbnail[eScopeChanNb];
+    juce::AudioThumbnail** aptr;
+
+    AudioRecorder recorder{ escopeThumbnail[0]->getAudioThumbnail()};//{ placeHolderThumbnail };
 
     std::unique_ptr<Rack> display_rack; // this is a horizontal rack for placing a vertical panel switch bar
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
@@ -88,7 +99,6 @@ private:
                                         // to offer a global scrollbar for all channels at once
     std::unique_ptr<Rack> thumbnail_rack[8];
     std::unique_ptr<ChannelControl> channelControl[8];
-    std::unique_ptr<Panel> channelDisplay[8];
 
     std::unique_ptr<grape::DREAMLookAndFeel> laf;
 
@@ -98,8 +108,16 @@ private:
 
     int recmode = 2; // can be 1= track view or 2= oscilloscope
     double oscilloWinSize = 0.05;
-
- //-------------------------------------------------------------------------------------   
+    //------------------------------------------------------------------------------------- 
+    void initPtrToRecThumbnailTable(int channelNumber)
+    {
+        for (int idx = 0; idx < channelNumber; idx++)
+        {
+            ptrToRecThumbnail[idx] = &escopeThumbnail[idx]->getAudioThumbnail();
+        }
+        aptr = ptrToRecThumbnail;
+    }
+    //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
     {
         return deviceManager; 
@@ -125,17 +143,17 @@ private:
                 //eScope[idx]->setDisplayYZoom(1.0);
                 //eScope[idx]->resized();
                 //[inTheProcess]
-                recThumbnail->setSource(new juce::FileInputSource(line));
+                escopeThumbnail[0]->setSource(new juce::FileInputSource(line));
                 recorder.setSampleRate(reader->sampleRate); //eScope[idx]->setSampleRate(reader->sampleRate);[1]
-                recThumbnail[idx].setSampleRate(reader->sampleRate);//eScope[idx]->setSampleRate(reader->sampleRate);[2]
+                escopeThumbnail[idx]->setSampleRate(reader->sampleRate);//eScope[idx]->setSampleRate(reader->sampleRate);[2]
 
-                recThumbnail[idx].setDisplayThumbnailMode(0);
-                recThumbnail[idx].repaint();
+                escopeThumbnail[idx]->setDisplayThumbnailMode(0);
+                escopeThumbnail[idx]->repaint();
 
-                recThumbnail[idx].setDisplayYZoom(1.0);
+                escopeThumbnail[idx]->setDisplayYZoom(1.0);
 
                 auto area = getLocalBounds();
-                recThumbnail[idx].setBounds(area);
+                escopeThumbnail[idx]->setBounds(area);
                 idx++;
             }
         }
@@ -176,11 +194,11 @@ private:
             //eScope[idx]->setDisplayThumbnailMode(recmode);
             //[inTheProcess]
             recorder.startRecording(lastRecording[idx]); //eScope[idx]->startRecording(lastRecording[idx]);            
-            recThumbnail[idx].setDisplayThumbnailMode(recmode);//eScope[idx]->setDisplayThumbnailMode(recmode); [1]
-            recThumbnail[idx].repaint();                       //eScope[idx]->setDisplayThumbnailMode(recmode); [2]
+            escopeThumbnail[idx]->setDisplayThumbnailMode(recmode);//eScope[idx]->setDisplayThumbnailMode(recmode); [1]
+            escopeThumbnail[idx]->repaint();                       //eScope[idx]->setDisplayThumbnailMode(recmode); [2]
 
             //recorder.setSampleRate(smpRate);
-            //recThumbnail[idx].setSampleRate(smpRate);
+            //escopeThumbnail[idx]->setSampleRate(smpRate);
 
         }
         //grape// header->recordButton.setButtonText("Stop");
@@ -219,9 +237,9 @@ private:
             //eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
             //eScope[idx]->setDisplayYZoom(1.0);
             //[inTheProcess]
-            recThumbnail[idx].setDisplayThumbnailMode(0); //eScope[idx]->setDisplayThumbnailMode(0); [1]
-            recThumbnail[idx].repaint();                  //eScope[idx]->setDisplayThumbnailMode(0); [2]
-            recThumbnail[idx].setDisplayYZoom(1.0);
+            escopeThumbnail[idx]->setDisplayThumbnailMode(0); //eScope[idx]->setDisplayThumbnailMode(0); [1]
+            escopeThumbnail[idx]->repaint();                  //eScope[idx]->setDisplayThumbnailMode(0); [2]
+            escopeThumbnail[idx]->setDisplayYZoom(1.0);
         }
         //grape// header->recordButton.setButtonText("Record");
         
