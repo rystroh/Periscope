@@ -8,8 +8,8 @@
 #include "RecordingThumbnail.h"
 #include "ChannelControl.h"
 #include "Header.h"
-
-#define option 1 //1 2 or 8
+// Now defined in Projucer Project
+#define option 2 //1 2 or 8
 #if option == 1
 const int eScopeChanNb = 1;
 #endif // option = 1
@@ -97,8 +97,8 @@ private:
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
                                         // in a vertical rack inside the parent vertical rack
                                         // to offer a global scrollbar for all channels at once
-    std::unique_ptr<Rack> thumbnail_rack[8];
-    std::unique_ptr<ChannelControl> channelControl[8];
+    std::unique_ptr<Rack> thumbnail_rack[eScopeChanNb];
+    std::unique_ptr<ChannelControl> channelControl[eScopeChanNb];
 
     std::unique_ptr<grape::DREAMLookAndFeel> laf;
 

@@ -7,7 +7,7 @@
 //#include "Ramp_bleep120k.h"
 //namespace juce
 //{
-#define audio_source 1
+//#define audio_source 1 //now defined in Projucer Project
 //#define modify_triggers 1
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
@@ -108,7 +108,7 @@
             int    remainer;
             divider = (double)eScopBufferSize / (double)smpPerBlockExpected;
             remainer = (int)eScopBufferSize % (int)smpPerBlockExpected;
-            for (int idx = 0; idx < eScopeChanNb; idx++)
+            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
             {
                 eScopeBuffer[idx].setSize(1, (int)eScopBufferSize);
                 eScopeBuffer[idx].clear();
@@ -208,8 +208,7 @@
             int numOutputChannels,
             int numSamples,
             const juce::AudioIODeviceCallbackContext& context) override
-        {
-            int idx = 0;
+        {            
             ignoreUnused(context);
             //sendSynchronousChangeMessage(); https://docs.juce.com/master/classMessageManagerLock.html#details
             const juce::ScopedLock sl(writerLock);
@@ -229,62 +228,68 @@
                 //
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
-                juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-                auto* channelData = buffer.getWritePointer(0);
+                //juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+                juce::AudioBuffer<float> bufferz[ESCOPE_CHAN_NB];
+                //int idx = 0;
+                for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+                {
+                    bufferz[idx].setDataToReferTo(const_cast<float**> (&inputChannelData[idx]), 1, numSamples);
+                    auto* channelData = bufferz[idx].getWritePointer(0);
 
-#if audio_source == 1 //overwrite stream with test wav file
-                overwriteStreamWithTestWav(channelData, buffer.getNumSamples());
+#if AUDIO_SOURCE == 1 //overwrite stream with test wav file
+                    overwriteStreamWithTestWav(channelData, bufferz[idx].getNumSamples());
 #endif
-                TestChannelID();
-                // write in circulare buffer for later display
-                if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
-                {
-                    eScopeBuffer[idx].copyFrom(0, writePosition, channelData, numSamples);
-                }
-                else//last partial buffer to copy
-                {
-                    int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
-                    eScopeBuffer[idx].copyFrom(0, writePosition, channelData, nbOfSmpToCopy);
-                 }
-                
-
-                // check if any sample in this new block is above threshold -> triggering display
-                if (currentPostTriggerSmpCount == 0)
-                {
-                    unsigned int triggerIndex;
-                    if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
-                    //if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
+                    TestChannelID();
+                    // write in circulare buffer for later display
+                    if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
                     {
-                        bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &buffer);
-                        *thumbnailTriggeredPtr = bTriggered;
-                        if (bTriggered)
+                        eScopeBuffer[idx].copyFrom(0, writePosition, channelData, numSamples);
+                    }
+                    else//last partial buffer to copy
+                    {
+                        int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
+                        eScopeBuffer[idx].copyFrom(0, writePosition, channelData, nbOfSmpToCopy);
+                    }
+
+
+                    // check if any sample in this new block is above threshold -> triggering display
+                    if (currentPostTriggerSmpCount == 0)
+                    {
+                        unsigned int triggerIndex;
+                        if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
+                            //if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
                         {
-                            triggAddress = writePosition + triggerIndex;
-                            triggAddress %= eScopBufferSize; //wrap if needed
-                            currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+                            bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx]);
+                            *thumbnailTriggeredPtr = bTriggered;
+                            if (bTriggered)
+                            {
+                                triggAddress = writePosition + triggerIndex;
+                                triggAddress %= eScopBufferSize; //wrap if needed
+                                currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+                            }
                         }
                     }
-                }
-                else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
-                {
-                    currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
-                }
-                writePosition += numSamples;
-                writePosition %= eScopBufferSize;
+                    else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
+                    {
+                        currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
+                    }
+                    writePosition += numSamples;
+                    writePosition %= eScopBufferSize;
 
-                //now if we have enough samples, pass them to the Thumbnail for display
-                //thumbnailWritten = WriteThumbnail(); // using numSamples ?
-                // 
-                //check if we have enough sample if yes, flag display to update
-                bufferWritten = PrepareBufferPointers();
+                    //now if we have enough samples, pass them to the Thumbnail for display
+                    //thumbnailWritten = WriteThumbnail(); // using numSamples ?
+                    // 
+                    //check if we have enough sample if yes, flag display to update
+                    bufferWritten = PrepareBufferPointers();
 
-                if (bufferWritten) // to allow tests / break points ONLY !
-                {
-                    wfBufferReady = true;
-                    sendChangeMessage();
+                    if (bufferWritten) // to allow tests / break points ONLY !
+                    {
+                        wfBufferReady = true;
+                        sendChangeMessage();
+                    }
+                    else
+                        wfBufferReady = false;
                 }
-                else
-                    wfBufferReady = false;
             }
             //Mode "Recording continuously" 
             if (activeWriter.load() != nullptr && chanID < numInputChannels)
@@ -524,7 +529,7 @@
         void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}
         //----------------------------------------------------------------------------------
         //----------------------------------------------------------------------------------
-#if audio_source == 1 //for debug and tests only
+#if AUDIO_SOURCE == 1 //for debug and tests only
         void overwriteStreamWithTestWav(float* chanDataptr, int numSmp)
         {
             int sample = 0;
@@ -541,7 +546,7 @@
         //----------------------------------------------------------------------------------
     private:
         //AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
-        juce::AudioThumbnail* thmbNail[8]; // pointer to thumbnails associated with the recorder;
+        juce::AudioThumbnail* thmbNail[ESCOPE_CHAN_NB]; // pointer to thumbnails associated with the recorder;
         int thumbnailSize = 0;
 
         // the thread that will write our audio data to disk
@@ -561,7 +566,7 @@
         int chanID = 0; // default channel selected in multi channel audio interface is first one
         double thresholdTrigger = 1.0;
         bool* thumbnailTriggeredPtr; // <- declare ptr to flag accessible by display part
-        juce::AudioBuffer<float>eScopeBuffer[8];
+        juce::AudioBuffer<float>eScopeBuffer[ESCOPE_CHAN_NB];
         juce::int64  eScopBufferSize;
         juce::int64 writePosition = 0;
         juce::int64 readPosition = 0;
