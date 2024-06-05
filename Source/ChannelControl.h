@@ -16,6 +16,9 @@ public:
 	~ChannelControl();
 
 	void resized() override;
+    //juce::AudioThumbnail* thmbNail;
+    std::unique_ptr<RecordingThumbnail>* thmbNail;
+    RecordingThumbnail* pointeur;
 private:
 	// This button issues a window size command
 	grape::Slider oscWinSizeSlider{ "Win size", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
@@ -27,6 +30,8 @@ private:
 	grape::ComboBox cmbBoxGroupe;*/
 
     juce::Colour gridColour = juce::Colour(0xff8a8a8a);
+
+    
 
     juce::Slider xGridModeSlider;
     juce::Label eScopeChannelLabel;
@@ -46,6 +51,8 @@ private:
 
     juce::Slider sliderXOffset;
     juce::Label sliderXLabel;
+
+
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChannelControl)
 };

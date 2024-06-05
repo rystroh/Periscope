@@ -60,7 +60,7 @@
 
         int yScaleZoneWidth = 50;
         float viewSize = 0.1;// viewing window size
-        int chanID = 0; //copy of eScope ID at Thumbnail level so Listener can retrieve info
+        int chanID = -1; //copy of eScope ID at Thumbnail level so Listener can retrieve info
         std::vector<float> mAudioPoints;
         std::vector<float> mMaxAudioPoints;
         std::vector<float> mMinAudioPoints;
@@ -72,6 +72,8 @@
         unsigned long *wfStartAddr ;
         unsigned long *wfTriggAddr ;
         bool *bBufferReady;
+        //------------------------------
+        bool repaintBroadcasted = false;
         //----------------------------------------------------------------------------------
         bool* getTriggeredPtr(void) { return &bTriggered; }
         //----------------------------------------------------------------------------------
@@ -270,7 +272,8 @@
                 std::vector<double> xs;
                 std::vector<long> xc;
                 double xx = 0;
-
+                if (visibleRange != visibleRangePrevious)
+                    DBG("paintGrid: chanID = " << chanID << " XZoomIndex = " << XZoomIndex);
                 if (XZoomIndex == 0)
                 {
                     //xs = getXsCentered(trigTime); //xs = getXsCentered(viewSize * 0.5); //create vector with nice positions for vert
@@ -1658,6 +1661,17 @@
         int getZoomGroup() { return(zoomGroup); }
         bool getXZoomFlag() { return(xZoomFlag); }
         bool getYZoomFlag() { return(yZoomFlag); }
+        int getXZoomIndex() { return (XZoomIndex); } 
+        int getYZoomIndex() { return (YZoomIndex); }
+
+        void setXZoom(double zoom) { ThumbXZoom = zoom; }
+        void setZoomGroup(int group) { zoomGroup = group; }
+        void setXZoomFlag(bool flag) { xZoomFlag = flag; }
+        void setYZoomFlag(bool flag) { yZoomFlag = flag; }
+        void setXZoomIndex(int zidx) { XZoomIndex = zidx; }
+        void setYZoomIndex(int zidx) { YZoomIndex = zidx; }
+
+
         //----------------------------------------------------------------------------------
     private:
         juce::AudioFormatManager formatManager;
@@ -1714,6 +1728,7 @@
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
         double thresholdTrigger;
+        
         //----------------------------------------------------------------------------------
         float timeToX(const double time) const
         {
@@ -1751,7 +1766,11 @@
         void changeListenerCallback(ChangeBroadcaster* source) override
         {
             if (source == &thumbnail)
-                repaint();
+            {
+                repaint(); // message broadcasted by the recorder
+                repaintBroadcasted = true;
+                sendChangeMessage(); //broacast to other RecordingThumbnails
+            }
         }
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RecordingThumbnail)

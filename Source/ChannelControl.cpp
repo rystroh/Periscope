@@ -68,11 +68,13 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     chkBoxXLink.onClick = [this]()
     {
         auto idx = chkBoxXLink.getToggleState();
+        this->pointeur->setXZoomFlag(idx);
         //xZoomFlag = idx;
     };
     chkBoxYLink.onClick = [this]()
     {
         auto idx = chkBoxYLink.getToggleState();
+        this->pointeur->setYZoomFlag(idx);
         //yZoomFlag = idx;
     };
     cmbBoxXMode.onChange = [this]()
@@ -85,7 +87,7 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     {
         auto idx = cmbBoxYMode.getSelectedItemIndex();
         auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
-        auto thatID = cmbBoxYMode.getItemId(idx);
+        auto thatID = cmbBoxYMode.getItemId(idx);        
     };
     cmbBoxGroupe.onChange = [this]()
     {
@@ -100,6 +102,37 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     addAndMakeVisible(cmbBoxGroupe);
     addAndMakeVisible(chkBoxXLink);
     addAndMakeVisible(chkBoxYLink);
+
+
+    cmbBoxXMode.onChange = [this]()
+    {
+        auto idx = cmbBoxXMode.getSelectedItemIndex();
+        auto thatTrackGroup = cmbBoxXMode.getItemText(idx);
+        auto thatID = cmbBoxXMode.getItemId(idx);
+    };
+    cmbBoxYMode.onChange = [this]()
+    {
+        auto idx = cmbBoxYMode.getSelectedItemIndex();
+        auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
+        auto thatID = cmbBoxYMode.getItemId(idx);
+        
+    };
+    cmbBoxGroupe.onChange = [this]()
+    {
+        auto idx = cmbBoxGroupe.getSelectedItemIndex();
+        auto thatTrackGroup = cmbBoxGroupe.getItemText(idx);
+        auto thatID = cmbBoxGroupe.getItemId(idx);
+        auto chanID = this->getName().getTrailingIntValue();
+        /*
+        std::unique_ptr<RecordingThumbnail>* eThbPtr = ((std::unique_ptr<RecordingThumbnail>*)this->thmbNail);
+            RecordingThumbnail* escThbPtr = ((RecordingThumbnail*)this->thmbNail);
+            auto ptdr = escThbPtr->getZoomGroup();// .zoomGroup = thatID;
+        //zoomGroup = thatID;
+        auto escopeThumbNailPtr = ((RecordingThumbnail*)this->thmbNail);
+        auto toto = this->thmbNail->~unique_ptr;*/
+        this->pointeur->setZoomGroup(thatID);
+    };
+
 
     setWidth(70, 200, 200);//min prefered max
     setHeight(50, 100, 1000);

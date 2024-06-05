@@ -27,7 +27,7 @@ usingCustomDeviceManager(false)
     channel_rack = std::make_unique<grape::Rack>("Channels", true);
 
     // Create eScope instances and populate channel rack
-    for (int idx = 0; idx < eScopeChanNb; idx++)
+    for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
         //[ToBeChanged]
  //       eScope[idx] = std::make_unique<EScope>("Channel " + juce::String(idx));
@@ -43,9 +43,10 @@ usingCustomDeviceManager(false)
         
         channelControl[idx] = std::make_unique<ChannelControl>("Channel Control" + juce::String(idx));
         thumbnail_rack[idx]->addPanel(channelControl[idx].get(), COLLAPSIBLE);
-
+        //channelControl[idx]->thmbNail = &escopeThumbnail[idx]->getAudioThumbnail();
         escopeThumbnail[idx] = std::make_unique<RecordingThumbnail>("Channel " + juce::String(idx));
-
+        channelControl[idx]->thmbNail = &escopeThumbnail[idx];
+        channelControl[idx]->pointeur = escopeThumbnail[idx].get();
         //thumbnail_rack[idx]->addPanel(eScope[idx].get()); //[ToBeChanged]
         thumbnail_rack[idx]->addPanel(escopeThumbnail[idx].get());
 
@@ -62,8 +63,11 @@ usingCustomDeviceManager(false)
         escopeThumbnail[idx]->setDisplayThumbnailMode(recmode);//eScope[idx]->setDisplayThumbnailMode(recmode);[1]
         escopeThumbnail[idx]->repaint();//eScope[idx]->setDisplayThumbnailMode(recmode);[2]
     }
-    initPtrToRecThumbnailTable(eScopeChanNb);
-    recorder.AttachThumbnail(aptr, eScopeChanNb);
+    initPtrToRecThumbnailTable(ESCOPE_CHAN_NB);
+    recorder.AttachThumbnail(aptr, ESCOPE_CHAN_NB);
+
+    initPtrToRecoThumbnailTable(ESCOPE_CHAN_NB);
+    //recorder.AttachListener(juce::ChangeListener& eptr , ESCOPE_CHAN_NB);
 
     channel_rack->computeSizeFromChildren(true, true);
 
@@ -80,7 +84,7 @@ usingCustomDeviceManager(false)
     
 
 #if option == 1
-    deviceManager.initialise(eScopeChanNb, 2, nullptr, true);
+    deviceManager.initialise(ESCOPE_CHAN_NB, 2, nullptr, true);
 #endif
 
 #if option == 2 
@@ -96,7 +100,7 @@ usingCustomDeviceManager(false)
     xxw.setAttribute("audioDeviceBufferSize", "512.0");*/
 
     xxw.setAttribute("audioDeviceInChans", "11111111");
-    deviceManager.initialise(eScopeChanNb, 2, &xxw, true);
+    deviceManager.initialise(ESCOPE_CHAN_NB, 2, &xxw, true);
 #endif
 
 #if option == 8 
@@ -112,7 +116,7 @@ usingCustomDeviceManager(false)
     xxw.setAttribute("audioDeviceBufferSize", "512.0");*/
 
     xxw.setAttribute("audioDeviceInChans", "11111111");
-    deviceManager.initialise(eScopeChanNb, 2, &xxw, true);
+    deviceManager.initialise(ESCOPE_CHAN_NB, 2, &xxw, true);
 #endif
     /*
     // Some platforms require permissions to open input channels so request that here
@@ -129,7 +133,7 @@ usingCustomDeviceManager(false)
     }*/
     auto& devManager = MainComponent::getAudioDeviceManager();
     auto& result = devManager.getAudioDeviceSetup();
-    for (int idx = 0; idx < eScopeChanNb; idx++)
+    for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
 //        devManager.addAudioCallback(eScope[idx]->getAudioIODeviceCallBack());        
     }
@@ -167,7 +171,7 @@ MainComponent::~MainComponent()
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
     auto& devManager = MainComponent::getAudioDeviceManager();
-    for (int idx = 0; idx < eScopeChanNb; idx++)
+    for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
         //devManager.removeAudioCallback(eScope[idx]->getAudioIODeviceCallBack());//[ToBeChanged]        
     }
@@ -222,7 +226,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     auto& devManager = MainComponent::getAudioDeviceManager();
     auto device = devManager.getCurrentAudioDevice();
     //eScope.audioDeviceAboutToStart(device); //needs refactoring
-    for (int idx = 0; idx < eScopeChanNb; idx++)
+    for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
         //eScope[idx].setSampleRate(device->getCurrentSampleRate());
 //        eScope[idx]->prepareToPlay(samplesPerBlockExpected, sampleRate);//[ToBeChanged]
@@ -258,35 +262,50 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
     auto visibRange = src->getVisibleRange();
     auto xZoom = src->getXZoom();
     auto yZoom = src->getDisplayYZoom();
+    auto xzidx = src->getXZoomIndex();
+    auto yzidx = src->getYZoomIndex();
     auto broadcasterZoomGroup = src->getZoomGroup();
-    for (int idx = 0; idx < eScopeChanNb; idx++)
+    auto repaintAllAsked = src->repaintBroadcasted;
+    src->repaintBroadcasted = false;
+    for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
         if (idx != eScopeID) //[ToBeChanged]
         {
-//            int targetZoomGroup= eScope[idx]->getZoomGroup(); //[ToBeChanged]
-//            int targetXZoomFlag = eScope[idx]->getXZoomFlag();
-//            int targetYZoomFlag = eScope[idx]->getYZoomFlag();
-            //[inTheProcess]
-            int targetZoomGroup = escopeThumbnail[idx]->getZoomGroup();
-            int targetXZoomFlag = escopeThumbnail[idx]->getXZoomFlag();
-            int targetYZoomFlag = escopeThumbnail[idx]->getYZoomFlag();
-
-            if (targetZoomGroup == broadcasterZoomGroup)
+            if (repaintAllAsked)
             {
-                if (targetXZoomFlag != 0)
+                escopeThumbnail[idx]->repaint();
+                escopeThumbnail[idx]->repaintBroadcasted = false;
+            }
+            else
+            {
+                //            int targetZoomGroup= eScope[idx]->getZoomGroup(); //[ToBeChanged]
+                //            int targetXZoomFlag = eScope[idx]->getXZoomFlag();
+                //            int targetYZoomFlag = eScope[idx]->getYZoomFlag();
+                            //[inTheProcess]
+                int targetZoomGroup = escopeThumbnail[idx]->getZoomGroup();
+                int targetXZoomFlag = escopeThumbnail[idx]->getXZoomFlag();
+                int targetYZoomFlag = escopeThumbnail[idx]->getYZoomFlag();
+                
+
+                if (targetZoomGroup == broadcasterZoomGroup)
                 {
-//                    eScope[idx]->setXZoom(xZoom); //[ToBeChanged]
-//                    eScope[idx]->setVisibleRange(visibRange);
-                    //[inTheProcess]
-                    escopeThumbnail[idx]->setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
-                    escopeThumbnail[idx]->setRange(visibRange); //eScope[idx]->setVisibleRange(visibRange); [1]
+                    if (targetXZoomFlag != 0)
+                    {
+                        //                    eScope[idx]->setXZoom(xZoom); //[ToBeChanged]
+                        //                    eScope[idx]->setVisibleRange(visibRange);
+                                            //[inTheProcess]
+                        escopeThumbnail[idx]->setXZoomIndex(xzidx);
+                        escopeThumbnail[idx]->setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
+                        escopeThumbnail[idx]->setRange(visibRange); //eScope[idx]->setVisibleRange(visibRange); [1]
+                    }
+                    if (targetYZoomFlag != 0)
+                    {
+                        //                    eScope[idx]->setDisplayYZoom(yZoom); //[ToBeChanged]
+                                            //[inTheProcess]
+                        escopeThumbnail[idx]->setYZoomIndex(yzidx);
+                        escopeThumbnail[idx]->setDisplayYZoom(yZoom); //eScope[idx]->setDisplayYZoom(yZoom); [1]
+                    }
                 }
-                if (targetYZoomFlag != 0)
-                {
-//                    eScope[idx]->setDisplayYZoom(yZoom); //[ToBeChanged]
-                    //[inTheProcess]
-                    escopeThumbnail[idx]->setDisplayYZoom(yZoom); //eScope[idx]->setDisplayYZoom(yZoom); [1]
-                }                
             }
         }
     }
@@ -322,7 +341,7 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
     case DISPLAY_MODE:
     {
         int oscmode = source->getControlValue();
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
 //            eScope[idx]->setDisplayThumbnailMode(oscmode); //[ToBeChanged]
             //[inTheProcess]
@@ -342,7 +361,7 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         bool* BufferReady = recorder.getBufferReadyAddrPtr();
         recorder.setViewSize(oscilloWinSize);
 
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
  //           eScope[idx]->setViewSize(oscilloWinSize); //[ToBeChanged]
             //[inTheProcess]
@@ -405,7 +424,7 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         unsigned long* TriggAddr = recorder.getTriggAddrPtr();//eScope[idx]->setViewSize(oscilloWinSize); [5]
         bool* BufferReady = recorder.getBufferReadyAddrPtr();//eScope[idx]->setViewSize(oscilloWinSize); [5]
 
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
             //[ToBeChanged]
 //            eScope[idx]->setSampleRate(smpRate);

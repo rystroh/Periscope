@@ -7,7 +7,7 @@
 //#include "Ramp_bleep120k.h"
 //namespace juce
 //{
-#define audio_source 1
+//#define audio_source 1 //now defined in Projucer Project
 //#define modify_triggers 1
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
@@ -32,7 +32,20 @@
             for (int idx = 0; idx < channelNumber; idx++)
             {
                 thmbNail[idx] = *ptr++;
+                //addChangeListener(thmbNail[idx](Listener));
+                //addChangeListener(juce::ChangeListenerthmbNail[idx]));
             }
+        }
+        //---------------------------------------------------------------------------------
+        void AttachListener(juce::ChangeListener& ptr, int channelNumber) // thumbnail To Update)
+        {
+          /*  juce::ChangeListener& recThmb;
+            for (int idx = 0; idx < channelNumber; idx++)
+            {
+                recThmb = *ptr++;
+                //addChangeListener(thmbNail[idx](Listener));
+                addChangeListener(recThmb);
+            }*/
         }
         //---------------------------------------------------------------------------------
         void startRecording(const juce::File& file)
@@ -98,7 +111,7 @@
         //----------------------------------------------------------------------------------
         void prepareToPlay(int smpPerBlockExpected, double smpRate)
         {
-            int eScopeChanNb = 8;
+            int eScopeChanNb = ESCOPE_CHAN_NB;
             sampleRate = smpRate;
             samplesPerBlockExpected = smpPerBlockExpected;
 
@@ -108,19 +121,22 @@
             int    remainer;
             divider = (double)eScopBufferSize / (double)smpPerBlockExpected;
             remainer = (int)eScopBufferSize % (int)smpPerBlockExpected;
-            for (int idx = 0; idx < eScopeChanNb; idx++)
+            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
             {
                 eScopeBuffer[idx].setSize(1, (int)eScopBufferSize);
                 eScopeBuffer[idx].clear();
             }
-            writePosition = 0;
-            wavaddr = 0;
-            wavidx = 0;
-            //wavptr = &Bleep_20Hz[0];
-            //wavptr = &RampPos48000[0];
-            //wavptr = &Ramp48000Skipped2[0];
-            //wavptr = &Ramp48000Skipped3[0];
-            wavptr = &Ramp120k[0];
+            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+            {
+                writePosition[idx] = 0;
+                wavaddr[idx] = 0;
+                wavidx[idx] = 0;
+                //wavptr = &Bleep_20Hz[0];
+                //wavptr = &RampPos48000[0];
+                //wavptr = &Ramp48000Skipped2[0];
+                //wavptr = &Ramp48000Skipped3[0];
+                wavptr[idx] = &Ramp120k[0];
+            }
             thumbnailWritten = false;
             bufferWritten = false; 
         }
@@ -147,7 +163,10 @@
         //----------------------------------------------------------------------------------
         unsigned long* getTriggAddrPtr() { return (&wfTriggAddress); }
         //----------------------------------------------------------------------------------
-        bool* getBufferReadyAddrPtr() { return (&wfBufferReady); }
+        bool* getBufferReadyAddrPtr() { 
+            bool* BufferReady;
+            BufferReady = &wfBufferReady;//for debug only
+            return (&wfBufferReady); }
         //----------------------------------------------------------------------------------
         void setSampleRate(double smpRate) { sampleRate = smpRate; }
         //----------------------------------------------------------------------------------
@@ -208,8 +227,7 @@
             int numOutputChannels,
             int numSamples,
             const juce::AudioIODeviceCallbackContext& context) override
-        {
-            int idx = 0;
+        {            
             ignoreUnused(context);
             //sendSynchronousChangeMessage(); https://docs.juce.com/master/classMessageManagerLock.html#details
             const juce::ScopedLock sl(writerLock);
@@ -229,62 +247,85 @@
                 //
                 // Create an AudioBuffer to wrap our incoming data, note that this does no 
                 //allocations or copies, it simply references our input data
-                juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-                auto* channelData = buffer.getWritePointer(0);
+                //juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+                juce::AudioBuffer<float> bufferz[ESCOPE_CHAN_NB];
+                //int idx = 0;
+                int eScopChanNb = ESCOPE_CHAN_NB;
+                for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+                {
+                    bufferz[idx].setDataToReferTo(const_cast<float**> (&inputChannelData[idx]), 1, numSamples);
+                    auto* channelData = bufferz[idx].getWritePointer(0);
 
-#if audio_source == 1 //overwrite stream with test wav file
-                overwriteStreamWithTestWav(channelData, buffer.getNumSamples());
+#if AUDIO_SOURCE == 1 //overwrite stream with test wav file
+                    overwriteStreamWithTestWav(idx, channelData, bufferz[idx].getNumSamples());
 #endif
-                TestChannelID();
-                // write in circulare buffer for later display
-                if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
-                {
-                    eScopeBuffer[idx].copyFrom(0, writePosition, channelData, numSamples);
-                }
-                else//last partial buffer to copy
-                {
-                    int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
-                    eScopeBuffer[idx].copyFrom(0, writePosition, channelData, nbOfSmpToCopy);
-                 }
-                
-
-                // check if any sample in this new block is above threshold -> triggering display
-                if (currentPostTriggerSmpCount == 0)
-                {
-                    unsigned int triggerIndex;
-                    if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
-                    //if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
+                    TestChannelID();
+                    // write in circulare buffer for later display
+                    if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
                     {
-                        bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &buffer);
-                        *thumbnailTriggeredPtr = bTriggered;
-                        if (bTriggered)
+                        eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, numSamples);
+                    }
+                    else//last partial buffer to copy
+                    {
+                        int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
+                        eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, nbOfSmpToCopy);
+                    }
+
+
+                    // check if any sample in this new block is above threshold -> triggering display
+                    if (currentPostTriggerSmpCount == 0)
+                    {
+                        unsigned int triggerIndex;
+
+                        if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
+                            ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
                         {
-                            triggAddress = writePosition + triggerIndex;
-                            triggAddress %= eScopBufferSize; //wrap if needed
-                            currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+                            bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx]);
+                            *thumbnailTriggeredPtr = bTriggered;
+                            if (bTriggered)
+                            {
+                                triggAddress = writePosition[idx] + triggerIndex;
+                                triggAddress %= eScopBufferSize; //wrap if needed
+                                currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+                            }
                         }
                     }
-                }
-                else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
-                {
-                    currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
-                }
-                writePosition += numSamples;
-                writePosition %= eScopBufferSize;
+                    else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
+                    {
+                        if (idx == ESCOPE_CHAN_NB-1)
+                            currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
+                    }
+                    writePosition[idx] += numSamples;
+                    writePosition[idx] %= eScopBufferSize;
 
-                //now if we have enough samples, pass them to the Thumbnail for display
-                //thumbnailWritten = WriteThumbnail(); // using numSamples ?
-                // 
-                //check if we have enough sample if yes, flag display to update
-                bufferWritten = PrepareBufferPointers();
-
-                if (bufferWritten) // to allow tests / break points ONLY !
-                {
-                    wfBufferReady = true;
-                    sendChangeMessage();
+                    //now if we have enough samples, pass them to the Thumbnail for display
+                    //thumbnailWritten = WriteThumbnail(); // using numSamples ?
+                    // 
+                    //check if we have enough sample if yes, flag display to update
+                    if (idx == ESCOPE_CHAN_NB - 1)
+                    {
+                        bufferWritten = PrepareBufferPointers();
+                        if (bufferWritten) // to allow tests / break points ONLY !
+                        {
+                            wfBufferReady = true;
+                            sendChangeMessage();
+                        }
+                        else
+                            wfBufferReady = false;
+                    }
                 }
-                else
-                    wfBufferReady = false;
+/*
+                    if (bufferWritten) // to allow tests / break points ONLY !
+                    {
+                        wfBufferReady = true;
+                        sendChangeMessage();
+                    }
+                    else if (wfBufferReady)
+                        wfBufferReady = true; //for debug
+                    else
+                        wfBufferReady = false;
+                }
+                wfBufferReady = false;*/
             }
             //Mode "Recording continuously" 
             if (activeWriter.load() != nullptr && chanID < numInputChannels)
@@ -384,7 +425,7 @@
                         ///nbOfSmpInThumbnail = thumbnail.getNumSamplesFinished();
                         thmbNail[0]->addBlock(0, eScopeBuffer[idx], offsetInEScopeBuffer, maxSmpCount);
                         nbOfSmpInThumbnail = thmbNail[0]->getNumSamplesFinished();
-                        eScopBufferSize = 0; // reset flag for tests
+                        //eScopBufferSize = 0; // reset flag for tests
                     }
                     else //tail data wrapped 
                     {
@@ -424,7 +465,7 @@
                         ///thumbnail.addBlock(paddingSmpNb, eScopeBuffer, offsetInEScopeBuffer, smpCount);
                         thmbNail[0]->addBlock(0, eScopeBuffer[idx], paddingPtrinBuffer, paddingSmpNb);
                         thmbNail[0]->addBlock(paddingSmpNb, eScopeBuffer[idx], offsetInEScopeBuffer, smpCount);
-                        eScopBufferSize = 0; // reset flag for tests
+                        //eScopBufferSize = 0; // reset flag for tests
                         wfStartAddress = paddingPtrinBuffer;
                         wfTriggAddress = triggAddress;
                     }
@@ -524,24 +565,24 @@
         void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}
         //----------------------------------------------------------------------------------
         //----------------------------------------------------------------------------------
-#if audio_source == 1 //for debug and tests only
-        void overwriteStreamWithTestWav(float* chanDataptr, int numSmp)
+#if AUDIO_SOURCE == 1 //for debug and tests only
+        void overwriteStreamWithTestWav(int index, float* chanDataptr, int numSmp)
         {
             int sample = 0;
-            while((wavidx < BleepSize) && (sample < numSmp)) //only copy at the beginning of the stream (the size of the array) 
+            while((wavidx[index] < BleepSize) && (sample < numSmp)) //only copy at the beginning of the stream (the size of the array) 
             {
-                    *chanDataptr = *wavptr;
+                    *chanDataptr = *wavptr[index];
                     chanDataptr++;
-                    wavptr++;
+                    wavptr[index]++;
                     sample++;
-                    wavidx++; //to check that total count doesn't exceed wav size 
+                    wavidx[index]++; //to check that total count doesn't exceed wav size 
             }
         }
 #endif
         //----------------------------------------------------------------------------------
     private:
         //AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
-        juce::AudioThumbnail* thmbNail[8]; // pointer to thumbnails associated with the recorder;
+        juce::AudioThumbnail* thmbNail[ESCOPE_CHAN_NB]; // pointer to thumbnails associated with the recorder;
         int thumbnailSize = 0;
 
         // the thread that will write our audio data to disk
@@ -550,7 +591,7 @@
         std::unique_ptr<juce::AudioFormatWriter::ThreadedWriter> threadedWriter;
         double sampleRate = 0.0;
         int samplesPerBlockExpected = 0;
-        int triggAddress = 0;
+        juce::int64 triggAddress = 0;
 
         int chanNb = 1;
         int bitDepth = 24;
@@ -561,24 +602,25 @@
         int chanID = 0; // default channel selected in multi channel audio interface is first one
         double thresholdTrigger = 1.0;
         bool* thumbnailTriggeredPtr; // <- declare ptr to flag accessible by display part
-        juce::AudioBuffer<float>eScopeBuffer[8];
+        juce::AudioBuffer<float>eScopeBuffer[ESCOPE_CHAN_NB];
         juce::int64  eScopBufferSize;
-        juce::int64 writePosition = 0;
+        juce::int64 writePosition[ESCOPE_CHAN_NB];
         juce::int64 readPosition = 0;
         float triggerPlaceRatio = 0.5;
         juce::int64 currentPostTriggerSmpCount = 0;
         juce::int64 maxSmpCount = 0;
         juce::int64 halfMaxSmpCount = 0;
 
-        unsigned long wavaddr = 0;
-        unsigned long wavidx = 0;
+        unsigned long wavaddr[ESCOPE_CHAN_NB];// = 0;
+        unsigned long wavidx[ESCOPE_CHAN_NB];// = 0;
         //following are shared by pointers between recorder and view
         unsigned long wfStartAddress = 0;
         unsigned long wfTriggAddress = 0;
+        //std::atomic<bool> 
         bool wfBufferReady = false;
         //end of shared
 
-        const float *wavptr = nullptr;
+        const float* wavptr[ESCOPE_CHAN_NB];// = nullptr;
         juce::uint16 wavSize = 48000;
         bool thumbnailWritten = false;
         bool bufferWritten = false; 

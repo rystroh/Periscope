@@ -8,8 +8,8 @@
 #include "RecordingThumbnail.h"
 #include "ChannelControl.h"
 #include "Header.h"
-
-#define option 1 //1 2 or 8
+// Now defined in Projucer Project
+#define option 2 //1 2 or 8
 #if option == 1
 const int eScopeChanNb = 1;
 #endif // option = 1
@@ -39,6 +39,7 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
     void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
+    //void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     //==============================================================================
 //    void paint (juce::Graphics& g) override;
@@ -73,32 +74,37 @@ private:
     bool usingCustomDeviceManager;
 
     juce::AudioFormatManager formatManager;                    // [3]    
-    juce::File lastRecording[eScopeChanNb];
+    juce::File lastRecording[ESCOPE_CHAN_NB];
 
     // GUI stuff
     std::unique_ptr<juce::FileChooser> chooser;
 
     std::unique_ptr<Header> header;
-    //std::unique_ptr<EScope> eScope[eScopeChanNb]; //[ToBeChanged]
+    //std::unique_ptr<EScope> eScope[ESCOPE_CHAN_NB]; //[ToBeChanged]
 
-    //RecordingThumbnail recThumbnail[eScopeChanNb];
-    std::unique_ptr<RecordingThumbnail> escopeThumbnail[eScopeChanNb];
-
+    //RecordingThumbnail recThumbnail[ESCOPE_CHAN_NB];
+    std::unique_ptr<RecordingThumbnail> escopeThumbnail[ESCOPE_CHAN_NB];
 
     //juce::AudioRecorder recorder{ recThumbnail[0].getAudioThumbnail()};
    //escopeThumbnail[0]->getAudioThumbnail();
     //juce::AudioThumbnail placeHolderThumbnail;
-    juce::AudioThumbnail* ptrToRecThumbnail[eScopeChanNb];
+    juce::AudioThumbnail* ptrToRecThumbnail[ESCOPE_CHAN_NB];
     juce::AudioThumbnail** aptr;
 
-    AudioRecorder recorder{ escopeThumbnail[0]->getAudioThumbnail()};//{ placeHolderThumbnail };
+    //RecordingThumbnail* ptrToRecoThumbnail[ESCOPE_CHAN_NB];
+    //RecordingThumbnail** eptr;
+
+    std::unique_ptr<RecordingThumbnail>* ptrToRecoThumbnail[ESCOPE_CHAN_NB];
+    std::unique_ptr<RecordingThumbnail>** eptr;
+
+    AudioRecorder recorder{ escopeThumbnail[1]->getAudioThumbnail() };//{ placeHolderThumbnail };
 
     std::unique_ptr<Rack> display_rack; // this is a horizontal rack for placing a vertical panel switch bar
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
                                         // in a vertical rack inside the parent vertical rack
                                         // to offer a global scrollbar for all channels at once
-    std::unique_ptr<Rack> thumbnail_rack[8];
-    std::unique_ptr<ChannelControl> channelControl[8];
+    std::unique_ptr<Rack> thumbnail_rack[ESCOPE_CHAN_NB];
+    std::unique_ptr<ChannelControl> channelControl[ESCOPE_CHAN_NB];
 
     std::unique_ptr<grape::DREAMLookAndFeel> laf;
 
@@ -108,7 +114,8 @@ private:
 
     int recmode = 2; // can be 1= track view or 2= oscilloscope
     double oscilloWinSize = 0.05;
-    //------------------------------------------------------------------------------------- 
+    //-------------------------------------------------------------------------------------
+    // initialize table of pointers to the escope Thumbnails
     void initPtrToRecThumbnailTable(int channelNumber)
     {
         for (int idx = 0; idx < channelNumber; idx++)
@@ -116,6 +123,16 @@ private:
             ptrToRecThumbnail[idx] = &escopeThumbnail[idx]->getAudioThumbnail();
         }
         aptr = ptrToRecThumbnail;
+    }
+    //-------------------------------------------------------------------------------------
+    // initialize table of pointers to the escope Thumbnails
+    void initPtrToRecoThumbnailTable(int channelNumber)
+    {
+        for (int idx = 0; idx < channelNumber; idx++)
+        {
+            ptrToRecoThumbnail[idx] = &escopeThumbnail[idx];
+        }
+        eptr = ptrToRecoThumbnail;
     }
     //-------------------------------------------------------------------------------------   
     juce::AudioDeviceManager& getAudioDeviceManager() //getting access to the built in AudioDeviceManager
@@ -185,7 +202,7 @@ private:
         //recmode = menu.getSelectedItemIndex();      //removed during merge operation 23-11-2023  
         //recmode = 1; //trackView //removed during merge operation 23-11-2023
         //eScope.recThumbnail.setSampleRate(eScope.rec.getSampleRate()); //needs refactoring
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
             //[ToBeChanged]
             //eScope[idx]->setSampleRate(smpRate);
@@ -206,7 +223,7 @@ private:
 //-------------------------------------------------------------------------------------
     void stopRecording()
     {
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
             //eScope[idx]->recorder.stop();//[ToBeChanged]
             //[inTheProcess]
@@ -230,7 +247,7 @@ private:
                         nullptr);
             });
 #endif
-        for (int idx = 0; idx < eScopeChanNb; idx++)
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
             //[ToBeChanged]
             lastRecording[idx] = juce::File();
