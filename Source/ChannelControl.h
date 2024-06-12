@@ -22,16 +22,8 @@ public:
 private:
 	// This button issues a window size command
 	grape::Slider oscWinSizeSlider{ "Win size", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
-	/*
-    grape::ToggleButton chkBoxXLink{ "x link",  };
-	grape::ToggleButton chkBoxYLink;
-	grape::ComboBox cmbBoxXMode;
-	grape::ComboBox cmbBoxYMode;
-	grape::ComboBox cmbBoxGroupe;*/
 
-    juce::Colour gridColour = juce::Colour(0xff8a8a8a);
-
-    
+    juce::Colour gridColour = juce::Colour(0xff8a8a8a);    
 
     juce::Slider xGridModeSlider;
     juce::Label eScopeChannelLabel;
@@ -40,11 +32,11 @@ private:
     juce::Label yGridModeLabel;
     juce::Label GroupeLabel;
 
-    juce::ToggleButton chkBoxXLink;
-    juce::ToggleButton chkBoxYLink;
-    juce::ComboBox cmbBoxXMode;
-    juce::ComboBox cmbBoxYMode;
-    juce::ComboBox cmbBoxGroupe;
+    //juce::ToggleButton chkBoxXLink;
+    //juce::ToggleButton chkBoxYLink;
+    //juce::ComboBox cmbBoxXMode;
+    //juce::ComboBox cmbBoxYMode;
+    //juce::ComboBox cmbBoxGroupe;
 
     juce::Slider sliderOffset;
     juce::Label sliderLabel;
@@ -52,7 +44,12 @@ private:
     juce::Slider sliderXOffset;
     juce::Label sliderXLabel;
 
-
+    
+    grape::ToggleButton chkBoxXLink{ "x link",  };
+    grape::ToggleButton chkBoxYLink{ "y link",  };
+    grape::ComboBox cmbBoxXMode{ "x mode", };
+    grape::ComboBox cmbBoxYMode{ "y mode", };
+    grape::ComboBox cmbBoxGroupe{ "groups", };
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChannelControl)
 };

@@ -69,13 +69,11 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     {
         auto idx = chkBoxXLink.getToggleState();
         this->pointeur->setXZoomFlag(idx);
-        //xZoomFlag = idx;
     };
     chkBoxYLink.onClick = [this]()
     {
         auto idx = chkBoxYLink.getToggleState();
         this->pointeur->setYZoomFlag(idx);
-        //yZoomFlag = idx;
     };
     cmbBoxXMode.onChange = [this]()
     {
@@ -94,7 +92,6 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
         auto idx = cmbBoxGroupe.getSelectedItemIndex();
         auto thatTrackGroup = cmbBoxGroupe.getItemText(idx);
         auto thatID = cmbBoxGroupe.getItemId(idx);
-        //zoomGroup = thatID;
     };
 
     addAndMakeVisible(cmbBoxXMode);
@@ -102,7 +99,6 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     addAndMakeVisible(cmbBoxGroupe);
     addAndMakeVisible(chkBoxXLink);
     addAndMakeVisible(chkBoxYLink);
-
 
     cmbBoxXMode.onChange = [this]()
     {
@@ -122,17 +118,9 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
         auto idx = cmbBoxGroupe.getSelectedItemIndex();
         auto thatTrackGroup = cmbBoxGroupe.getItemText(idx);
         auto thatID = cmbBoxGroupe.getItemId(idx);
-        auto chanID = this->getName().getTrailingIntValue();
-        /*
-        std::unique_ptr<RecordingThumbnail>* eThbPtr = ((std::unique_ptr<RecordingThumbnail>*)this->thmbNail);
-            RecordingThumbnail* escThbPtr = ((RecordingThumbnail*)this->thmbNail);
-            auto ptdr = escThbPtr->getZoomGroup();// .zoomGroup = thatID;
-        //zoomGroup = thatID;
-        auto escopeThumbNailPtr = ((RecordingThumbnail*)this->thmbNail);
-        auto toto = this->thmbNail->~unique_ptr;*/
+        auto chanID = this->getName().getTrailingIntValue();//just to check 
         this->pointeur->setZoomGroup(thatID);
     };
-
 
     setWidth(70, 200, 200);//min prefered max
     setHeight(50, 100, 1000);
