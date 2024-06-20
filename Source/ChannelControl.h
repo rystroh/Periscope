@@ -38,18 +38,18 @@ private:
     //juce::ComboBox cmbBoxYMode;
     //juce::ComboBox cmbBoxGroupe;
 
-    juce::Slider sliderOffset;
-    juce::Label sliderLabel;
+grape::Slider sliderOffset{"Offset", grape::Slider::HORIZONTAL2, }; //juce::Slider sliderOffset;
+//juce::Label sliderLabel;
 
-    juce::Slider sliderXOffset;
-    juce::Label sliderXLabel;
+grape::Slider sliderXOffset{ "Width", grape::Slider::HORIZONTAL2, }; //juce::Slider sliderXOffset;
+//juce::Label sliderXLabel;
 
-    
-    grape::ToggleButton chkBoxXLink{ "x link",  };
-    grape::ToggleButton chkBoxYLink{ "y link",  };
-    grape::ComboBox cmbBoxXMode{ "x mode", };
-    grape::ComboBox cmbBoxYMode{ "y mode", };
-    grape::ComboBox cmbBoxGroupe{ "groups", };
+grape::ComboBox cmbBoxGroupe{ "groups", };
+grape::CheckBox chkBoxXLink{ "x link", };    //grape::ToggleButton chkBoxXLink{ "x link", };
+grape::CheckBox chkBoxYLink{ "y link", };    //grape::ToggleButton chkBoxYLink{ "y link", };
+grape::ComboBox cmbBoxXMode{ "x mode", };
+grape::ComboBox cmbBoxYMode{ "y mode", };
+
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChannelControl)
 };

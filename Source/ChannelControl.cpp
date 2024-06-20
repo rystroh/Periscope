@@ -11,10 +11,10 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     //oscWinSizeSlider.setTextBoxStyle(oscWinSizeSlider.getTextBoxPosition(), false, newWidth, oscWinSizeSlider.getTextBoxHeight());
 
     chkBoxXLink.setColour(juce::Label::textColourId, gridColour);
-    chkBoxXLink.setButtonText("x link");
+    //chkBoxXLink.setButtonText("x link");
 
     chkBoxYLink.setColour(juce::Label::textColourId, gridColour);
-    chkBoxYLink.setButtonText("y link");
+    //chkBoxYLink.setButtonText("y link");
 
     cmbBoxXMode.setEditableText(false);
     cmbBoxXMode.setJustificationType(juce::Justification::centredLeft);
@@ -42,11 +42,12 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
 
     sliderOffset.setRange(-600, 600, 1);
     sliderOffset.setValue(0);
-    sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-    sliderLabel.setColour(juce::Label::textColourId, gridColour);
-    sliderLabel.setText("Offset", juce::dontSendNotification);
+    //sliderOffset.setSliderStyle(grape::Slider::HORIZONTAL2);
+    //sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
+    //sliderLabel.setColour(juce::Label::textColourId, gridColour);
+    //sliderLabel.setText("Offset", juce::dontSendNotification);
     addAndMakeVisible(sliderOffset);
-    addAndMakeVisible(sliderLabel);
+    //addAndMakeVisible(sliderLabel);
 
     sliderOffset.onValueChange = [this] {
         //currentOffset = sliderOffset.getValue();
@@ -54,11 +55,12 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     };
     sliderXOffset.setRange(0, 200, 1);
     sliderXOffset.setValue(0);
-    sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-    sliderXLabel.setColour(juce::Label::textColourId, gridColour);
-    sliderXLabel.setText("Width", juce::dontSendNotification);
+    //sliderXOffset.setSliderStyle(grape::Slider::HORIZONTAL2);
+    //sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
+    //sliderXLabel.setColour(juce::Label::textColourId, gridColour);
+    //sliderXLabel.setText("Width", juce::dontSendNotification);
     addAndMakeVisible(sliderXOffset);
-    addAndMakeVisible(sliderXLabel);
+    //addAndMakeVisible(sliderXLabel);
 
     sliderXOffset.onValueChange = [this] {
         //spareWidth = sliderXOffset.getValue();
@@ -128,29 +130,31 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
 ChannelControl::~ChannelControl() {};
 void ChannelControl::resized()
 {
-    auto area = getLocalBounds();
-    double width;
+auto area = getLocalBounds();
+double width;
+int xoffset = 30;
+int yoffset = 10;
     //oscWinSizeSlider.setBounds(area.removeFromTop(40).removeFromLeft(80).reduced(10));
     //oscWinSizeSlider.setBounds(area);
-    //oscWinSizeSlider.setBounds(area.removeFromTop(40).removeFromLeft(40).reduced(5));
+    //oscWinSizeSlider.setBounds(area.removeFromTop(40).removeFromLeft(40).reduced(xoffset));
 
-    GroupeLabel.setBounds(5, 60, 50, 20);
-    //cmbBoxGroupe.setBounds(80, 20, 64, 24);
-    cmbBoxGroupe.setBounds(5 + GroupeLabel.getWidth(), 60, 87, 24);
-    chkBoxXLink.setBounds(5, 90, 64, 24);
-    chkBoxYLink.setBounds(80, 90, 64, 24);
+GroupeLabel.setBounds(xoffset, yoffset, 50, 20);
+//cmbBoxGroupe.setBounds(80, 20, 64, 24);
+cmbBoxGroupe.setBounds(xoffset + GroupeLabel.getWidth(), yoffset, 87, 24);
+chkBoxXLink.setBounds(xoffset, yoffset+30, 64, 24);
+chkBoxYLink.setBounds(xoffset + 75, yoffset+30, 64, 24);
 
-    xGridModeLabel.setBounds(5, 120, 50, 20);
-    yGridModeLabel.setBounds(5, 150, 50, 20);
+xGridModeLabel.setBounds(xoffset, yoffset+60, 50, 20);
+yGridModeLabel.setBounds(xoffset, yoffset+90, 50, 20);
 
-    cmbBoxXMode.setBounds(5 + xGridModeLabel.getWidth(), 120, 87, 24);
-    cmbBoxYMode.setBounds(5 + yGridModeLabel.getWidth(), 150, 87, 24);
+cmbBoxXMode.setBounds(xoffset + xGridModeLabel.getWidth(), yoffset+60, 87, 24);
+cmbBoxYMode.setBounds(xoffset + yGridModeLabel.getWidth(), yoffset+90, 87, 24);
 
-    sliderLabel.setBounds(5, 180, 50, 20);
-    sliderOffset.setBounds(5 + sliderLabel.getWidth(), 180, 100, 20);
-    sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderOffset.getTextBoxHeight());
+//sliderLabel.setBounds(xoffset, yoffset+120, 50, 20);
+sliderOffset.setBounds(xoffset+30, yoffset + 120, 100, 20);// + sliderLabel.getWidth(), yoffset+120, 100, 20);
+sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderOffset.getTextBoxHeight());
 
-    sliderXLabel.setBounds(5, 210, 50, 20);
-    sliderXOffset.setBounds(5 + sliderXLabel.getWidth(), 210, 100, 20);
-    sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderXOffset.getTextBoxHeight());
+//sliderXLabel.setBounds(xoffset, yoffset+150, 50, 20);
+sliderXOffset.setBounds(xoffset+30, yoffset + 150, 100, 20); //+ sliderXLabel.getWidth(), yoffset+150, 100, 20);
+sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderXOffset.getTextBoxHeight());
 }
