@@ -107,12 +107,17 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
         auto idx = cmbBoxXMode.getSelectedItemIndex();
         auto thatTrackGroup = cmbBoxXMode.getItemText(idx);
         auto thatID = cmbBoxXMode.getItemId(idx);
+        this->pointeur->setXScale(idx);
+        this->pointeur->repaint();
     };
     cmbBoxYMode.onChange = [this]()
     {
         auto idx = cmbBoxYMode.getSelectedItemIndex();
         auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
         auto thatID = cmbBoxYMode.getItemId(idx);
+        this->pointeur->setYScale(idx);
+        this->pointeur->repaint();
+        //escopeThumbnail[0]->setYScale(scale);
         
     };
     cmbBoxGroupe.onChange = [this]()

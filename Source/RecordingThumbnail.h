@@ -3,6 +3,8 @@
 #include <vector>
 #include <algorithm>
 #include "..\grape\source\grape.h"
+enum horizontalScale { Absolute, RelativeToTrigger };
+enum verticalScale { Linear, dB };
     //=====================================================================================
     //class RecordingThumbnail : public juce::Component, 
     class RecordingThumbnail : public grape::Panel,
@@ -89,7 +91,9 @@
         void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
         { viewSize = dispTime;}
         //----------------------------------------------------------------------------------
-        void setYScale(int scale) { yScale = scale; }
+        void setXScale(int scale) { xScale = (horizontalScale) scale; }
+        //----------------------------------------------------------------------------------
+        void setYScale(int scale) { yScale = (verticalScale) scale; }
         //----------------------------------------------------------------------------------
         bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
         //----------------------------------------------------------------------------------
@@ -225,6 +229,25 @@
             trigY = (int)trigLevel;
             if ((trigY >= top) && (trigY <= bottom))
                 g.drawHorizontalLine(trigY, left, right);// only draw if in display area
+        }
+        //----------------------------------------------------------------------------------
+        void paintTimeLines(juce::Graphics& g, const juce::Rectangle<int>& gridBounds, const juce::Rectangle<int>& labelBounds, horizontalScale scale)//(g, wavZone, xScale);
+        {
+            if(scale == Absolute)
+            {
+                paintVerticalGrid(g, gridBounds);
+                drawXLabels(g, labelBounds);
+            }
+            else if(scale == RelativeToTrigger)
+            {
+                paintTimeGridLin(g, gridBounds);
+                drawXLabelsOffset(g, labelBounds, viewSize * 0.5);
+            }
+            else
+            {
+                DBG("paintTimeLines::Error: xScale = " << scale);
+            }
+
         }
         //----------------------------------------------------------------------------------
         void paintTimeGridLin(juce::Graphics& g, const juce::Rectangle<int>& bounds)
@@ -1245,12 +1268,13 @@
                     scrollbar.setRangeLimits(newRange);
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
                     wavZone = getWaveZone(thumbArea);
-                    paintVerticalGrid(g, wavZone);
+                    //paintVerticalGrid(g, wavZone);
+                    //drawXLabels(g, thumbArea);
+                    paintTimeLines(g, wavZone, thumbArea, xScale);
                     paintHorizontalGrid(g, wavZone, yScale);
+                    drawYLabels(g, thumbArea, 1);                    
                     g.setColour(wavFormColour);
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawXLabels(g, thumbArea);
-                    drawYLabels(g, thumbArea, 1);
                 }
                 break;
             case 4: //oscilloscope with trigger
@@ -1268,12 +1292,14 @@
                     setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
-                    paintTimeGridLin(g, wavZone);
+                    //paintTimeGridLin(g, wavZone);
+                    //drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
+                    paintTimeLines(g, wavZone, thumbArea, xScale);
                     paintHorizontalGrid(g, wavZone, yScale);
-                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, yScale);
+                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);                    
+                    
                     if (visibleRange != visibleRangePrevious)
                     {
                         visibleRangePrevious = visibleRange;
@@ -1296,12 +1322,14 @@
                     //setRange(newRange);
                     wavZone = getWaveZone(thumbArea);
                     //paintVerticalGrid(g, wavZone);
-                    paintTimeGridLin(g, wavZone);
+                    paintTimeLines(g, wavZone, thumbArea, xScale);
+                    //paintTimeGridLin(g, wavZone);
+                    //drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     paintHorizontalGrid(g, wavZone, yScale);
-                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
-                    drawXLabelsOffset(g, thumbArea, viewSize * 0.5);
                     drawYLabels(g, thumbArea, yScale);
+                    //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
+                    drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);                    
+                    
                     if (visibleRange != visibleRangePrevious)
                     {
                         visibleRangePrevious = visibleRange;
@@ -1310,7 +1338,7 @@
                 }
                 break;
             }            
-        }
+        }      
         //----------------------------------------------------------------------------------
         void resized() override
         {
@@ -1721,7 +1749,12 @@
         */
         int currentOffset = 0;
 
-        int yScale = 0; //0 = linear // 1 = dB
+        //int xScale = 0; //0 = linear // 1 = dB
+        horizontalScale xScale = Absolute; //0 = linear // 1 = dB
+        //int yScale = 0; //0 = linear // 1 = dB
+        verticalScale yScale = Linear; //0 = linear // 1 = dB
+        
+
         double ThumbYZoom = 1.0f;
         int YZoomIndex = 8;
         const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click
