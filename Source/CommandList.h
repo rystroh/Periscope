@@ -9,5 +9,6 @@ enum CommandList {
 	SAVE_SETTINGS,
 	GO_LIVE,
 	THRESHOLD_LEVEL,
-	Y_SCALE
+	Y_SCALE,
+	TRIGG
 };

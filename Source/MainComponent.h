@@ -8,6 +8,8 @@
 #include "RecordingThumbnail.h"
 #include "ChannelControl.h"
 #include "Header.h"
+#include "TriggerDialog.h"
+
 // Now defined in Projucer Project
 #define option 2 //1 2 or 8
 #if option == 1
@@ -64,7 +66,7 @@ public:
 
 
     juce::AudioDeviceManager& deviceManager;
-
+    
 private:
     friend Header;
 

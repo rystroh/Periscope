@@ -66,24 +66,25 @@
       </GROUP>
     </GROUP>
     <GROUP id="{C3084179-C89D-81C3-736B-EAB569609034}" name="Source">
+      <FILE id="cpl9kg" name="TriggerDialog.h" compile="0" resource="0" file="Source/TriggerDialog.h"/>
       <FILE id="GugS2u" name="20Hz_Bleep.h" compile="1" resource="0" file="Source/20Hz_Bleep.h"/>
+      <FILE id="DntdsD" name="AudioRecorder.h" compile="0" resource="0" file="Source/AudioRecorder.h"/>
+      <FILE id="hC85ZV" name="AudioRecording.h" compile="0" resource="0"
+            file="Source/AudioRecording.h"/>
       <FILE id="Hdq3Ql" name="ChannelControl.cpp" compile="1" resource="0"
             file="Source/ChannelControl.cpp"/>
       <FILE id="R3d5rE" name="ChannelControl.h" compile="0" resource="0"
             file="Source/ChannelControl.h"/>
-      <FILE id="DntdsD" name="AudioRecorder.h" compile="0" resource="0" file="Source/AudioRecorder.h"/>
-      <FILE id="hC85ZV" name="AudioRecording.h" compile="0" resource="0"
-            file="Source/AudioRecording.h"/>
       <FILE id="Z0LHyQ" name="CommandList.h" compile="0" resource="0" file="Source/CommandList.h"/>
-      <FILE id="vdlKrx" name="RecordingThumbnail.h" compile="0" resource="0"
-            file="Source/RecordingThumbnail.h"/>
+      <FILE id="wM79fo" name="eScope.h" compile="0" resource="0" file="Source/eScope.h"/>
       <FILE id="HNnqP6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="uH9wim" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
-      <FILE id="wM79fo" name="eScope.h" compile="0" resource="0" file="Source/eScope.h"/>
       <FILE id="q4o2GK" name="Header.cpp" compile="1" resource="0" file="Source/Header.cpp"/>
       <FILE id="FV2P25" name="Header.h" compile="0" resource="0" file="Source/Header.h"/>
+      <FILE id="vdlKrx" name="RecordingThumbnail.h" compile="0" resource="0"
+            file="Source/RecordingThumbnail.h"/>
     </GROUP>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_ASIO="1"/>

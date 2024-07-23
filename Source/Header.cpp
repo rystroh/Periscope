@@ -40,6 +40,7 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
 
     setWidth(300, 600, 10000);
     setHeight(50, 50, 50);
+    addAndMakeVisible(trig_button);
 }
 
 
@@ -68,4 +69,5 @@ void Header::resized()
     //load_button.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     save_button.setBounds(load_button.getX() + load_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
     
+    trig_button.setBounds(save_button.getX() + save_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth() - 10, recordButton.getHeight());
 }

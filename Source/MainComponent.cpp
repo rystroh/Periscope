@@ -151,7 +151,7 @@ usingCustomDeviceManager(false)
     addCommand(GO_LIVE,"Go Live");
     addCommand(THRESHOLD_LEVEL,"Threshold Level");
     addCommand(Y_SCALE, "Y Scale");
-
+    addCommand(TRIGG, "Trig Settings");
     // setSize(1800, 1000);
 #if option == 1
     setSize(1200, 400);
@@ -310,7 +310,7 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
         }
     }
 }
-
+void onDialogBoxClosed(int result);
 bool MainComponent::executeCommand(int id, grape::Control* source)
 {
     switch (id)
@@ -463,8 +463,65 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         escopeThumbnail[0]->setYScale(scale); // eScope[0]->setYScale(scale); [1]
         return true;
     }
+    case TRIGG:
+    {        
+        triggerDlgData bufferDlgData;
 
+        bufferDlgData.enable = true;
+        bufferDlgData.channel = 2;
+        bufferDlgData.threshold = 0.33f;
+        bufferDlgData.direction = 3;
+        bufferDlgData.pretrigger = 10;
+        /*/-----------------------------------------------------
+        juce::DialogWindow::LaunchOptions options;
+        auto trigDialog = new MyDialogBoxComponent(&bufferDlgData);
+        //trigDialog->initTrigDlgData(true, 2, 0.33f, 3, 10);
+        options.content.setOwned(trigDialog);
+        options.content->setSize(400, 200);
+
+        options.dialogTitle = "Trigger Box";
+        options.dialogBackgroundColour = juce::Colours::lightgrey;
+        options.escapeKeyTriggersCloseButton = true;
+        options.useNativeTitleBar = true;
+        options.resizable = false;            
+        //options.//dialogWindow
+        //trigDialog->initTrigDlgData(true, 2, 0.33f, 3, 10);
+       
+        options.launchAsync(juce::ModalCallbackFunction::create([this](int result)
+            {
+                onDialogBoxClosed(result);
+            }));
+        */
+
+        auto* dialogBox = new MyDialogBoxComponent(&bufferDlgData);
+        auto* dialogWindow = new juce::DialogWindow("Dialog Box", juce::Colours::grey, true);
+
+        dialogWindow->setContentOwned(dialogBox, true);
+        dialogWindow->setUsingNativeTitleBar(true);
+        dialogWindow->setResizable(true, true);
+        int width, height;
+        width = dialogBox->getWidth();
+        height = dialogBox->getHeight();
+        dialogWindow->centreWithSize(width, height);
+        dialogWindow->setVisible(true);
+
+        // Set up a callback for when the dialog window is closed
+        dialogWindow->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
+            {
+                onDialogBoxClosed(result);
+            }), true);
+        return true;
+    }
     default:
         return false;
     }
 }
+
+void onDialogBoxClosed(int result)
+{
+    // Handle the dialog box closure here
+    juce::Logger::writeToLog("Dialog box closed with result: " + juce::String(result));
+    // Perform other actions as needed
+}
+
+

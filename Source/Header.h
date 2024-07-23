@@ -42,15 +42,20 @@ private:
     // This button issues a load settings command
     grape::PushButton LiveButton{ "Live", grape::PushButton::NAME, GO_LIVE };
 
+    grape::PushButton trig_button{ "Trigger Settings", grape::PushButton::NAME, TRIGG };
+
 
     // * Controls whose values are saved in the settings *
     // This button issues a display mode command
     grape::ComboBox menu{ "Mode", grape::ComboBox::HORIZONTAL, grape::ComboBox::ValueType::ID, "", DISPLAY_MODE};
     // This button issues a window size command
-    grape::Slider oscWinSizeSlider{ "Win size", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
+    grape::Slider oscWinSizeSlider{ "Buffer_Size(s)", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
     // This button issues a window size command
     grape::Slider ThesholdSlider{ "Threshold", grape::Slider::HORIZONTAL2, "", THRESHOLD_LEVEL };
+    
     grape::Slider yScaleSlider{ "Y Scale", grape::Slider::HORIZONTAL2, "", Y_SCALE };
+    grape::PushButton TrigSettings_button{ "Trig Settings", grape::PushButton::NAME, TRIGG };
+   
 
  //-------------------------------------------------------------------------------------
     //void openButtonClicked();

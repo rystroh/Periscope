@@ -1,6 +1,7 @@
 #include "ChannelControl.h"
 #include "MainComponent.h"
 #include "..\GRAPE\Source\GRAPE.h"
+#include "TriggerDialog.h"
 ChannelControl::ChannelControl(const juce::String& name):Panel(name) 
 {
     addAndMakeVisible(oscWinSizeSlider);
