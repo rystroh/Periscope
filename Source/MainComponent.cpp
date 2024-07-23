@@ -465,8 +465,6 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
     }
     case TRIGG:
     {        
-        triggerDlgData bufferDlgData;
-
         bufferDlgData.enable = true;
         bufferDlgData.channel = 2;
         bufferDlgData.threshold = 0.33f;

@@ -194,6 +194,7 @@ public:
     int triggerMode;
     
     triggerDlgData trigDlgData;
+    triggerDlgData *trigDlgDataPtr;
     
     void inittrigDlgData2()
     {
@@ -223,6 +224,7 @@ public:
     }*/
     void inittrigDlgDataAlpha(triggerDlgData* bufferDlgData)
     {
+        trigDlgDataPtr = bufferDlgData;
         trigDlgData.enable = bufferDlgData->enable;
         trigDlgData.channel = bufferDlgData->channel;
         triggerMode = bufferDlgData->direction;
@@ -248,6 +250,12 @@ public:
         trigDlgData.direction = triggerMode;
         trigDlgData.pretrigger = preTriggerSlider.getValue();
 
+        trigDlgDataPtr->enable = triggerEnableChkBx.getToggleState();
+        trigDlgDataPtr->channel = triggerChannelCmbBx.getItemId(triggerChannelCmbBx.getSelectedItemIndex());
+        trigDlgDataPtr->threshold = ThresholdSlider.getValue();        
+        trigDlgDataPtr->direction = triggerMode;
+        trigDlgDataPtr->pretrigger = preTriggerSlider.getValue();
+        
         auto parwin = this->getParentComponent();
         parwin->setVisible(false);
         parwin->exitModalState(0);

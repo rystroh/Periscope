@@ -69,6 +69,7 @@ public:
     
 private:
     friend Header;
+    triggerDlgData bufferDlgData;
 
     // Audio stuff
     juce::AudioDeviceManager defaultDeviceManager;
