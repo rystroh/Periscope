@@ -218,12 +218,31 @@ public:
             auto left = bounds.getX();
             auto right = bounds.getRight();
             auto thumbh = bounds.getHeight();
+            auto width = bounds.getWidth(); // width of Display zone in pixels
+
+            auto totlen = getSampleSize();
+            double SampleSize = totlen * sampleRate; //size  of sample in points
+            double Ratio = SampleSize / (double)width;
+            auto visRangeWidth = visibleRange.getLength();
+            double curRatio = Ratio / totlen * (double)visibleRange.getLength();
+            double tRatio = 0.5;
+            float center_t = totlen * tRatio;// timeToX(visRangeWidth * tRatio);  //+ txtZoneOffset; // timeToX(viewSize * 0.5); get time center
+            int centerX = timeToX(visRangeWidth * tRatio); // timeToX(viewSize * 0.5); get time center
+            double dTrigTime = visRangeWidth * tRatio;
+            double xOffset = width / 2.0;
+            xOffset = xOffset * Ratio / curRatio;
+
               
             // Draw Trigger Vertical and Horizontal
             g.setColour(triggerColour);//Draw middle horizontal line
             g.setOpacity(triggerOpacity);
             trigX = timeToX(viewSize * 0.5);
             trigTime = currentOffset + trigX;//+left; // get time center
+
+            trigX = timeToX(0);
+            dTrigTime = trigX + xOffset;
+            trigTime = (int)dTrigTime;
+
             if ((trigTime >= left) && (trigTime <= right))
             {
                 g.drawVerticalLine(trigTime, top, bottom);
