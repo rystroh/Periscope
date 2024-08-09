@@ -7,131 +7,136 @@ enum horizontalScale { Absolute, RelativeToTrigger };
 enum verticalScale { Linear, dB };
     //=====================================================================================
     //class RecordingThumbnail : public juce::Component, 
-    class RecordingThumbnail : public grape::Panel,
-        private juce::ChangeListener,
-        private juce::ScrollBar::Listener,
-        public juce::ChangeBroadcaster
+class RecordingThumbnail : public grape::Panel,
+    private juce::ChangeListener,
+    private juce::ScrollBar::Listener,
+    public juce::ChangeBroadcaster
+{
+public:
+    /* RecordingThumbnail()
     {
-    public:
-        /* RecordingThumbnail()
-        {
-            addAndMakeVisible(scrollbar);
-            scrollbar.setRangeLimits(visibleRange);
-            scrollbar.setAutoHide(true);
-            scrollbar.addListener(this);
-            formatManager.registerBasicFormats();
-            thumbnail.addChangeListener(this);
-        }*/
-        RecordingThumbnail(const juce::String& id) : Panel(id)
-        {
-            addAndMakeVisible(scrollbar);
-            scrollbar.setRangeLimits(visibleRange);
-            scrollbar.setAutoHide(true);
-            scrollbar.addListener(this);
-            formatManager.registerBasicFormats();
-            thumbnail.addChangeListener(this);
-            
- /*           juce::String chanTxt;
-            chanTxt << "Channel " << chanID;*/
-            
-            setWidth(300, 600, 10000);
-            setHeight(50, 100, 500);
-        }
+        addAndMakeVisible(scrollbar);
+        scrollbar.setRangeLimits(visibleRange);
+        scrollbar.setAutoHide(true);
+        scrollbar.addListener(this);
+        formatManager.registerBasicFormats();
+        thumbnail.addChangeListener(this);
+    }*/
+    RecordingThumbnail(const juce::String& id) : Panel(id)
+    {
+        addAndMakeVisible(scrollbar);
+        scrollbar.setRangeLimits(visibleRange);
+        scrollbar.setAutoHide(true);
+        scrollbar.addListener(this);
+        formatManager.registerBasicFormats();
+        thumbnail.addChangeListener(this);
 
-        ~RecordingThumbnail() override
-        {
-            scrollbar.removeListener(this);
-            thumbnail.removeChangeListener(this);
-        }
+        /*           juce::String chanTxt;
+                   chanTxt << "Channel " << chanID;*/
 
-        juce::AudioThumbnail& getAudioThumbnail() { return thumbnail; }
+        setWidth(300, 600, 10000);
+        setHeight(50, 100, 500);
+    }
 
-        juce::Colour testColour = juce::Colours::antiquewhite;
-        juce::Colour wavFormColour = juce::Colour(0xff43d996);
-        juce::Colour wavBackgroundColour = juce::Colours::black;
-        juce::Colour digitPanelColour = juce::Colour(0xff232323);
-        juce::Colour digitColour = juce::Colour(0xff8a8a8a);
-        juce::Colour gridColour = juce::Colour(0xff8a8a8a);
-        juce::Colour gridHorizontalCenterColour = juce::Colours::red;
-        juce::Colour triggerColour = juce::Colours::yellow;
-        juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
-        double gridOpacity = 0.5; //grid opacity
-        double triggerOpacity = 0.75; //trigger lines opacity
-        
-        int spareWidth = 0;//width of zone used to display eScope controls 
+    ~RecordingThumbnail() override
+    {
+        scrollbar.removeListener(this);
+        thumbnail.removeChangeListener(this);
+    }
 
-        int yScaleZoneWidth = 50;
-        float viewSize = 0.1;// viewing window size
-        int chanID = -1; //copy of eScope ID at Thumbnail level so Listener can retrieve info
-        std::vector<float> mAudioPoints;
-        std::vector<float> mMaxAudioPoints;
-        std::vector<float> mMinAudioPoints;
-        juce::Point< int > Posi3;        
-        //-------------------------------------------------------------------
-        //following elements are passed between RecTumbnail and AudioRecorder
-        bool bTriggered = false;
-        juce::AudioBuffer<float>* eBuffer;
-        unsigned long *wfStartAddr ;
-        unsigned long *wfTriggAddr ;
-        bool *bBufferReady;
-        //------------------------------
-        bool repaintBroadcasted = false;
-        //----------------------------------------------------------------------------------
-        bool* getTriggeredPtr(void) { return &bTriggered; }
-        //----------------------------------------------------------------------------------
-        void setBufferedToImage(juce::AudioBuffer<float>* recBuffer) {  eBuffer = recBuffer; }
-        //called by eScope setViewSize
-        //----------------------------------------------------------------------------------
-        void setBufferStartAddress(unsigned long* addr) { wfStartAddr = addr; }
-        //----------------------------------------------------------------------------------
-        void setBufferTriggAddress(unsigned long* addr) { wfTriggAddr = addr; }
-        //----------------------------------------------------------------------------------
-        void setBufferReadyAddress(bool* addr) { bBufferReady = addr; }
-        //----------------------------------------------------------------------------------
-        void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
-        { viewSize = dispTime;}
-        //----------------------------------------------------------------------------------
-        void setXScale(int scale) { xScale = (horizontalScale) scale; }
-        //----------------------------------------------------------------------------------
-        void setYScale(int scale) { yScale = (verticalScale) scale; }
-        //----------------------------------------------------------------------------------
-        bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
-        //----------------------------------------------------------------------------------
-        void prepareToPlay(int smpPerBlockExpected, double smpRate)
-        {
-            sampleRate = smpRate;
-            samplesPerBlockExpected = smpPerBlockExpected;
-        }
-        //----------------------------------------------------------------------------------
-        void setSampleRate(double smpRate) { sampleRate = smpRate; }
-        //----------------------------------------------------------------------------------
-        void setThreshold(double threshold)
-        {
+    juce::AudioThumbnail& getAudioThumbnail() { return thumbnail; }
+
+    juce::Colour testColour = juce::Colours::antiquewhite;
+    juce::Colour wavFormColour = juce::Colour(0xff43d996);
+    juce::Colour wavBackgroundColour = juce::Colours::black;
+    juce::Colour digitPanelColour = juce::Colour(0xff232323);
+    juce::Colour digitColour = juce::Colour(0xff8a8a8a);
+    juce::Colour gridColour = juce::Colour(0xff8a8a8a);
+    juce::Colour gridHorizontalCenterColour = juce::Colours::red;
+    juce::Colour triggerColour = juce::Colours::yellow;
+    juce::Colour backGroundColour = juce::Colour(0xff2e2e2e);
+    double gridOpacity = 0.5; //grid opacity
+    double triggerOpacity = 0.75; //trigger lines opacity
+
+    int spareWidth = 0;//width of zone used to display eScope controls 
+
+    int yScaleZoneWidth = 50;
+    float viewSize = 0.1;// viewing window size
+    int chanID = -1; //copy of eScope ID at Thumbnail level so Listener can retrieve info
+    std::vector<float> mAudioPoints;
+    std::vector<float> mMaxAudioPoints;
+    std::vector<float> mMinAudioPoints;
+    juce::Point< int > Posi3;
+    //-------------------------------------------------------------------
+    //following elements are passed between RecTumbnail and AudioRecorder
+    bool bTriggered = false;
+    juce::AudioBuffer<float>* eBuffer;
+    unsigned long* wfStartAddr;
+    unsigned long* wfTriggAddr;
+    bool* bBufferReady;
+    //------------------------------
+    bool repaintBroadcasted = false;
+    //----------------------------------------------------------------------------------
+    bool* getTriggeredPtr(void) { return &bTriggered; }
+    //----------------------------------------------------------------------------------
+    void setBufferedToImage(juce::AudioBuffer<float>* recBuffer) { eBuffer = recBuffer; }
+    //called by eScope setViewSize
+    //----------------------------------------------------------------------------------
+    void setBufferStartAddress(unsigned long* addr) { wfStartAddr = addr; }
+    //----------------------------------------------------------------------------------
+    void setBufferTriggAddress(unsigned long* addr) { wfTriggAddr = addr; }
+    //----------------------------------------------------------------------------------
+    void setBufferReadyAddress(bool* addr) { bBufferReady = addr; }
+    //----------------------------------------------------------------------------------
+    void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
+    {
+        viewSize = dispTime;
+    }
+    //----------------------------------------------------------------------------------
+    void setXScale(int scale) { xScale = (horizontalScale)scale; }
+    //----------------------------------------------------------------------------------
+    void setYScale(int scale) { yScale = (verticalScale)scale; }
+    //----------------------------------------------------------------------------------
+    bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
+    //----------------------------------------------------------------------------------
+    void prepareToPlay(int smpPerBlockExpected, double smpRate)
+    {
+        sampleRate = smpRate;
+        samplesPerBlockExpected = smpPerBlockExpected;
+    }
+    //----------------------------------------------------------------------------------
+    void setSampleRate(double smpRate) { sampleRate = smpRate; }
+    //----------------------------------------------------------------------------------
+    void setThreshold(double threshold)
+    {
 #if modify_triggers == 1
-            switch ((int)(threshold * 100))
-            {
-            case 0:
-                thresholdTrigger = 0.010;   // addr =    530
-                break;
-            case 1:
-                thresholdTrigger = 0.011;   // addr =  2 829
-                break;
-            case 2:
-                thresholdTrigger = 0.017;   // addr =  5 303
-                break;
-            case 3:
-                thresholdTrigger = 0.037;   // addr = 10 141
-                break;
-            case 4:
-                thresholdTrigger = 0.800;   // addr = 19 556
-                break;
-            default:
-                thresholdTrigger = threshold;
-            }
-#else
+        switch ((int)(threshold * 100))
+        {
+        case 0:
+            thresholdTrigger = 0.010;   // addr =    530
+            break;
+        case 1:
+            thresholdTrigger = 0.011;   // addr =  2 829
+            break;
+        case 2:
+            thresholdTrigger = 0.017;   // addr =  5 303
+            break;
+        case 3:
+            thresholdTrigger = 0.037;   // addr = 10 141
+            break;
+        case 4:
+            thresholdTrigger = 0.800;   // addr = 19 556
+            break;
+        default:
             thresholdTrigger = threshold;
-#endif
         }
+#else
+        thresholdTrigger = threshold;
+#endif
+    }
+    //----------------------------------------------------------------------------------
+    void setTrigEnabled(bool enable) { trigEnabled = enable; }        
+
         //----------------------------------------------------------------------------------
         void setDisplayFullThumbnail(bool displayFull)
         {
@@ -227,7 +232,8 @@ enum verticalScale { Linear, dB };
             }
             float trigLevel = bounds.getCentreY() - (float)thumbh * 0.5 * thresholdTrigger * ThumbYZoom;
             trigY = (int)trigLevel;
-            if ((trigY >= top) && (trigY <= bottom))
+            
+            if ((trigY >= top) && (trigY <= bottom)&& (trigEnabled))
                 g.drawHorizontalLine(trigY, left, right);// only draw if in display area
         }
         //----------------------------------------------------------------------------------
@@ -1761,6 +1767,7 @@ enum verticalScale { Linear, dB };
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
         double thresholdTrigger;
+        bool trigEnabled = false;
         
         //----------------------------------------------------------------------------------
         float timeToX(const double time) const

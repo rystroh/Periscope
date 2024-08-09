@@ -162,7 +162,7 @@ usingCustomDeviceManager(false)
 #if option == 8
     setSize(1200, 1000);
 #endif
-
+    initThresholdSettings();
     formatManager.registerBasicFormats();
 }
 
@@ -310,7 +310,54 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
         }
     }
 }
-void onDialogBoxClosed(int result);
+//void onDialogBoxClosed(int result);
+
+void MainComponent::onDialogBoxClosed(int result, triggerDlgData *trigDlgData)
+{
+    // Handle the dialog box closure here
+    juce::Logger::writeToLog("Dialog box closed with result: " + juce::String(result));
+    
+    //bufferDlgData.enable = true;
+        //bool enab = bufferDlgData->enable;
+    int chan = trigDlgData->channel-1;
+    int direct = trigDlgData->direction;
+    float thresh = trigDlgData->threshold;
+    header->SetThresholdValue(thresh); //sends ThresholdSlider.setValue(thresh);
+    recorder.setThreshold(thresh);
+    int pretrigg = trigDlgData->pretrigger;
+
+    storeThresholdSettings(trigDlgData->enable, trigDlgData->channel, trigDlgData->threshold, trigDlgData->direction, trigDlgData->pretrigger);
+
+    recorder.setThreshold(thresh);
+    recorder.setTriggerChannel(chan);
+    recorder.setTriggerMode(direct);
+    bool enab = trigDlgData->enable;
+
+    if (enab)
+    {
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+        {
+            //escopeThumbnail[idx]->setXScale(1); // RelativeToTrigger);
+            escopeThumbnail[idx]->setXScale(RelativeToTrigger);
+            escopeThumbnail[idx]->setThreshold(thresh);
+            if(idx == chan)
+                escopeThumbnail[idx]->setTrigEnabled(true);
+            else
+                escopeThumbnail[idx]->setTrigEnabled(false);
+        }
+    }
+    else
+    {
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+        {
+            //escopeThumbnail[idx]->setXScale(0); //Absolute
+            escopeThumbnail[idx]->setXScale(Absolute);
+        }    
+    }
+    // Perform other actions as needed
+}
+
+
 bool MainComponent::executeCommand(int id, grape::Control* source)
 {
     switch (id)
@@ -465,31 +512,12 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
     }
     case TRIGG:
     {        
+        /*
         bufferDlgData.enable = true;
         bufferDlgData.channel = 2;
         bufferDlgData.threshold = 0.33f;
         bufferDlgData.direction = 3;
-        bufferDlgData.pretrigger = 10;
-        /*/-----------------------------------------------------
-        juce::DialogWindow::LaunchOptions options;
-        auto trigDialog = new MyDialogBoxComponent(&bufferDlgData);
-        //trigDialog->initTrigDlgData(true, 2, 0.33f, 3, 10);
-        options.content.setOwned(trigDialog);
-        options.content->setSize(400, 200);
-
-        options.dialogTitle = "Trigger Box";
-        options.dialogBackgroundColour = juce::Colours::lightgrey;
-        options.escapeKeyTriggersCloseButton = true;
-        options.useNativeTitleBar = true;
-        options.resizable = false;            
-        //options.//dialogWindow
-        //trigDialog->initTrigDlgData(true, 2, 0.33f, 3, 10);
-       
-        options.launchAsync(juce::ModalCallbackFunction::create([this](int result)
-            {
-                onDialogBoxClosed(result);
-            }));
-        */
+        bufferDlgData.pretrigger = 10;*/
 
         auto* dialogBox = new MyDialogBoxComponent(&bufferDlgData);
         auto* dialogWindow = new juce::DialogWindow("Dialog Box", juce::Colours::grey, true);
@@ -506,7 +534,8 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         // Set up a callback for when the dialog window is closed
         dialogWindow->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
             {
-                onDialogBoxClosed(result);
+                bool enab = bufferDlgData.enable;
+                onDialogBoxClosed(result, &bufferDlgData);
             }), true);
         return true;
     }
@@ -515,11 +544,6 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
     }
 }
 
-void onDialogBoxClosed(int result)
-{
-    // Handle the dialog box closure here
-    juce::Logger::writeToLog("Dialog box closed with result: " + juce::String(result));
-    // Perform other actions as needed
-}
+
 
 

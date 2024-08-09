@@ -24,6 +24,9 @@ const int eScopeChanNb = 2;
 const int eScopeChanNb = 8;
 #endif // option = 1
 
+//enum horizontalScale { Absolute, RelativeToTrigger };
+//enum verticalScale { Linear, dB };
+
 class Rack;
 //==============================================================================
 /*
@@ -41,6 +44,7 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
     void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
+
     //void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     //==============================================================================
@@ -66,10 +70,29 @@ public:
 
 
     juce::AudioDeviceManager& deviceManager;
-    
-private:
-    friend Header;
     triggerDlgData bufferDlgData;
+    //void initThresholdSettings(void);
+    //void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent);
+    void initThresholdSettings(void)
+    {
+        bufferDlgData.enable = true;
+        bufferDlgData.channel = 1;
+        bufferDlgData.threshold = 0.51f;
+        bufferDlgData.direction = 2;
+        bufferDlgData.pretrigger = 42;
+    }
+    void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent)
+    {
+        bufferDlgData.enable = triggerEnabled;
+        bufferDlgData.channel = triggerChannel;
+        bufferDlgData.threshold = triggerThreshold;
+        bufferDlgData.direction = triggerDirection;
+        bufferDlgData.pretrigger = preTriggerPercent;
+    }
+    void MainComponent::onDialogBoxClosed(int result, triggerDlgData* trigDlgData);
+
+private:
+    friend Header;    
 
     // Audio stuff
     juce::AudioDeviceManager defaultDeviceManager;

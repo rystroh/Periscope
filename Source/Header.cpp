@@ -29,9 +29,9 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     addAndMakeVisible(load_button);
     addAndMakeVisible(save_button);
 
-    addAndMakeVisible(ThesholdSlider);
-    ThesholdSlider.setRange(-1.0f, 1.0f, 0.01f);
-    ThesholdSlider.setValue(0.5f);
+    addAndMakeVisible(ThresholdSlider);
+    ThresholdSlider.setRange(-1.0f, 1.0f, 0.01f);
+    ThresholdSlider.setValue(0.5f);
     addAndMakeVisible(LiveButton);
 
     addAndMakeVisible(yScaleSlider);
@@ -62,8 +62,8 @@ void Header::resized()
     menu.setBounds(openButton.getX() + openButton.getWidth() + menu.getLabel()->getWidth() + 10, recordButton.getY(),(int)width, recordButton.getHeight());
 
     oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + oscWinSizeSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
-    ThesholdSlider.setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + ThesholdSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
-    yScaleSlider.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + yScaleSlider.getLabel()->getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    ThresholdSlider.setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + ThresholdSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
+    yScaleSlider.setBounds(ThresholdSlider.getX() + ThresholdSlider.getWidth() + yScaleSlider.getLabel()->getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     
     load_button.setBounds(yScaleSlider.getX() + yScaleSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
     //load_button.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());

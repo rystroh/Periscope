@@ -197,10 +197,13 @@
         //----------------------------------------------------------------------------------
         void audioDeviceStopped() override { sampleRate = 0; }
         //----------------------------------------------------------------------------------
-        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, juce::AudioBuffer<float>* buffer)
+        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, juce::AudioBuffer<float>* buffer, int currentChan)
         {
             // check trigger condition in block of samples
             bool triggerConditionFound = false;
+            if (currentChan!= RecTrigChannel) //screen non triggering channels
+                return (triggerConditionFound);
+
             double min = 1, max = -1;
             double smpValue;
             int idx = 0;
@@ -280,7 +283,7 @@
                         if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
                             ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
                         {
-                            bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx]);
+                            bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx], idx);
                             *thumbnailTriggeredPtr = bTriggered;
                             if (bTriggered)
                             {
@@ -500,7 +503,7 @@
         //----------------------------------------------------------------------------------
         void setChannelID(int setChanID) {  chanID = setChanID; }
         //----------------------------------------------------------------------------------
-        void setThreshold(double threshold)
+        void setThreshold(double threshold) //set the 
         {
 #if modify_triggers == 1
             switch ((int)(threshold*100))
@@ -526,6 +529,16 @@
 #else
             thresholdTrigger = threshold;
 #endif
+        }
+        //-------------------------------------
+        void setTriggerChannel(int channel)
+        {
+            RecTrigChannel = channel;
+        }
+        //-------------------------------------
+        void setTriggerMode(int mode)// set Trigger direction
+        {
+            RecTrigMode = mode;
         }
         //-------------------------------------
         void TestChannelID() // for debugging multiple channel sessions
@@ -564,6 +577,7 @@
         //----------------------------------------------------------------------------------
         void setTriggerPtr(bool* ptr)  { thumbnailTriggeredPtr = ptr;}
         //----------------------------------------------------------------------------------
+//        void setTriggerMode(int mode) { RecTrigMode = mode; }
         //----------------------------------------------------------------------------------
 #if AUDIO_SOURCE == 1 //for debug and tests only
         void overwriteStreamWithTestWav(int index, float* chanDataptr, int numSmp)
@@ -623,7 +637,11 @@
         const float* wavptr[ESCOPE_CHAN_NB];// = nullptr;
         juce::uint16 wavSize = 48000;
         bool thumbnailWritten = false;
-        bool bufferWritten = false; 
+        bool bufferWritten = false;
+
+        int RecTrigMode; //
+        int RecTrigChannel;//
+
     };
 //};
 

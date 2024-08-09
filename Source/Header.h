@@ -24,7 +24,7 @@ public:
     //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
-
+    void SetThresholdValue(float value) { ThresholdSlider.setValue(value); }
 private:
     friend MainComponent;
     //==============================================================================
@@ -51,7 +51,7 @@ private:
     // This button issues a window size command
     grape::Slider oscWinSizeSlider{ "Buffer_Size(s)", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
     // This button issues a window size command
-    grape::Slider ThesholdSlider{ "Threshold", grape::Slider::HORIZONTAL2, "", THRESHOLD_LEVEL };
+    grape::Slider ThresholdSlider{ "Threshold", grape::Slider::HORIZONTAL2, "", THRESHOLD_LEVEL };
     
     grape::Slider yScaleSlider{ "Y Scale", grape::Slider::HORIZONTAL2, "", Y_SCALE };
     grape::PushButton TrigSettings_button{ "Trig Settings", grape::PushButton::NAME, TRIGG };
