@@ -207,20 +207,77 @@
             double min = 1, max = -1;
             double smpValue;
             int idx = 0;
-            while ((idx < nbSamples) && !triggerConditionFound)
+            switch (RecTrigMode)
             {
-                smpValue = buffer->getSample(0, idx);
-                if (smpValue < min)
-                    min = smpValue;
-                if (smpValue > max)
-                    max = smpValue;
-                if (smpValue > thresholdTrigger)
-                {
-                    *trigIndex = idx;
-                    triggerConditionFound = true;
-                }
-                idx++;
+                case 0: // getting equal to definite value
+                    while ((idx < nbSamples) && !triggerConditionFound)
+                    {
+                        smpValue = buffer->getSample(0, idx);
+                        if (smpValue < min)
+                            min = smpValue;
+                        if (smpValue > max)
+                            max = smpValue;
+                        if (smpValue == thresholdTrigger)
+                        {
+                            *trigIndex = idx;
+                            triggerConditionFound = true;
+                        }
+                        idx++;
+                    }
+                    break;
+                case 1: //rising edge condition
+                    while ((idx < nbSamples) && !triggerConditionFound)
+                    {
+                        smpValue = buffer->getSample(0, idx);
+                        if (smpValue < min)
+                            min = smpValue;
+                        if (smpValue > max)
+                            max = smpValue;
+                        if (smpValue > thresholdTrigger)
+                        {
+                            *trigIndex = idx;
+                            triggerConditionFound = true;
+                        }
+                        idx++;
+                    }
+                    break;
+                case 2: //falling edge condition
+                    while ((idx < nbSamples) && !triggerConditionFound)
+                    {
+                        smpValue = buffer->getSample(0, idx);
+                        if (smpValue < min)
+                            min = smpValue;
+                        if (smpValue > max)
+                            max = smpValue;
+                        if ((smpValue < thresholdTrigger) && (max >= thresholdTrigger))
+                        {
+                            *trigIndex = idx;
+                            triggerConditionFound = true;
+                        }
+                        idx++;
+                    }
+                    break;
+                case 3: // rizing or falling edge condition
+                    while ((idx < nbSamples) && !triggerConditionFound)
+                    {
+                        smpValue = buffer->getSample(0, idx);
+                        if (smpValue < min)
+                            min = smpValue;
+                        if (smpValue > max)
+                            max = smpValue;
+                        if (((smpValue < thresholdTrigger) && (max >= thresholdTrigger)) || ((smpValue > thresholdTrigger) ))
+                        {
+                            *trigIndex = idx;
+                            triggerConditionFound = true;
+                        }
+                        idx++;
+                    }
+                    break;
+                default:
+                    break;
+
             }
+            
             return (triggerConditionFound);
         }
         //----------------------------------------------------------------------------------
@@ -531,10 +588,7 @@
 #endif
         }
         //-------------------------------------
-        void setTriggerChannel(int channel)
-        {
-            RecTrigChannel = channel;
-        }
+        void setTriggerChannel(int channel)  { RecTrigChannel = channel;}
         //-------------------------------------
         void setTriggerMode(int mode)// set Trigger direction
         {

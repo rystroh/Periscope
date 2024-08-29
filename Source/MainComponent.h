@@ -77,9 +77,9 @@ public:
     {
         bufferDlgData.enable = true;
         bufferDlgData.channel = 1;
-        bufferDlgData.threshold = 0.51f;
+        bufferDlgData.threshold = 0.50f;
         bufferDlgData.direction = 2;
-        bufferDlgData.pretrigger = 42;
+        bufferDlgData.pretrigger = 50;
     }
     void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent)
     {
