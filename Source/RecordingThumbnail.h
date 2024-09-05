@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include "..\grape\source\grape.h"
+#include "Enums.h"
 enum horizontalScale { Absolute, RelativeToTrigger };
 enum verticalScale { Linear, dB };
     //=====================================================================================
@@ -48,6 +49,7 @@ public:
 
     juce::Colour testColour = juce::Colours::antiquewhite;
     juce::Colour wavFormColour = juce::Colour(0xff43d996);
+    juce::Colour wavClippingColour = juce::Colour(0xffff0000);
     juce::Colour wavBackgroundColour = juce::Colours::black;
     juce::Colour digitPanelColour = juce::Colour(0xff232323);
     juce::Colour digitColour = juce::Colour(0xff8a8a8a);
@@ -67,6 +69,8 @@ public:
     std::vector<float> mMaxAudioPoints;
     std::vector<float> mMinAudioPoints;
     juce::Point< int > Posi3;
+
+    int RecTrigMode; //
     //-------------------------------------------------------------------
     //following elements are passed between RecTumbnail and AudioRecorder
     bool bTriggered = false;
@@ -231,10 +235,13 @@ public:
             double dTrigTime = visRangeWidth * tRatio;
             double xOffset = width / 2.0;
             xOffset = xOffset * Ratio / curRatio;
-
-              
+                
             // Draw Trigger Vertical and Horizontal
-            g.setColour(triggerColour);//Draw middle horizontal line
+            if((RecTrigMode == Clipping) && (trigEnabled))
+                g.setColour(wavClippingColour);//Trigger on clipping condition is in Red
+            else
+                g.setColour(triggerColour);//Draw middle horizontal line
+            
             g.setOpacity(triggerOpacity);
             trigX = timeToX(viewSize * 0.5);
             trigTime = currentOffset + trigX;//+left; // get time center
@@ -253,7 +260,8 @@ public:
             trigY = (int)trigLevel;
             
             if ((trigY >= top) && (trigY <= bottom)&& (trigEnabled))
-                g.drawHorizontalLine(trigY, left, right);// only draw if in display area
+                if(RecTrigMode != Clipping)
+                    g.drawHorizontalLine(trigY, left, right);// only draw if in display area
         }
         //----------------------------------------------------------------------------------
         void paintTimeLines(juce::Graphics& g, const juce::Rectangle<int>& gridBounds, const juce::Rectangle<int>& labelBounds, horizontalScale scale)//(g, wavZone, xScale);
@@ -1723,7 +1731,7 @@ public:
         void setYZoomFlag(bool flag) { yZoomFlag = flag; }
         void setXZoomIndex(int zidx) { XZoomIndex = zidx; }
         void setYZoomIndex(int zidx) { YZoomIndex = zidx; }
-
+        void setTriggerMode(int mode) {RecTrigMode = mode;}// set Trigger directio
 
         //----------------------------------------------------------------------------------
     private:
@@ -1788,6 +1796,7 @@ public:
         double thresholdTrigger;
         bool trigEnabled = false;
         
+                
         //----------------------------------------------------------------------------------
         float timeToX(const double time) const
         {

@@ -340,7 +340,8 @@ void MainComponent::onDialogBoxClosed(int result, triggerDlgData *trigDlgData)
             //escopeThumbnail[idx]->setXScale(1); // RelativeToTrigger);
             escopeThumbnail[idx]->setXScale(RelativeToTrigger);
             escopeThumbnail[idx]->setThreshold(thresh);
-            if(idx == chan)
+            escopeThumbnail[idx]->setTriggerMode(direct);
+            if (idx == chan)
                 escopeThumbnail[idx]->setTrigEnabled(true);
             else
                 escopeThumbnail[idx]->setTrigEnabled(false);

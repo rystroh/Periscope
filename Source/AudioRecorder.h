@@ -1,4 +1,5 @@
 #pragma once
+#include "Enums.h"
 //#include "20Hz_Bleep.h";
 //#include "RampPos48000.h"
 //#include "Ramp48000Skipped2.h"
@@ -131,6 +132,7 @@
                 writePosition[idx] = 0;
                 wavaddr[idx] = 0;
                 wavidx[idx] = 0;
+                previousSampleValue[idx] = 0;
                 //wavptr = &Bleep_20Hz[0];
                 //wavptr = &RampPos48000[0];
                 //wavptr = &Ramp48000Skipped2[0];
@@ -204,73 +206,64 @@
             if (currentChan!= RecTrigChannel) //screen non triggering channels
                 return (triggerConditionFound);
 
-            double min = 1, max = -1;
             double smpValue;
             int idx = 0;
+            long longidx = writePosition[currentChan];
+            longidx = wavaddr[currentChan];
+            longidx = wavidx[currentChan] = 0;            
             switch (RecTrigMode)
             {
-                case 0: // getting equal to definite value
+                case Clipping: //0: clipping detection
                     while ((idx < nbSamples) && !triggerConditionFound)
                     {
                         smpValue = buffer->getSample(0, idx);
-                        if (smpValue < min)
-                            min = smpValue;
-                        if (smpValue > max)
-                            max = smpValue;
-                        if (smpValue == thresholdTrigger)
+                        if (((smpValue == previousSampleValue[currentChan])) && (abs(smpValue) >= 0.999))
                         {
                             *trigIndex = idx;
                             triggerConditionFound = true;
                         }
+                        previousSampleValue[currentChan] = smpValue;
                         idx++;
                     }
                     break;
-                case 1: //rising edge condition
+                case ThresholdRising: //1: rising edge condition
                     while ((idx < nbSamples) && !triggerConditionFound)
                     {
                         smpValue = buffer->getSample(0, idx);
-                        if (smpValue < min)
-                            min = smpValue;
-                        if (smpValue > max)
-                            max = smpValue;
-                        if (smpValue > thresholdTrigger)
+                        if ((smpValue >= thresholdTrigger) && (previousSampleValue[currentChan] < thresholdTrigger))
                         {
                             *trigIndex = idx;
                             triggerConditionFound = true;
                         }
+                        previousSampleValue[currentChan] = smpValue;
                         idx++;
                     }
                     break;
-                case 2: //falling edge condition
+                case ThresholdFalling: //2: falling edge condition
                     while ((idx < nbSamples) && !triggerConditionFound)
                     {
                         smpValue = buffer->getSample(0, idx);
-                        if (smpValue < min)
-                            min = smpValue;
-                        if (smpValue > max)
-                            max = smpValue;
-                        if ((smpValue < thresholdTrigger) && (max >= thresholdTrigger))
+                        if ((smpValue <= thresholdTrigger) && (previousSampleValue[currentChan] > thresholdTrigger))
                         {
                             *trigIndex = idx;
                             triggerConditionFound = true;
                         }
                         idx++;
-                    }
+                        previousSampleValue[currentChan] = smpValue;
+                    }                    
                     break;
-                case 3: // rizing or falling edge condition
+                case ThresholdRisingOrFalling: //3: rizing or falling edge condition 
                     while ((idx < nbSamples) && !triggerConditionFound)
                     {
                         smpValue = buffer->getSample(0, idx);
-                        if (smpValue < min)
-                            min = smpValue;
-                        if (smpValue > max)
-                            max = smpValue;
-                        if (((smpValue < thresholdTrigger) && (max >= thresholdTrigger)) || ((smpValue > thresholdTrigger) ))
+                        
+                        if (((smpValue >= thresholdTrigger) && (previousSampleValue[currentChan] < thresholdTrigger)) || ((smpValue <= thresholdTrigger) && (previousSampleValue[currentChan] > thresholdTrigger)))
                         {
                             *trigIndex = idx;
                             triggerConditionFound = true;
                         }
                         idx++;
+                        previousSampleValue[currentChan] = smpValue;
                     }
                     break;
                 default:
@@ -678,7 +671,7 @@
         juce::int64 currentPostTriggerSmpCount = 0;
         juce::int64 maxSmpCount = 0;
         juce::int64 halfMaxSmpCount = 0;
-
+        double previousSampleValue[ESCOPE_CHAN_NB]; //stores value(t-1) for trigger detection 
         unsigned long wavaddr[ESCOPE_CHAN_NB];// = 0;
         unsigned long wavidx[ESCOPE_CHAN_NB];// = 0;
         //following are shared by pointers between recorder and view

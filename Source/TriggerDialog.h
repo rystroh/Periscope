@@ -10,6 +10,7 @@
 
 #pragma once
 #include <JuceHeader.h>
+#include "Enums.h"
 struct triggerDlgData
 {
     bool enable;
@@ -27,7 +28,8 @@ public:
     {
         // Add and configure the label
         inittrigDlgDataAlpha(bufferDlgData);
-        setSize(400, 200);
+        int diaWidth = 500;
+        setSize(diaWidth, 200);
         addAndMakeVisible(triggerEnableLabel);
         triggerEnableLabel.setText("Trigger enable:", juce::dontSendNotification);
         triggerEnableLabel.setJustificationType(juce::Justification::centredLeft);
@@ -39,12 +41,14 @@ public:
         addAndMakeVisible(triggerChannelLabel);
         triggerChannelLabel.setText("Trigger channel:", juce::dontSendNotification);
         addAndMakeVisible(triggerChannelCmbBx);
-        triggerChannelCmbBx.addItem("Channel 1", 1);
-        triggerChannelCmbBx.addItem("Channel 2", 2);
-        triggerChannelCmbBx.addItem("Channel 3", 3);
-        triggerChannelCmbBx.addItem("Channel 4", 4);
+        std::string ChanText;
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+        {
+            ChanText = "Channel " + std::to_string(idx+1);
+            triggerChannelCmbBx.addItem(ChanText, idx+1);
+        }
+ 
         triggerChannelCmbBx.setSelectedItemIndex(trigDlgData.channel-1, true); //triggerChannelCmbBx.setSelectedItemIndex(0, true);
-
         triggerChannelCmbBx.onChange = [this]() { comboBoxChange(); };
 
         addAndMakeVisible(ThresholdLabel);
@@ -69,25 +73,33 @@ public:
         addAndMakeVisible(trigUpDownLabel);
         trigUpDownLabel.setText("Up & Down", juce::dontSendNotification);
 
+        addAndMakeVisible(triggerClippingChkBx);
+        addAndMakeVisible(trigClippingLabel);
+        trigClippingLabel.setText("Clipping", juce::dontSendNotification);
+
         triggerUpChkBx.setRadioGroupId(1);
         triggerDownChkBx.setRadioGroupId(1);
         triggerUpDownChkBx.setRadioGroupId(1);
         
         switch (trigDlgData.direction) {
-        case 1:
-            triggerUpChkBx.setToggleState(true, false);
-            triggerMode = 1;
+        case Clipping:
+            triggerClippingChkBx.setToggleState(true, false);
+            triggerMode = Clipping;
             break;
-        case 2:
-            triggerMode = 2;
+        case ThresholdRising:
+            triggerUpChkBx.setToggleState(true, false);
+            triggerMode = ThresholdRising;
+            break;
+        case ThresholdFalling:
+            triggerMode = ThresholdFalling;
             triggerDownChkBx.setToggleState(true, false);
             break;
-        case 3:
-            triggerMode = 3;
+        case ThresholdRisingOrFalling:
+            triggerMode = ThresholdRisingOrFalling;
             triggerUpDownChkBx.setToggleState(true, false);
             break;
         }
-
+        triggerClippingChkBx.onClick = [this] {checkboxClicked(triggerClippingChkBx); };
         triggerUpChkBx.onClick = [this] {checkboxClicked(triggerUpChkBx); };
         triggerDownChkBx.onClick = [this] {checkboxClicked(triggerDownChkBx); };
         triggerUpDownChkBx.onClick = [this] {checkboxClicked(triggerUpDownChkBx); };
@@ -155,6 +167,9 @@ public:
         trigDownLabel.setBounds(triggerDownChkBx.getX() + triggerDownChkBx.getWidth() , DirectionLabel.getY(), 50, 20);
         triggerUpDownChkBx.setBounds(trigDownLabel.getX() + trigDownLabel.getWidth(), DirectionLabel.getY(), chkBox, 20);
         trigUpDownLabel.setBounds(triggerUpDownChkBx.getX() + triggerUpDownChkBx.getWidth(), DirectionLabel.getY(), 80, 20);
+        triggerClippingChkBx.setBounds(trigUpDownLabel.getX() + trigUpDownLabel.getWidth(), DirectionLabel.getY(), chkBox, 20);
+        trigClippingLabel.setBounds(triggerClippingChkBx.getX() + triggerClippingChkBx.getWidth(), DirectionLabel.getY(), 80, 20);
+        
         subarea = area.removeFromTop(30);
         preTriggerLabel.setBounds(subarea.getX(), subarea.getY(), largerWidth, 20);
         preTriggerLabel.setJustificationType(juce::Justification::centredRight);
@@ -172,19 +187,24 @@ public:
     }
     void checkboxClicked(juce::ToggleButton& button) 
     {
+        if (&button == &triggerClippingChkBx)
+        {
+            triggerMode = Clipping;
+            //DBG("Option 1");
+        }
         if (&button == &triggerUpChkBx)
         {
-            triggerMode = 1;
+            triggerMode = ThresholdRising;
             //DBG("Option 1");
         }
         else if (&button == &triggerDownChkBx)
         {
-            triggerMode = 2;
+            triggerMode = ThresholdFalling;
             //DBG("Option 2");
         }
         else if (&button == &triggerUpDownChkBx)
         {
-            triggerMode = 3;
+            triggerMode = ThresholdRisingOrFalling;
             //DBG("Option 3");
         }
      }
@@ -286,6 +306,8 @@ public:
         juce::Label trigDownLabel;
         juce::ToggleButton triggerUpDownChkBx;
         juce::Label trigUpDownLabel;
+        juce::ToggleButton triggerClippingChkBx;
+        juce::Label trigClippingLabel;
         juce::Label preTriggerLabel;
         juce::Slider preTriggerSlider;
         juce::TextButton okButton;
