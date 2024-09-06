@@ -9,6 +9,7 @@
 #include "ChannelControl.h"
 #include "Header.h"
 #include "TriggerDialog.h"
+#include "PopUpMenu.h"
 
 // Now defined in Projucer Project
 #define option 2 //1 2 or 8

@@ -297,6 +297,9 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
                         escopeThumbnail[idx]->setXZoomIndex(xzidx);
                         escopeThumbnail[idx]->setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
                         escopeThumbnail[idx]->setRange(visibRange); //eScope[idx]->setVisibleRange(visibRange); [1]
+                        DBG("---------------------------------------------------------------");
+                        DBG("changeListenerCallback:xzidx = " << xzidx << " xZoom = " << xZoom);
+                        DBG("---------------------------------------------------------------");
                     }
                     if (targetYZoomFlag != 0)
                     {

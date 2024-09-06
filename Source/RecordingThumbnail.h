@@ -3,6 +3,7 @@
 #include <vector>
 #include <algorithm>
 #include "..\grape\source\grape.h"
+#include "PopUpMenu.h"
 #include "Enums.h"
 enum horizontalScale { Absolute, RelativeToTrigger };
 enum verticalScale { Linear, dB };
@@ -1520,7 +1521,57 @@ public:
         {
              Posi3 = getMouseXYRelative(); // Read Mouse click position
              repaint();
-            //DBG("Mouse.x = " << Posi3.getX());            
+            //DBG("Mouse.x = " << Posi3.getX());
+             if (event.mods.isRightButtonDown())
+             {
+                 // Create a PopupMenu instance
+                 juce::PopupMenu menu;
+
+                 // Add some items to the menu
+                 menu.addItem(Zoom_1_Centered, "Zoom 1:1 Centered");
+                 menu.addItem(Zoom_1_Left, "Zoom 1:1 Left");
+                 menu.addItem(Zoom_1_Right, "Zoom 1:1 Right");
+                 menu.addItem(Zoom_Max_Centered, "Zoom Max Centered");
+                 menu.addItem(Zoom_Out_Full, "Zoom Out Full");
+
+                 // Show the menu and handle the user's choice
+                 menu.showMenuAsync(juce::PopupMenu::Options(),
+                     [this](int selectedId)
+                     {
+                         // Handle the user's selection
+                         int zix;
+                         int xZoom;
+                         juce::Range<double> visibRange;
+
+                         switch (selectedId)
+                         {
+                         case Zoom_1_Centered:
+                             juce::Logger::outputDebugString("Option 1 selected");
+                             zix = 1;
+                             xZoom = 1;
+                             setXZoomIndex(zix);
+                             setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
+                             setRange(visibRange);
+                             break;
+                         case Zoom_Max_Centered:
+                             juce::Logger::outputDebugString("Option 2 selected");
+                             zix = 4;
+                             xZoom = 1;
+                             setXZoomIndex(zix);
+                             setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
+                             setRange(visibRange);
+                             break;
+                         case Zoom_1_Left:
+                             juce::Logger::outputDebugString("Option 3 selected"); 
+                             break;
+                         case Zoom_1_Right:
+                             break;
+                         case Zoom_Out_Full:
+                             break;
+                         default: break; // No option was selected
+                         }
+                     });
+             }
         }
         //----------------------------------------------------------------------------------
         void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override

@@ -82,6 +82,7 @@
       <FILE id="uH9wim" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="uRzeyH" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <FILE id="qN2MUo" name="PopUpMenu.h" compile="0" resource="0" file="Source/PopUpMenu.h"/>
       <FILE id="q4o2GK" name="Header.cpp" compile="1" resource="0" file="Source/Header.cpp"/>
       <FILE id="FV2P25" name="Header.h" compile="0" resource="0" file="Source/Header.h"/>
       <FILE id="vdlKrx" name="RecordingThumbnail.h" compile="0" resource="0"
