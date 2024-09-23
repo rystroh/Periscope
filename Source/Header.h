@@ -49,7 +49,7 @@ private:
     // This button issues a display mode command
     grape::ComboBox menu{ "Mode", grape::ComboBox::HORIZONTAL, grape::ComboBox::ValueType::ID, "", DISPLAY_MODE};
     // This button issues a window size command
-    grape::Slider oscWinSizeSlider{ "Buffer_Size(s)", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
+    grape::Slider oscWinSizeSlider{ "Buffer Size in s", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
     // This button issues a window size command
     grape::Slider ThresholdSlider{ "Threshold", grape::Slider::HORIZONTAL2, "", THRESHOLD_LEVEL };
     

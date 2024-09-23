@@ -177,6 +177,13 @@ public:
             scrollbar.setCurrentRange(visibleRange);
             repaint();
         }
+        //----------------------------------------------------------------------------------
+        juce::Range<double> getEScopeVisibleRange(int index,double timeOffset)
+        {
+            auto thumbnailsize = thumbnail.getTotalLength();
+            double currentlength = getSampleSize();
+            return(visibleRange);
+        }
         //------------------------------------------------------------------------------
         double getTimeStepSize(int displayWidthPix, double wavDurationToDisplaySec)
         {
@@ -1244,6 +1251,7 @@ public:
             juce::Range<double> newRange;
             double thumbnailsize;
             int xzoomticknb;
+            int eScopeID = chanID; // for debug purposes
 
             switch (displayThumbMode)
             {
@@ -1517,9 +1525,11 @@ public:
             Posi3 = getMouseXYRelative(); // Read Mouse  position
             repaint();
         }
+        //----------------------------------------------------------------------------------
         void mouseDown(const juce::MouseEvent& event)
         {
-             Posi3 = getMouseXYRelative(); // Read Mouse click position
+            
+            Posi3 = getMouseXYRelative(); // Read Mouse click position
              repaint();
             //DBG("Mouse.x = " << Posi3.getX());
              if (event.mods.isRightButtonDown())
@@ -1539,37 +1549,48 @@ public:
                      [this](int selectedId)
                      {
                          // Handle the user's selection
-                         int zix;
+                         int eScopeID = chanID;// for debug only
                          int xZoom;
-                         juce::Range<double> visibRange;
-
+                         double ZFactor;
+                         unsigned long zoomInAddress;
+                         xZoom = zoomVector.size();
                          switch (selectedId)
                          {
                          case Zoom_1_Centered:
-                             juce::Logger::outputDebugString("Option 1 selected");
-                             zix = 1;
-                             xZoom = 1;
-                             setXZoomIndex(zix);
-                             setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
-                             setRange(visibRange);
+                             juce::Logger::outputDebugString("Zoom_1_Centered");                             
+                             XZoomIndex = xZoom - 10;
+                             ZFactor = zoomVector.at(XZoomIndex);
+                             zoomInAddress = eBuffer->getNumSamples()/2;
                              break;
                          case Zoom_Max_Centered:
-                             juce::Logger::outputDebugString("Option 2 selected");
-                             zix = 4;
-                             xZoom = 1;
-                             setXZoomIndex(zix);
-                             setDisplayXZoom(xZoom); //eScope[idx]->setXZoom(xZoom); [1]
-                             setRange(visibRange);
+                             juce::Logger::outputDebugString("Zoom_Max_Centered");
+                             XZoomIndex = xZoom - 1;
+                             ZFactor = zoomVector.at(XZoomIndex);
+                             zoomInAddress = eBuffer->getNumSamples() / 2;
                              break;
                          case Zoom_1_Left:
-                             juce::Logger::outputDebugString("Option 3 selected"); 
+                             juce::Logger::outputDebugString("Zoom_1_Left"); 
+                             XZoomIndex = xZoom - 10;
+                             ZFactor = zoomVector.at(XZoomIndex);                             
+                             zoomInAddress = 0;
                              break;
                          case Zoom_1_Right:
+                             juce::Logger::outputDebugString("Zoom_1_Right");
+                             XZoomIndex = xZoom - 10;
+                             ZFactor = zoomVector.at(XZoomIndex);
+                             zoomInAddress = eBuffer->getNumSamples(); //get max
                              break;
                          case Zoom_Out_Full:
+                             juce::Logger::outputDebugString("Zoom_Out_Full");
+                             XZoomIndex = 0;
+                             ZFactor = zoomVector.at(XZoomIndex);                             
+                             zoomInAddress = eBuffer->getNumSamples() / 2;                             
                              break;
                          default: break; // No option was selected
                          }
+                         setDisplayZone(ZFactor, zoomInAddress);
+                         sendChangeMessage();
+                         repaint();
                      });
              }
         }
@@ -1676,16 +1697,16 @@ public:
             setDisplayXZone(zoomfactor, MousePosition);
         }
         //----------------------------------------------------------------------------------
-        float getSampleSize(void)
+        double getSampleSize(void)
         {
-            float sampleTimeInSecond = 0;
+            double sampleTimeInSecond = 0;
             if (displayThumbMode > 3)// if was in triggered mode
             {
                 if(sampleRate < 1 )
                     return(sampleTimeInSecond);
                 else
                 {
-                    sampleTimeInSecond = (float)eBuffer->getNumSamples() / (float)sampleRate;
+                    sampleTimeInSecond = (double)eBuffer->getNumSamples() / (double)sampleRate;
                     return(sampleTimeInSecond);
                 }
             }
@@ -1693,6 +1714,65 @@ public:
             {
                 return( thumbnail.getTotalLength());
             }
+        }
+        //----------------------------------------------------------------------------------
+        void setDisplayZone(double zoomfactor, unsigned long Address)
+        {
+            juce::Point< int >MousePosition;
+            int eScopeID = chanID;
+            displayFullThumb = false;
+            unsigned long bufferSizePoints = eBuffer->getNumSamples();
+            double  waveLength = getSampleSize();
+            if (waveLength > 0)
+            {
+                float invZoom;
+                if (zoomfactor < 1)
+                    invZoom = 1.0 / zoomfactor;
+                auto wavWindowWidth = wavZone.getWidth();//width in pixels 
+                MousePosition.setX(wavWindowWidth / 2.0);
+
+                auto totlen = waveLength; //thumbnail.getTotalLength(); //total length of sample in seconds
+                double displayStartTime, displayEndTime, displayWidth;
+
+                auto thumbArea = getLocalBounds(); //bounds of display zone
+                auto width = getWidth(); // width of Display zone in pixels
+
+                double SampleSize = totlen * sampleRate; //size  of sample in points
+                double Ratio = SampleSize / thumbArea.getWidth();
+                Ratio = (double)SampleSize / (double)wavWindowWidth;
+
+                auto timeAtMousePos = xToTime((float)MousePosition.x);
+                timeAtMousePos = waveLength / (double)2.0;
+
+                double timeAtZoomAddress = (double)waveLength *(double)Address / (double)bufferSizePoints;
+
+                //double PosixRatioPix = (double)width / (double) Posi3.x;
+                double PosixRatioPix = (double)wavWindowWidth / (double)MousePosition.x;
+
+                displayWidth = totlen * zoomfactor / Ratio;
+
+                displayStartTime = timeAtZoomAddress - displayWidth / PosixRatioPix;
+                displayEndTime = displayStartTime + displayWidth;
+                //   DBG("Mouse.x = " << Posi3.x << " PosixRatio = " << PosixRatioPix << " timeAtMousePos = " << timeAtMousePos << "(s) displayStartTime = " << displayStartTime << "(s) displayEndTime = " << displayEndTime << "(s) zoom ratio = " << zoomfactor);
+                if (displayStartTime < 0)
+                {
+                    DBG("setDisplayXZone:displayStartTime = " << displayStartTime);
+                    displayStartTime = 0; // prevent stupid cases
+                    displayEndTime = displayStartTime + displayWidth;
+
+                }
+                if (displayEndTime > totlen)
+                {
+                    DBG("setDisplayXZone:displayEndTime = " << displayEndTime);
+                    displayEndTime = totlen;// prevent stupid cases
+                    displayStartTime = displayEndTime - displayWidth;
+                }
+                setRange({ displayStartTime, displayEndTime });
+                displayThumbMode = 5;
+            }
+            else
+                repaint();
+
         }
         //----------------------------------------------------------------------------------
         void setDisplayXZone(double zoomfactor, juce::Point< int >MousePosition)
@@ -1849,15 +1929,17 @@ public:
         
                 
         //----------------------------------------------------------------------------------
-        float timeToX(const double time) const
+        double timeToX(const double time) const
         {
+            double preciseTime;
             if (visibleRange.getLength() <= 0)
                 return 0;
             //auto width = getWidth();
-            auto width = wavZone.getWidth();
+            double width = wavZone.getWidth();
 
-            return (float)width * (float)((time - visibleRange.getStart()) /
-                visibleRange.getLength());
+            preciseTime = (double)width * ((double)time - (double)visibleRange.getStart()) /
+                (double)visibleRange.getLength();
+            return (preciseTime);
         }
         //----------------------------------------------------------------------------------
         double xToTime(const float x) const
