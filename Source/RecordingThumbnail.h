@@ -7,6 +7,7 @@
 #include "Enums.h"
 enum horizontalScale { Absolute, RelativeToTrigger };
 enum verticalScale { Linear, dB };
+enum displayMode {FullThumb,ScrollingView,Oscilloscope,Zooming,Triggerred,TriggeredZoomed};
     //=====================================================================================
     //class RecordingThumbnail : public juce::Component, 
 class RecordingThumbnail : public grape::Panel,
@@ -406,10 +407,10 @@ public:
             int ret;
             switch (mode)
             {
-                case 0: // linear
+                case Linear: //0: // linear
                     ret = getNiceGainVectLin(bounds.getHeight(), NiceGainVect, NiceGainY);
                     break;
-                case 1: // in dB
+                case dB: //1: // in dB
                     ret = getNiceGainVect(bounds.getHeight(), NiceGainVect, NiceGainY);
                     break;
                 default: // linear
@@ -819,11 +820,11 @@ public:
 
             switch (mode)
             {
-            case 0: // linear
+            case Linear://0: // linear
                 ret = getNiceGainVectLin(textArea.getHeight(), NiceGainVect, NiceGainY);
                 yUnits << " %";
                 break;
-            case 1: // in dB
+            case dB: //1: // in dB
                 ret = getNiceGainVect(textArea.getHeight(), NiceGainVect, NiceGainY);
                 yUnits << " dB";
                 break;
@@ -1255,7 +1256,7 @@ public:
 
             switch (displayThumbMode)
             {
-            case 0: //Full Thumb mode (expand recording data to window when stopping Recording
+            case FullThumb: //0: //Full Thumb mode (expand recording data to window when stopping Recording
                 if (thumbnail.getTotalLength() > 0.0)
                 {
                     endTime = thumbnail.getTotalLength();
@@ -1276,7 +1277,7 @@ public:
                 }
                 break;
 
-            case 1: // recording mode (scrolling data)
+            case ScrollingView://1: // recording mode (scrolling data)
                 if (thumbnail.getTotalLength() > 0.0)
                 {
                     thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
@@ -1285,7 +1286,7 @@ public:
                 }
                 break;
 
-            case 2: //oscilloscope dancing view
+            case Oscilloscope: //2: //oscilloscope dancing view
                 if (thumbnail.getTotalLength() > 0.0)
                 {
                     if (currentlength >= viewSize)
@@ -1301,7 +1302,7 @@ public:
                 }
                 break;
 
-            case 3: // zooming mode
+            case Zooming://3: // zooming mode
                 if (thumbnail.getTotalLength() > 0.0)
                 {
                     thumbnailsize = thumbnail.getTotalLength();
@@ -1319,7 +1320,7 @@ public:
                     thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                 }
                 break;
-            case 4: //oscilloscope with trigger
+            case Triggerred://4: //oscilloscope with trigger
                 if (*bBufferReady)
                 {
                     if (bTriggered)
@@ -1350,7 +1351,7 @@ public:
                 }
                 break;
 
-            case 5: //oscilloscope with trigger Zoom
+            case TriggeredZoomed://5: //oscilloscope with trigger Zoom
                 if (*bBufferReady)
                 {
                     if (bTriggered)
