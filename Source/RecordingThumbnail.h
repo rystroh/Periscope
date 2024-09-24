@@ -80,6 +80,7 @@ public:
     unsigned long* wfStartAddr;
     unsigned long* wfTriggAddr;
     bool* bBufferReady;
+    bool* bBufferUnderRun;
     //------------------------------
     bool repaintBroadcasted = false;
     //----------------------------------------------------------------------------------
@@ -94,6 +95,8 @@ public:
     //----------------------------------------------------------------------------------
     void setBufferReadyAddress(bool* addr) { bBufferReady = addr; }
     //----------------------------------------------------------------------------------
+    void setBufferUnderRunAddress(bool* addr) { bBufferUnderRun = addr; }
+    //----------------------------------------------------------------------------------
     void setViewSize(float dispTime)// sets viewing window size in secondes in oscillo mode
     {
         viewSize = dispTime;
@@ -102,6 +105,8 @@ public:
     void setXScale(int scale) { xScale = (horizontalScale)scale; }
     //----------------------------------------------------------------------------------
     void setYScale(int scale) { yScale = (verticalScale)scale; }
+    //----------------------------------------------------------------------------------
+    void setPreTrigg(int pretrigg) { preTriggerPercent = pretrigg; }
     //----------------------------------------------------------------------------------
     bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
     //----------------------------------------------------------------------------------
@@ -575,7 +580,7 @@ public:
                 }
                 
 
-                if (*ptrTrig < halfBuffer)
+                if ((*ptrTrig < halfBuffer) && bBufferUnderRun)
                 {
                     unsigned long invalidDataAddr = halfBuffer - *ptrTrig;
                     if (invalidDataAddr > startSample)
@@ -1555,27 +1560,28 @@ public:
                          double ZFactor;
                          unsigned long zoomInAddress;
                          xZoom = zoomVector.size();
+                         double pretrigmemratio = (double)preTriggerPercent / (double)100.0;
                          switch (selectedId)
                          {
-                         case Zoom_1_Centered:
+                         case Zoom_1_Centered://display values centered on trigger point
                              juce::Logger::outputDebugString("Zoom_1_Centered");                             
                              XZoomIndex = xZoom - 10;
                              ZFactor = zoomVector.at(XZoomIndex);
-                             zoomInAddress = eBuffer->getNumSamples()/2;
+                             zoomInAddress = (unsigned long)((double)eBuffer->getNumSamples() * pretrigmemratio);
                              break;
-                         case Zoom_Max_Centered:
+                         case Zoom_Max_Centered://display values centered on trigger point
                              juce::Logger::outputDebugString("Zoom_Max_Centered");
                              XZoomIndex = xZoom - 1;
                              ZFactor = zoomVector.at(XZoomIndex);
-                             zoomInAddress = eBuffer->getNumSamples() / 2;
+                             zoomInAddress = (unsigned long)((double)eBuffer->getNumSamples() * pretrigmemratio);
                              break;
-                         case Zoom_1_Left:
+                         case Zoom_1_Left://display values starting at first samples
                              juce::Logger::outputDebugString("Zoom_1_Left"); 
                              XZoomIndex = xZoom - 10;
                              ZFactor = zoomVector.at(XZoomIndex);                             
                              zoomInAddress = 0;
                              break;
-                         case Zoom_1_Right:
+                         case Zoom_1_Right://display values ending at last samples
                              juce::Logger::outputDebugString("Zoom_1_Right");
                              XZoomIndex = xZoom - 10;
                              ZFactor = zoomVector.at(XZoomIndex);
@@ -1585,7 +1591,7 @@ public:
                              juce::Logger::outputDebugString("Zoom_Out_Full");
                              XZoomIndex = 0;
                              ZFactor = zoomVector.at(XZoomIndex);                             
-                             zoomInAddress = eBuffer->getNumSamples() / 2;                             
+                             zoomInAddress = eBuffer->getNumSamples() / 2;    //center                         
                              break;
                          default: break; // No option was selected
                          }
@@ -1919,6 +1925,7 @@ public:
         //int yScale = 0; //0 = linear // 1 = dB
         verticalScale yScale = Linear; //0 = linear // 1 = dB
         
+        int preTriggerPercent = 50; // percentage of buffer allocated to pre trig recording
 
         double ThumbYZoom = 1.0f;
         int YZoomIndex = 8;

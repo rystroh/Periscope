@@ -344,6 +344,7 @@ void MainComponent::onDialogBoxClosed(int result, triggerDlgData *trigDlgData)
             escopeThumbnail[idx]->setXScale(RelativeToTrigger);
             escopeThumbnail[idx]->setThreshold(thresh);
             escopeThumbnail[idx]->setTriggerMode(direct);
+            escopeThumbnail[idx]->setPreTrigg(pretrigg);
             if (idx == chan)
                 escopeThumbnail[idx]->setTrigEnabled(true);
             else
@@ -410,6 +411,7 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         unsigned long* StartAddr = recorder.getStartAddrPtr();
         unsigned long* TriggAddr = recorder.getTriggAddrPtr();
         bool* BufferReady = recorder.getBufferReadyAddrPtr();
+        bool* BufferUnderRun = recorder.getBufferUndeRunAddrPtr();
         recorder.setViewSize(oscilloWinSize);
 
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
@@ -422,6 +424,8 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
             escopeThumbnail[idx]->setBufferStartAddress(StartAddr);   //eScope[idx]->setViewSize(oscilloWinSize);[3]
             escopeThumbnail[idx]->setBufferTriggAddress(TriggAddr);   //eScope[idx]->setViewSize(oscilloWinSize);[4]
             escopeThumbnail[idx]->setBufferReadyAddress(BufferReady); //eScope[idx]->setViewSize(oscilloWinSize);[5]
+            escopeThumbnail[idx]->setBufferUnderRunAddress(BufferUnderRun);
+        
         }
         return true;
     };

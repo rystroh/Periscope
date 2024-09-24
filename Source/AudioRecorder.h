@@ -140,7 +140,8 @@
                 wavptr[idx] = &Ramp120k[0];
             }
             thumbnailWritten = false;
-            bufferWritten = false; 
+            bufferWritten = false;
+            wfBufferUnderRun = true;
         }
         //----------------------------------------------------------------------------------
         void setViewSize(float dispTime)
@@ -169,6 +170,12 @@
             bool* BufferReady;
             BufferReady = &wfBufferReady;//for debug only
             return (&wfBufferReady); }
+        //----------------------------------------------------------------------------------
+        bool* getBufferUndeRunAddrPtr() {
+            bool* BufferUnderRun;
+            BufferUnderRun = &wfBufferUnderRun;//for debug only
+            return (&wfBufferUnderRun);
+        }
         //----------------------------------------------------------------------------------
         void setSampleRate(double smpRate) { sampleRate = smpRate; }
         //----------------------------------------------------------------------------------
@@ -349,6 +356,9 @@
                             currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
                     }
                     writePosition[idx] += numSamples;
+                    
+                    if  (writePosition[idx] >= eScopBufferSize) //check if buff limit reached
+                        wfBufferUnderRun = false;//will grant all data in buffer are valid
                     writePosition[idx] %= eScopBufferSize;
 
                     //now if we have enough samples, pass them to the Thumbnail for display
@@ -679,6 +689,7 @@
         unsigned long wfTriggAddress = 0;
         //std::atomic<bool> 
         bool wfBufferReady = false;
+        bool wfBufferUnderRun = true;
         //end of shared
 
         const float* wavptr[ESCOPE_CHAN_NB];// = nullptr;
