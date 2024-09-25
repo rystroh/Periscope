@@ -4,7 +4,8 @@
 //#include "RampPos48000.h"
 //#include "Ramp48000Skipped2.h"
 //#include "Ramp48000Skipped3.h"
-#include "Ramp120k.h"
+//#include "Ramp120k.h"
+#include "Ramp120kUpDown.h"
 //#include "Ramp_bleep120k.h"
 //namespace juce
 //{
@@ -137,7 +138,8 @@
                 //wavptr = &RampPos48000[0];
                 //wavptr = &Ramp48000Skipped2[0];
                 //wavptr = &Ramp48000Skipped3[0];
-                wavptr[idx] = &Ramp120k[0];
+                //wavptr[idx] = &Ramp120k[0];
+                wavptr[idx] = &Ramp120kUpDown[0];
             }
             thumbnailWritten = false;
             bufferWritten = false;

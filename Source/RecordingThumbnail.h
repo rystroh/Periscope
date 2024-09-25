@@ -580,7 +580,7 @@ public:
                 }
                 
 
-                if ((*ptrTrig < halfBuffer) && bBufferUnderRun)
+                if ((*ptrTrig < halfBuffer) && *bBufferUnderRun)
                 {
                     unsigned long invalidDataAddr = halfBuffer - *ptrTrig;
                     if (invalidDataAddr > startSample)
