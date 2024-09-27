@@ -24,7 +24,7 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     //oscWinSizeSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
     //oscWinSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
     oscWinSizeSlider.setRange(0.05, 5.00, 0.05);
-    oscWinSizeSlider.setValue(2.5f);
+    oscWinSizeSlider.setValue(0.10f);
 
     addAndMakeVisible(load_button);
     addAndMakeVisible(save_button);
@@ -32,7 +32,7 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
 
     addAndMakeVisible(ThresholdSlider);
     ThresholdSlider.setRange(-1.0f, 1.0f, 0.01f);
-    ThresholdSlider.setValue(0.5f);
+    ThresholdSlider.setValue(0.1f);
     addAndMakeVisible(LiveButton);
 
     addAndMakeVisible(yScaleSlider);

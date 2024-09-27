@@ -8,7 +8,11 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     //oscWinSizeSlider.setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
     //oscWinSizeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 72, 32);
     oscWinSizeSlider.setRange(0.05, 5.00, 0.05);
+#if AUDIO_SOURCE == 1 //debug mode
+    oscWinSizeSlider.setValue(0.10f);
+#else
     oscWinSizeSlider.setValue(2.5f);
+#endif
     //oscWinSizeSlider.setTextBoxStyle(oscWinSizeSlider.getTextBoxPosition(), false, newWidth, oscWinSizeSlider.getTextBoxHeight());
 
     chkBoxXLink.setColour(juce::Label::textColourId, gridColour);

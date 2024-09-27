@@ -5,9 +5,6 @@
 #include "..\grape\source\grape.h"
 #include "PopUpMenu.h"
 #include "Enums.h"
-enum horizontalScale { Absolute, RelativeToTrigger };
-enum verticalScale { Linear, dB };
-enum displayMode {FullThumb,ScrollingView,Oscilloscope,Zooming,Triggerred,TriggeredZoomed};
     //=====================================================================================
     //class RecordingThumbnail : public juce::Component, 
 class RecordingThumbnail : public grape::Panel,

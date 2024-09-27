@@ -470,11 +470,22 @@
         //----------------------------------------------------------------------------------
         void saveBufferAsWav(const juce::AudioBuffer<float>& buffer, const juce::File& fileToSave)
         {
+            if (buffer.getNumChannels() == 0 || buffer.getNumSamples() == 0)
+            {
+                DBG("Le buffer est vide ou non initialisé");
+                return;
+            }            
             // Crée un WavAudioFormat pour gérer le format WAV
             juce::WavAudioFormat wavFormat;
 
             // Ouvre un flux de sortie vers le fichier
             std::unique_ptr<juce::FileOutputStream> fileStream(fileToSave.createOutputStream());
+
+            if (fileStream == nullptr || !fileStream->openedOk())
+            {
+                DBG("Impossible de créer ou ouvrir le fichier WAV pour l'écriture");
+                return;
+            }
 
             if (fileStream != nullptr)
             {
@@ -495,8 +506,22 @@
                     fileStream.release();
 
                     // Écrit le contenu du buffer dans le fichier WAV
-                    bool success = writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+                   // bool success = writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+                    // Écrit le contenu du buffer dans le fichier WAV
+                    if (!writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples()))
+                    {
+                        DBG("Erreur lors de l'écriture du buffer dans le fichier WAV");
+                    }
+                    else
+                    {
+                        DBG("Fichier WAV écrit avec succès !");
+                    }
                 }
+                else
+                {
+                    DBG("Impossible de créer un writer pour le format WAV");
+                }
+
             }
         }
         //----------------------------------------------------------------------------------
@@ -504,18 +529,19 @@
         {
             
             juce::String fileName;
-            juce::AudioBuffer<float>* eBuffer;
+            juce::AudioBuffer<float> eBuffer;
 
             for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
             {
                 fileName.clear();
-                //fileName <<"c:/Users/René-Yves/Documents/Juce/Wav/Wave"<<idx<<".wav";
-                fileName << "Wave" << idx << ".wav";
+                //fileName <<"c:/Users/René-Yves/Documents/Juce/Wav/WaveZ"<<idx<<".wav";
+                fileName << "Zave" << idx << ".wav";
                 juce::File fileToSave(fileName);
                 //eBuffer = &eScopeBuffer[idx];
-                eBuffer = &eScopeBuffer[idx];
-                unsigned long ptNb = eBuffer->getNumSamples();
-                saveBufferAsWav(*eBuffer, fileToSave);
+                eBuffer.setSize(1, eScopeBuffer[idx].getNumSamples());
+                eBuffer.copyFrom(0, 0, eScopeBuffer[idx], 0, 0, eScopeBuffer[idx].getNumSamples());
+                unsigned long ptNb = eBuffer.getNumSamples();
+                saveBufferAsWav(eBuffer, fileToSave);
             }
         }
         //----------------------------------------------------------------------------------

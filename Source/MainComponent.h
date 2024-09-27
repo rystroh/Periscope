@@ -76,11 +76,19 @@ public:
     //void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent);
     void initThresholdSettings(void)
     {
+#if AUDIO_SOURCE == 1 //debug mode
+        bufferDlgData.enable = true;
+        bufferDlgData.channel = 1;
+        bufferDlgData.threshold = 0.10f;
+        bufferDlgData.direction = ThresholdRising;
+        bufferDlgData.pretrigger = 50;
+#else
         bufferDlgData.enable = true;
         bufferDlgData.channel = 1;
         bufferDlgData.threshold = 0.50f;
-        bufferDlgData.direction = 2;
+        bufferDlgData.direction = ThresholdRising;
         bufferDlgData.pretrigger = 50;
+#endif
     }
     void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent)
     {

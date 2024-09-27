@@ -218,11 +218,19 @@ public:
     
     void inittrigDlgData2()
     {
+#if AUDIO_SOURCE == 1 //debug mode
+        trigDlgData.enable = true;
+        trigDlgData.channel = 1;
+        trigDlgData.threshold = 0.1;
+        trigDlgData.direction = ThresholdRising;
+        trigDlgData.pretrigger = 50;
+#else
         trigDlgData.enable = true;
         trigDlgData.channel = 1;
         trigDlgData.threshold = 0.5;
-        trigDlgData.direction = 1;
+        trigDlgData.direction = ThresholdRising;
         trigDlgData.pretrigger = 50;
+#endif
     }
     void inittrigDlgData()
     {
