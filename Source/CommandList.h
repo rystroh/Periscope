@@ -10,5 +10,6 @@ enum CommandList {
 	GO_LIVE,
 	THRESHOLD_LEVEL,
 	Y_SCALE,
-	TRIGG
+	TRIGG,
+	SAVE_WAV
 };

@@ -148,6 +148,7 @@ usingCustomDeviceManager(false)
     addCommand(WIN_SIZE, "Window size");
     addCommand(LOAD_SETTINGS, "Load settings");
     addCommand(SAVE_SETTINGS, "Save settings");
+    addCommand(SAVE_WAV, "Save Wav");
     addCommand(GO_LIVE,"Go Live");
     addCommand(THRESHOLD_LEVEL,"Threshold Level");
     addCommand(Y_SCALE, "Y Scale");
@@ -459,6 +460,11 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
                 if (file != juce::File{})
                     mm->saveParameters(file);
             });
+        return true;
+    }
+    case SAVE_WAV:
+    {
+        recorder.saveWaves();
         return true;
     }
     case GO_LIVE:

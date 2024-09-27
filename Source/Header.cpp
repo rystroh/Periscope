@@ -28,6 +28,7 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
 
     addAndMakeVisible(load_button);
     addAndMakeVisible(save_button);
+    addAndMakeVisible(saveWav_button);
 
     addAndMakeVisible(ThresholdSlider);
     ThresholdSlider.setRange(-1.0f, 1.0f, 0.01f);
@@ -70,4 +71,5 @@ void Header::resized()
     save_button.setBounds(load_button.getX() + load_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
     
     trig_button.setBounds(save_button.getX() + save_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth() - 10, recordButton.getHeight());
+    saveWav_button.setBounds(trig_button.getX() + trig_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth() - 10, recordButton.getHeight());
 }

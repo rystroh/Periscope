@@ -44,6 +44,8 @@ private:
 
     grape::PushButton trig_button{ "Trigger Settings", grape::PushButton::NAME, TRIGG };
 
+    grape::PushButton saveWav_button{ "Save Wav", grape::PushButton::NAME, SAVE_WAV };
+
 
     // * Controls whose values are saved in the settings *
     // This button issues a display mode command
