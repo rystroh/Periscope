@@ -14,539 +14,564 @@
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
                               and writes the incoming audio data to a WAV file.          */
-    class AudioRecorder : public juce::AudioIODeviceCallback,
-        public juce::ChangeBroadcaster
+class AudioRecorder : public juce::AudioIODeviceCallback,
+    public juce::ChangeBroadcaster
+{
+public:
+    AudioRecorder(juce::AudioThumbnail& thumbnailToUpdate)
+        //: thumbnail(thumbnailToUpdate)
     {
-    public:
-        AudioRecorder(juce::AudioThumbnail& thumbnailToUpdate)
-            //: thumbnail(thumbnailToUpdate)
-        {
-            backgroundThread.startThread();
-        }
+        backgroundThread.startThread();
+    }
 
-        ~AudioRecorder() override
+    ~AudioRecorder() override
+    {
+        stop();
+    }
+    //---------------------------------------------------------------------------------
+    void AttachThumbnail(juce::AudioThumbnail** ptr, int channelNumber) // thumbnail To Update)
+    {
+        for (int idx = 0; idx < channelNumber; idx++)
         {
-            stop();
+            thmbNail[idx] = *ptr++;
+            //addChangeListener(thmbNail[idx](Listener));
+            //addChangeListener(juce::ChangeListenerthmbNail[idx]));
         }
-        //---------------------------------------------------------------------------------
-        void AttachThumbnail(juce::AudioThumbnail** ptr, int channelNumber) // thumbnail To Update)
-        {
-            for (int idx = 0; idx < channelNumber; idx++)
-            {
-                thmbNail[idx] = *ptr++;
-                //addChangeListener(thmbNail[idx](Listener));
-                //addChangeListener(juce::ChangeListenerthmbNail[idx]));
-            }
-        }
-        //---------------------------------------------------------------------------------
-        void AttachListener(juce::ChangeListener& ptr, int channelNumber) // thumbnail To Update)
-        {
-          /*  juce::ChangeListener& recThmb;
-            for (int idx = 0; idx < channelNumber; idx++)
-            {
-                recThmb = *ptr++;
-                //addChangeListener(thmbNail[idx](Listener));
-                addChangeListener(recThmb);
-            }*/
-        }
-        //---------------------------------------------------------------------------------
-        void startRecording(const juce::File& file)
-        {
-            stop();
+    }
+    //---------------------------------------------------------------------------------
+    void AttachListener(juce::ChangeListener& ptr, int channelNumber) // thumbnail To Update)
+    {
+        /*  juce::ChangeListener& recThmb;
+          for (int idx = 0; idx < channelNumber; idx++)
+          {
+              recThmb = *ptr++;
+              //addChangeListener(thmbNail[idx](Listener));
+              addChangeListener(recThmb);
+          }*/
+    }
+    //---------------------------------------------------------------------------------
+    void startRecording(const juce::File& file)
+    {
+        stop();
 
-            if (sampleRate > 0)
-            {
-                // Create an OutputStream to write to our destination file...
-                file.deleteFile();
+        if (sampleRate > 0)
+        {
+            // Create an OutputStream to write to our destination file...
+            file.deleteFile();
 
-                if (auto fileStream = std::unique_ptr<juce::FileOutputStream>(file.createOutputStream()))
+            if (auto fileStream = std::unique_ptr<juce::FileOutputStream>(file.createOutputStream()))
+            {
+                // Now create a WAV writer object that writes to our output stream...
+                juce::WavAudioFormat wavFormat;
+
+                if (auto writer = wavFormat.createWriterFor(fileStream.get(), sampleRate, chanNb, bitDepth, {}, 0))
                 {
-                    // Now create a WAV writer object that writes to our output stream...
-                    juce::WavAudioFormat wavFormat;
+                    fileStream.release(); // (passes responsibility for deleting the stream 
+                                         // to the writer object that is now using it)
 
-                    if (auto writer = wavFormat.createWriterFor(fileStream.get(), sampleRate, chanNb, bitDepth, {}, 0))
-                    {
-                        fileStream.release(); // (passes responsibility for deleting the stream 
-                                             // to the writer object that is now using it)
+                    // Now we'll create one of these helper objects which will act as a FIFO
+                    // buffer, and will write the data to disk on our background thread.
+                    threadedWriter.reset(new juce::AudioFormatWriter::ThreadedWriter(writer, backgroundThread, 32768));
 
-                        // Now we'll create one of these helper objects which will act as a FIFO
-                        // buffer, and will write the data to disk on our background thread.
-                        threadedWriter.reset(new juce::AudioFormatWriter::ThreadedWriter(writer, backgroundThread, 32768));
+                    // Reset our recording thumbnail
+                    //thumbnail.reset(writer->getNumChannels(), writer->getSampleRate());
+                    thmbNail[0]->reset(writer->getNumChannels(), writer->getSampleRate());
+                    nextSampleNum = 0;
 
-                        // Reset our recording thumbnail
-                        //thumbnail.reset(writer->getNumChannels(), writer->getSampleRate());
-                        thmbNail[0]->reset(writer->getNumChannels(), writer->getSampleRate());
-                        nextSampleNum = 0;
-
-                        // And now, swap over our active writer pointer so that the audio 
-                        //callback will start using it..
-                        const juce::ScopedLock sl(writerLock);
-                        activeWriter = threadedWriter.get();
-                    }
+                    // And now, swap over our active writer pointer so that the audio 
+                    //callback will start using it..
+                    const juce::ScopedLock sl(writerLock);
+                    activeWriter = threadedWriter.get();
                 }
             }
         }
-        //----------------------------------------------------------------------------------
-        void stop()
+    }
+    //----------------------------------------------------------------------------------
+    void stop()
+    {
+        // 1st, clear this pter to stop the audio callback from using our writer object..
         {
-            // 1st, clear this pter to stop the audio callback from using our writer object..
-            {
-                const juce::ScopedLock sl(writerLock);
-                activeWriter = nullptr;
-            }
-            // Now we can delete the writer object. It's done in this order because the deletion
-            // could take a little time while remaining data gets flushed to disk, 
-            // so it's best to avoid blocking the audio callback while this happens.
-            threadedWriter.reset();
-        }
-        //----------------------------------------------------------------------------------
-        bool isRecording() const
-        {
-            return activeWriter.load() != nullptr;
-        }
-        //----------------------------------------------------------------------------------
-        void audioDeviceAboutToStart(juce::AudioIODevice* device) override
-        {
-            sampleRate = device->getCurrentSampleRate();
-            samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
-        }
-        //----------------------------------------------------------------------------------
-        void prepareToPlay(int smpPerBlockExpected, double smpRate)
-        {
-            int eScopeChanNb = ESCOPE_CHAN_NB;
-            sampleRate = smpRate;
-            samplesPerBlockExpected = smpPerBlockExpected;
-
-            eScopBufferSize = maxSmpCount;// (int)(smpRate * 2.0); //2 seconds
-
-            double divider;
-            int    remainer;
-            divider = (double)eScopBufferSize / (double)smpPerBlockExpected;
-            remainer = (int)eScopBufferSize % (int)smpPerBlockExpected;
-            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
-            {
-                eScopeBuffer[idx].setSize(1, (int)eScopBufferSize);
-                eScopeBuffer[idx].clear();
-            }
-            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
-            {
-                writePosition[idx] = 0;
-                wavaddr[idx] = 0;
-                wavidx[idx] = 0;
-                previousSampleValue[idx] = 0;
-                //wavptr = &Bleep_20Hz[0];
-                //wavptr = &RampPos48000[0];
-                //wavptr = &Ramp48000Skipped2[0];
-                //wavptr = &Ramp48000Skipped3[0];
-                //wavptr[idx] = &Ramp120k[0];
-                wavptr[idx] = &Ramp120kUpDown[0];
-            }
-            thumbnailWritten = false;
-            bufferWritten = false;
-            wfBufferUnderRun = true;
-        }
-        //----------------------------------------------------------------------------------
-        void setViewSize(float dispTime)
-        {
-            thumbnailSize = dispTime * sampleRate;
-            double flBlockNb = (double)thumbnailSize / (double)samplesPerBlockExpected + 0.5;
-            int smpBlockNb = (int)flBlockNb;
-            maxSmpCount = smpBlockNb * samplesPerBlockExpected; //make it multiple of block Size
-            halfMaxSmpCount = (int)maxSmpCount / 2;
-            thumbnailSize = maxSmpCount;
-
-            float remain = (int)maxSmpCount % 2;
-            if (remain > 0)
-            {
-                DBG("Odd MacSmpCount");
-            }
-        }
-        //----------------------------------------------------------------------------------
-        juce::AudioBuffer<float>* getBufferPtr(int trackID) { return (&eScopeBuffer[trackID]); }
-        //----------------------------------------------------------------------------------
-        unsigned long* getStartAddrPtr() { return (&wfStartAddress); }
-        //----------------------------------------------------------------------------------
-        unsigned long* getTriggAddrPtr() { return (&wfTriggAddress); }
-        //----------------------------------------------------------------------------------
-        bool* getBufferReadyAddrPtr() { 
-            bool* BufferReady;
-            BufferReady = &wfBufferReady;//for debug only
-            return (&wfBufferReady); }
-        //----------------------------------------------------------------------------------
-        bool* getBufferUndeRunAddrPtr() {
-            bool* BufferUnderRun;
-            BufferUnderRun = &wfBufferUnderRun;//for debug only
-            return (&wfBufferUnderRun);
-        }
-        //----------------------------------------------------------------------------------
-        void setSampleRate(double smpRate) { sampleRate = smpRate; }
-        //----------------------------------------------------------------------------------
-        double getSampleRate(void) { return(sampleRate); }
-        //----------------------------------------------------------------------------------
-        bool setSampleDepth(int depth)
-        {
-            int possibleDepth[] = { 8, 16, 24 };
-            int n = sizeof(possibleDepth) / sizeof(*possibleDepth);
-            bool exists = std::find(possibleDepth, possibleDepth + n, depth) != possibleDepth
-                + n;
-            if (exists) {
-                bitDepth = depth;
-            }
-            return(exists);
-        }
-        //----------------------------------------------------------------------------------
-        bool setSampleChanNb(int chNb)
-        {
-            if ((chNb == 1) || (chNb == 2))
-            {
-                chanNb = chNb;
-                return(true);
-            }
-            else
-                return(false);
-        }
-        //----------------------------------------------------------------------------------
-        void audioDeviceStopped() override { sampleRate = 0; }
-        //----------------------------------------------------------------------------------
-        bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, juce::AudioBuffer<float>* buffer, int currentChan)
-        {
-            // check trigger condition in block of samples
-            bool triggerConditionFound = false;
-            if (currentChan!= RecTrigChannel) //screen non triggering channels
-                return (triggerConditionFound);
-
-            double smpValue;
-            int idx = 0;
-            long longidx = writePosition[currentChan];
-            longidx = wavaddr[currentChan];
-            longidx = wavidx[currentChan] = 0;            
-            switch (RecTrigMode)
-            {
-                case Clipping: //0: clipping detection
-                    while ((idx < nbSamples) && !triggerConditionFound)
-                    {
-                        smpValue = buffer->getSample(0, idx);
-                        if (((smpValue == previousSampleValue[currentChan])) && (abs(smpValue) >= 0.999))
-                        {
-                            *trigIndex = idx;
-                            triggerConditionFound = true;
-                        }
-                        previousSampleValue[currentChan] = smpValue;
-                        idx++;
-                    }
-                    break;
-                case ThresholdRising: //1: rising edge condition
-                    while ((idx < nbSamples) && !triggerConditionFound)
-                    {
-                        smpValue = buffer->getSample(0, idx);
-                        if ((smpValue >= thresholdTrigger) && (previousSampleValue[currentChan] < thresholdTrigger))
-                        {
-                            *trigIndex = idx;
-                            triggerConditionFound = true;
-                        }
-                        previousSampleValue[currentChan] = smpValue;
-                        idx++;
-                    }
-                    break;
-                case ThresholdFalling: //2: falling edge condition
-                    while ((idx < nbSamples) && !triggerConditionFound)
-                    {
-                        smpValue = buffer->getSample(0, idx);
-                        if ((smpValue <= thresholdTrigger) && (previousSampleValue[currentChan] > thresholdTrigger))
-                        {
-                            *trigIndex = idx;
-                            triggerConditionFound = true;
-                        }
-                        idx++;
-                        previousSampleValue[currentChan] = smpValue;
-                    }                    
-                    break;
-                case ThresholdRisingOrFalling: //3: rizing or falling edge condition 
-                    while ((idx < nbSamples) && !triggerConditionFound)
-                    {
-                        smpValue = buffer->getSample(0, idx);
-                        
-                        if (((smpValue >= thresholdTrigger) && (previousSampleValue[currentChan] < thresholdTrigger)) || ((smpValue <= thresholdTrigger) && (previousSampleValue[currentChan] > thresholdTrigger)))
-                        {
-                            *trigIndex = idx;
-                            triggerConditionFound = true;
-                        }
-                        idx++;
-                        previousSampleValue[currentChan] = smpValue;
-                    }
-                    break;
-                default:
-                    break;
-
-            }
-            
-            return (triggerConditionFound);
-        }
-        //----------------------------------------------------------------------------------
-        void audioDeviceIOCallbackWithContext(const float* const* inputChannelData,
-            int numInputChannels,
-            float* const* outputChannelData,
-            int numOutputChannels,
-            int numSamples,
-            const juce::AudioIODeviceCallbackContext& context) override
-        {            
-            ignoreUnused(context);
-            //sendSynchronousChangeMessage(); https://docs.juce.com/master/classMessageManagerLock.html#details
             const juce::ScopedLock sl(writerLock);
-            /*
-                        if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
-                        {
-                            activeWriter.load()->write(inputChannelData, numSamples);
-                            // Create an AudioBuffer to wrap our incoming data, note that this does no
-                            //allocations or copies, it simply references our input data
-                            AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
-                            thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                            nextSampleNum += numSamples;
-                        }*/
-            if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopBufferSize>0)
+            activeWriter = nullptr;
+        }
+        // Now we can delete the writer object. It's done in this order because the deletion
+        // could take a little time while remaining data gets flushed to disk, 
+        // so it's best to avoid blocking the audio callback while this happens.
+        threadedWriter.reset();
+    }
+    //----------------------------------------------------------------------------------
+    bool isRecording() const
+    {
+        return activeWriter.load() != nullptr;
+    }
+    //----------------------------------------------------------------------------------
+    void audioDeviceAboutToStart(juce::AudioIODevice* device) override
+    {
+        sampleRate = device->getCurrentSampleRate();
+        samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
+    }
+    //----------------------------------------------------------------------------------
+    void prepareToPlay(int smpPerBlockExpected, double smpRate)
+    {
+        int eScopeChanNb = ESCOPE_CHAN_NB;
+        sampleRate = smpRate;
+        samplesPerBlockExpected = smpPerBlockExpected;
+
+        eScopBufferSize = maxSmpCount;// (int)(smpRate * 2.0); //2 seconds
+
+        double divider;
+        int    remainer;
+        divider = (double)eScopBufferSize / (double)smpPerBlockExpected;
+        remainer = (int)eScopBufferSize % (int)smpPerBlockExpected;
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+        {
+            eScopeBuffer[idx].setSize(1, (int)eScopBufferSize);
+            eScopeBuffer[idx].clear();
+        }
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+        {
+            writePosition[idx] = 0;
+            wavaddr[idx] = 0;
+            wavidx[idx] = 0;
+            previousSampleValue[idx] = 0;
+            //wavptr = &Bleep_20Hz[0];
+            //wavptr = &RampPos48000[0];
+            //wavptr = &Ramp48000Skipped2[0];
+            //wavptr = &Ramp48000Skipped3[0];
+            //wavptr[idx] = &Ramp120k[0];
+            wavptr[idx] = &Ramp120kUpDown[0];
+        }
+        thumbnailWritten = false;
+        bufferWritten = false;
+        wfBufferUnderRun = true;
+    }
+    //----------------------------------------------------------------------------------
+    void setViewSize(float dispTime)
+    {
+        thumbnailSize = dispTime * sampleRate;
+        double flBlockNb = (double)thumbnailSize / (double)samplesPerBlockExpected + 0.5;
+        int smpBlockNb = (int)flBlockNb;
+        maxSmpCount = smpBlockNb * samplesPerBlockExpected; //make it multiple of block Size
+        halfMaxSmpCount = (int)maxSmpCount / 2;
+        thumbnailSize = maxSmpCount;
+
+        float remain = (int)maxSmpCount % 2;
+        if (remain > 0)
+        {
+            DBG("Odd MacSmpCount");
+        }
+    }
+    //----------------------------------------------------------------------------------
+    juce::AudioBuffer<float>* getBufferPtr(int trackID) { return (&eScopeBuffer[trackID]); }
+    //----------------------------------------------------------------------------------
+    unsigned long* getStartAddrPtr() { return (&wfStartAddress); }
+    //----------------------------------------------------------------------------------
+    unsigned long* getTriggAddrPtr() { return (&wfTriggAddress); }
+    //----------------------------------------------------------------------------------
+    bool* getBufferReadyAddrPtr() {
+        bool* BufferReady;
+        BufferReady = &wfBufferReady;//for debug only
+        return (&wfBufferReady);
+    }
+    //----------------------------------------------------------------------------------
+    bool* getBufferUndeRunAddrPtr() {
+        bool* BufferUnderRun;
+        BufferUnderRun = &wfBufferUnderRun;//for debug only
+        return (&wfBufferUnderRun);
+    }
+    //----------------------------------------------------------------------------------
+    void setSampleRate(double smpRate) { sampleRate = smpRate; }
+    //----------------------------------------------------------------------------------
+    double getSampleRate(void) { return(sampleRate); }
+    //----------------------------------------------------------------------------------
+    bool setSampleDepth(int depth)
+    {
+        int possibleDepth[] = { 8, 16, 24 };
+        int n = sizeof(possibleDepth) / sizeof(*possibleDepth);
+        bool exists = std::find(possibleDepth, possibleDepth + n, depth) != possibleDepth
+            + n;
+        if (exists) {
+            bitDepth = depth;
+        }
+        return(exists);
+    }
+    //----------------------------------------------------------------------------------
+    bool setSampleChanNb(int chNb)
+    {
+        if ((chNb == 1) || (chNb == 2))
+        {
+            chanNb = chNb;
+            return(true);
+        }
+        else
+            return(false);
+    }
+    //----------------------------------------------------------------------------------
+    void audioDeviceStopped() override { sampleRate = 0; }
+    //----------------------------------------------------------------------------------
+    bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, juce::AudioBuffer<float>* buffer, int currentChan)
+    {
+        // check trigger condition in block of samples
+        bool triggerConditionFound = false;
+        if (currentChan != RecTrigChannel) //screen non triggering channels
+            return (triggerConditionFound);
+
+        double smpValue;
+        int idx = 0;
+        long longidx = writePosition[currentChan];
+        longidx = wavaddr[currentChan];
+        longidx = wavidx[currentChan] = 0;
+        switch (RecTrigMode)
+        {
+        case Clipping: //0: clipping detection
+            while ((idx < nbSamples) && !triggerConditionFound)
             {
-                //activeWriter.load()->write(&inputChannelData[chanID], numSamples);
-                //
-                // Create an AudioBuffer to wrap our incoming data, note that this does no 
-                //allocations or copies, it simply references our input data
-                //juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-                juce::AudioBuffer<float> bufferz[ESCOPE_CHAN_NB];
-                //int idx = 0;
-                int eScopChanNb = ESCOPE_CHAN_NB;
-                for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+                smpValue = buffer->getSample(0, idx);
+                if (((smpValue == previousSampleValue[currentChan])) && (abs(smpValue) >= 0.999))
                 {
-                    bufferz[idx].setDataToReferTo(const_cast<float**> (&inputChannelData[idx]), 1, numSamples);
-                    auto* channelData = bufferz[idx].getWritePointer(0);
+                    *trigIndex = idx;
+                    triggerConditionFound = true;
+                }
+                previousSampleValue[currentChan] = smpValue;
+                idx++;
+            }
+            break;
+        case ThresholdRising: //1: rising edge condition
+            while ((idx < nbSamples) && !triggerConditionFound)
+            {
+                smpValue = buffer->getSample(0, idx);
+                if ((smpValue >= thresholdTrigger) && (previousSampleValue[currentChan] < thresholdTrigger))
+                {
+                    *trigIndex = idx;
+                    triggerConditionFound = true;
+                }
+                previousSampleValue[currentChan] = smpValue;
+                idx++;
+            }
+            break;
+        case ThresholdFalling: //2: falling edge condition
+            while ((idx < nbSamples) && !triggerConditionFound)
+            {
+                smpValue = buffer->getSample(0, idx);
+                if ((smpValue <= thresholdTrigger) && (previousSampleValue[currentChan] > thresholdTrigger))
+                {
+                    *trigIndex = idx;
+                    triggerConditionFound = true;
+                }
+                idx++;
+                previousSampleValue[currentChan] = smpValue;
+            }
+            break;
+        case ThresholdRisingOrFalling: //3: rizing or falling edge condition 
+            while ((idx < nbSamples) && !triggerConditionFound)
+            {
+                smpValue = buffer->getSample(0, idx);
+
+                if (((smpValue >= thresholdTrigger) && (previousSampleValue[currentChan] < thresholdTrigger)) || ((smpValue <= thresholdTrigger) && (previousSampleValue[currentChan] > thresholdTrigger)))
+                {
+                    *trigIndex = idx;
+                    triggerConditionFound = true;
+                }
+                idx++;
+                previousSampleValue[currentChan] = smpValue;
+            }
+            break;
+        default:
+            break;
+
+        }
+
+        return (triggerConditionFound);
+    }
+    //----------------------------------------------------------------------------------
+    void audioDeviceIOCallbackWithContext(const float* const* inputChannelData,
+        int numInputChannels,
+        float* const* outputChannelData,
+        int numOutputChannels,
+        int numSamples,
+        const juce::AudioIODeviceCallbackContext& context) override
+    {
+        ignoreUnused(context);
+        //sendSynchronousChangeMessage(); https://docs.juce.com/master/classMessageManagerLock.html#details
+        const juce::ScopedLock sl(writerLock);
+        /*
+                    if (activeWriter.load() != nullptr && numInputChannels >= thumbnail.getNumChannels())
+                    {
+                        activeWriter.load()->write(inputChannelData, numSamples);
+                        // Create an AudioBuffer to wrap our incoming data, note that this does no
+                        //allocations or copies, it simply references our input data
+                        AudioBuffer<float> buffer(const_cast<float**> (inputChannelData), thumbnail.getNumChannels(), numSamples);
+                        thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                        nextSampleNum += numSamples;
+                    }*/
+        if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopBufferSize>0)
+        {
+            //activeWriter.load()->write(&inputChannelData[chanID], numSamples);
+            //
+            // Create an AudioBuffer to wrap our incoming data, note that this does no 
+            //allocations or copies, it simply references our input data
+            //juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+            juce::AudioBuffer<float> bufferz[ESCOPE_CHAN_NB];
+            //int idx = 0;
+            int eScopChanNb = ESCOPE_CHAN_NB;
+            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+            {
+                bufferz[idx].setDataToReferTo(const_cast<float**> (&inputChannelData[idx]), 1, numSamples);
+                auto* channelData = bufferz[idx].getWritePointer(0);
 
 #if AUDIO_SOURCE == 1 //overwrite stream with test wav file
-                    overwriteStreamWithTestWav(idx, channelData, bufferz[idx].getNumSamples());
+                overwriteStreamWithTestWav(idx, channelData, bufferz[idx].getNumSamples());
 #endif
-                    TestChannelID();
-                    // write in circulare buffer for later display
-                    if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
-                    {
-                        eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, numSamples);
-                    }
-                    else//last partial buffer to copy
-                    {
-                        int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
-                        eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, nbOfSmpToCopy);
-                    }
+                TestChannelID();
+                // write in circulare buffer for later display
+                if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
+                {
+                    eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, numSamples);
+                }
+                else//last partial buffer to copy
+                {
+                    int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
+                    eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, nbOfSmpToCopy);
+                }
 
 
-                    // check if any sample in this new block is above threshold -> triggering display
-                    if (currentPostTriggerSmpCount == 0)
-                    {
-                        unsigned int triggerIndex;
+                // check if any sample in this new block is above threshold -> triggering display
+                if (currentPostTriggerSmpCount == 0)
+                {
+                    unsigned int triggerIndex;
 
-                        if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
-                            ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
+                    if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
+                        ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
+                    {
+                        bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx], idx);
+                        *thumbnailTriggeredPtr = bTriggered;
+                        if (bTriggered)
                         {
-                            bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx], idx);
-                            *thumbnailTriggeredPtr = bTriggered;
-                            if (bTriggered)
-                            {
-                                triggAddress = writePosition[idx] + triggerIndex;
-                                triggAddress %= eScopBufferSize; //wrap if needed
-                                currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
-                            }
+                            triggAddress = writePosition[idx] + triggerIndex;
+                            triggAddress %= eScopBufferSize; //wrap if needed
+                            currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
                         }
-                    }
-                    else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
-                    {
-                        if (idx == ESCOPE_CHAN_NB-1)
-                            currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
-                    }
-                    writePosition[idx] += numSamples;
-                    
-                    if  (writePosition[idx] >= eScopBufferSize) //check if buff limit reached
-                        wfBufferUnderRun = false;//will grant all data in buffer are valid
-                    writePosition[idx] %= eScopBufferSize;
-
-                    //now if we have enough samples, pass them to the Thumbnail for display
-                    //thumbnailWritten = WriteThumbnail(); // using numSamples ?
-                    // 
-                    //check if we have enough sample if yes, flag display to update
-                    if (idx == ESCOPE_CHAN_NB - 1)
-                    {
-                        bufferWritten = PrepareBufferPointers();
-                        if (bufferWritten) // to allow tests / break points ONLY !
-                        {
-                            wfBufferReady = true;
-                            sendChangeMessage();
-                        }
-                        else
-                            wfBufferReady = false;
                     }
                 }
-/*
+                else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
+                {
+                    if (idx == ESCOPE_CHAN_NB - 1)
+                        currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
+                }
+                writePosition[idx] += numSamples;
+
+                if (writePosition[idx] >= eScopBufferSize) //check if buff limit reached
+                    wfBufferUnderRun = false;//will grant all data in buffer are valid
+                writePosition[idx] %= eScopBufferSize;
+
+                //now if we have enough samples, pass them to the Thumbnail for display
+                //thumbnailWritten = WriteThumbnail(); // using numSamples ?
+                // 
+                //check if we have enough sample if yes, flag display to update
+                if (idx == ESCOPE_CHAN_NB - 1)
+                {
+                    bufferWritten = PrepareBufferPointers();
                     if (bufferWritten) // to allow tests / break points ONLY !
                     {
                         wfBufferReady = true;
                         sendChangeMessage();
                     }
-                    else if (wfBufferReady)
-                        wfBufferReady = true; //for debug
                     else
                         wfBufferReady = false;
                 }
-                wfBufferReady = false;*/
             }
-            //Mode "Recording continuously" 
-            if (activeWriter.load() != nullptr && chanID < numInputChannels)
-            {
-                activeWriter.load()->write(&inputChannelData[chanID], numSamples);
-                // Create an AudioBuffer to wrap our incoming data, note that this does no 
-                //allocations or copies, it simply references our input data
-                juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-                //thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-                thmbNail[0]->addBlock(nextSampleNum, buffer, 0, numSamples);
-                nextSampleNum += numSamples;
-            }
-
-            // We need to clear the output buffers, in case they're full of junk..
-            for (int i = 0; i < numOutputChannels; ++i)
-                if (outputChannelData[i] != nullptr)
-                    juce::FloatVectorOperations::clear(outputChannelData[i], numSamples);
+            /*
+                                if (bufferWritten) // to allow tests / break points ONLY !
+                                {
+                                    wfBufferReady = true;
+                                    sendChangeMessage();
+                                }
+                                else if (wfBufferReady)
+                                    wfBufferReady = true; //for debug
+                                else
+                                    wfBufferReady = false;
+                            }
+                            wfBufferReady = false;*/
         }
-        //----------------------------------------------------------------------------------
-        bool PrepareBufferPointers(void)
+        //Mode "Recording continuously" 
+        if (activeWriter.load() != nullptr && chanID < numInputChannels)
         {
-            if ((currentPostTriggerSmpCount >= halfMaxSmpCount) && (bufferWritten == false))
-            {
-                bufferWritten = true;
-                //copy data that are before the Threshold
-                if (triggAddress >= halfMaxSmpCount) //we have enough data before trig 
-                {
-                    int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
-                    int smpCount;
-                    juce::int64 nbOfSmpInThumbnail;
-                    if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
-                    {
-                        smpCount = triggAddress + halfMaxSmpCount;
-                        eScopBufferSize = 0; // reset flag for tests
-                        wfStartAddress = smpCount;
-                        wfTriggAddress = triggAddress;
-                    }
-                    else //tail data wrapped 
-                    {
+            activeWriter.load()->write(&inputChannelData[chanID], numSamples);
+            // Create an AudioBuffer to wrap our incoming data, note that this does no 
+            //allocations or copies, it simply references our input data
+            juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
+            //thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+            thmbNail[0]->addBlock(nextSampleNum, buffer, 0, numSamples);
+            nextSampleNum += numSamples;
+        }
 
-                        smpCount = eScopBufferSize - triggAddress + halfMaxSmpCount;
-                        unsigned long copyStart = triggAddress - halfMaxSmpCount;
-                        smpCount = maxSmpCount - smpCount;
-                        eScopBufferSize = 0; // reset flag for tests
-                        wfStartAddress = smpCount;
-                        wfTriggAddress = triggAddress;
+        // We need to clear the output buffers, in case they're full of junk..
+        for (int i = 0; i < numOutputChannels; ++i)
+            if (outputChannelData[i] != nullptr)
+                juce::FloatVectorOperations::clear(outputChannelData[i], numSamples);
+    }
+    //----------------------------------------------------------------------------------
+    bool PrepareBufferPointers(void)
+    {
+        if ((currentPostTriggerSmpCount >= halfMaxSmpCount) && (bufferWritten == false))
+        {
+            bufferWritten = true;
+            //copy data that are before the Threshold
+            if (triggAddress >= halfMaxSmpCount) //we have enough data before trig 
+            {
+                int offsetInEScopeBuffer = triggAddress - halfMaxSmpCount;
+                int smpCount;
+                juce::int64 nbOfSmpInThumbnail;
+                if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
+                {
+                    smpCount = triggAddress + halfMaxSmpCount;
+                    eScopBufferSize = 0; // reset flag for tests
+                    wfStartAddress = smpCount;
+                    wfTriggAddress = triggAddress;
+                }
+                else //tail data wrapped 
+                {
+
+                    smpCount = eScopBufferSize - triggAddress + halfMaxSmpCount;
+                    unsigned long copyStart = triggAddress - halfMaxSmpCount;
+                    smpCount = maxSmpCount - smpCount;
+                    eScopBufferSize = 0; // reset flag for tests
+                    wfStartAddress = smpCount;
+                    wfTriggAddress = triggAddress;
+                }
+            }
+            else //head data wrapped or not enough data recorded before trigger point
+            {
+                int offsetInEScopeBuffer = 0;
+                int smpCount;
+                if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
+                {
+                    smpCount = triggAddress + halfMaxSmpCount;
+                    int paddingSmpNb = halfMaxSmpCount - triggAddress;
+                    int paddingPtrinBuffer = eScopBufferSize - paddingSmpNb;
+                    eScopBufferSize = 0; // reset flag for tests
+                    wfStartAddress = paddingPtrinBuffer;
+                    wfTriggAddress = triggAddress;
+                }
+                else //should never happen
+                {
+                    eScopBufferSize = 0; // reset flag for tests
+                    wfStartAddress = 0;
+                    wfTriggAddress = triggAddress;
+                }
+            }
+            currentPostTriggerSmpCount = 0;
+            //thumbnail.reset(1, sampleRate, 0); //[ToBeChanged]
+            thmbNail[0]->reset(1, sampleRate, 0);
+            return(true);
+        }
+        else
+            return(false);
+    }
+    //----------------------------------------------------------------------------------
+    void saveBufferAsWav(const juce::AudioBuffer<float>& buffer, const juce::File& fileToSave)
+    {
+        if (buffer.getNumChannels() == 0 || buffer.getNumSamples() == 0)
+        {
+            DBG("Le buffer est vide ou non initialisé");
+            return;
+        }        
+        juce::WavAudioFormat wavFormat; // Crée un WavAudioFormat pour gérer le format WAV
+        // Ouvre un flux de sortie vers le fichier
+        std::unique_ptr<juce::FileOutputStream> fileStream(fileToSave.createOutputStream());
+
+        int buffSize;
+        buffSize = buffer.getNumSamples();
+
+        if (fileStream == nullptr || !fileStream->openedOk())
+        {
+            DBG("Impossible de créer ou ouvrir le fichier WAV pour l'écriture");
+            return;
+        }
+
+        if (fileStream != nullptr)
+        {
+            // Crée un AudioFormatWriter pour écrire les données du buffer dans le fichier WAV
+            int bitDepth = 16;
+            double sampleRate = 48000.0;
+            unsigned int chanNb = 1;
+
+            std::unique_ptr<juce::AudioFormatWriter> writer;
+            writer.reset(wavFormat.createWriterFor(fileStream.get(),
+                48000.0,
+                buffer.getNumChannels(),
+                24,
+                {},
+                0));
+
+            if (writer != nullptr)
+            {
+                // Libère le flux, car l'AudioFormatWriter va maintenant le gérer
+                fileStream.release();
+                // Écrit le contenu du buffer dans le fichier WAV
+                auto buffSize = buffer.getNumSamples();
+                auto chanNb = buffer.getNumChannels();
+                float wavData;
+                for (int xx = 0; xx < chanNb; xx++)
+                {
+                    for (int yy = 0; yy < buffSize; yy++)
+                    {
+                        wavData = buffer.getSample(xx, yy);
                     }
                 }
-                else //head data wrapped or not enough data recorded before trigger point
+                //check if buffer 
+                if (!writer->writeFromAudioSampleBuffer(buffer, 0, buffSize))
                 {
-                    int offsetInEScopeBuffer = 0;
-                    int smpCount;
-                    if (triggAddress + halfMaxSmpCount <= eScopBufferSize)//tail data not wrapped
-                    {
-                        smpCount = triggAddress + halfMaxSmpCount;
-                        int paddingSmpNb = halfMaxSmpCount - triggAddress;
-                        int paddingPtrinBuffer = eScopBufferSize - paddingSmpNb;
-                        eScopBufferSize = 0; // reset flag for tests
-                        wfStartAddress = paddingPtrinBuffer;
-                        wfTriggAddress = triggAddress;
-                    }
-                    else //should never happen
-                    {
-                        eScopBufferSize = 0; // reset flag for tests
-                        wfStartAddress = 0;
-                        wfTriggAddress = triggAddress;
-                    }
-                }
-                currentPostTriggerSmpCount = 0;
-                //thumbnail.reset(1, sampleRate, 0); //[ToBeChanged]
-                thmbNail[0]->reset(1, sampleRate, 0);
-                return(true);
-            }
-            else
-                return(false);
-        }
-        //----------------------------------------------------------------------------------
-        void saveBufferAsWav(const juce::AudioBuffer<float>& buffer, const juce::File& fileToSave)
-        {
-            if (buffer.getNumChannels() == 0 || buffer.getNumSamples() == 0)
-            {
-                DBG("Le buffer est vide ou non initialisé");
-                return;
-            }            
-            // Crée un WavAudioFormat pour gérer le format WAV
-            juce::WavAudioFormat wavFormat;
-
-            // Ouvre un flux de sortie vers le fichier
-            std::unique_ptr<juce::FileOutputStream> fileStream(fileToSave.createOutputStream());
-
-            if (fileStream == nullptr || !fileStream->openedOk())
-            {
-                DBG("Impossible de créer ou ouvrir le fichier WAV pour l'écriture");
-                return;
-            }
-
-            if (fileStream != nullptr)
-            {
-                // Crée un AudioFormatWriter pour écrire les données du buffer dans le fichier WAV
-                //std::unique_ptr<juce::AudioFormatWriter> writer = wavFormat.createWriterFor(
-                juce::AudioFormatWriter* writer = wavFormat.createWriterFor(
-                    fileStream.get(),                         // Flux vers le fichier
-                    48000,                                    // Fréquence d'échantillonnage
-                    1,                  // Nombre de canaux (par exemple, stéréo)
-                    24,                                       // Bits par échantillon (généralement 16 ou 24)
-                    nullptr,                                  // Pas d'options supplémentaires
-                    0                                         // Qualité d'écriture
-                );
-
-                if (writer != nullptr)
-                {
-                    // Libère le flux, car l'AudioFormatWriter va maintenant le gérer
-                    fileStream.release();
-
-                    // Écrit le contenu du buffer dans le fichier WAV
-                   // bool success = writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
-                    // Écrit le contenu du buffer dans le fichier WAV
-                    if (!writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples()))
-                    {
-                        DBG("Erreur lors de l'écriture du buffer dans le fichier WAV");
-                    }
-                    else
-                    {
-                        DBG("Fichier WAV écrit avec succès !");
-                    }
+                    DBG("Erreur lors de l'écriture du buffer dans le fichier WAV");
                 }
                 else
                 {
-                    DBG("Impossible de créer un writer pour le format WAV");
+                    DBG("Fichier WAV écrit avec succès !");
                 }
-
+                writer.reset();
             }
-        }
-        //----------------------------------------------------------------------------------
-        void saveWaves()
-        {
-            
-            juce::String fileName;
-            juce::AudioBuffer<float> eBuffer;
-
-            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+            else
             {
-                fileName.clear();
-                //fileName <<"c:/Users/René-Yves/Documents/Juce/Wav/WaveZ"<<idx<<".wav";
-                fileName << "Zave" << idx << ".wav";
-                juce::File fileToSave(fileName);
-                //eBuffer = &eScopeBuffer[idx];
-                eBuffer.setSize(1, eScopeBuffer[idx].getNumSamples());
-                eBuffer.copyFrom(0, 0, eScopeBuffer[idx], 0, 0, eScopeBuffer[idx].getNumSamples());
-                unsigned long ptNb = eBuffer.getNumSamples();
-                saveBufferAsWav(eBuffer, fileToSave);
+                DBG("Impossible de créer un writer pour le format WAV");
             }
-        }
-        //----------------------------------------------------------------------------------
 
-        //----------------------------------------------------------------------------------
+        }
+    }
+    //----------------------------------------------------------------------------------
+    void testSaveWaves()
+    {   juce::AudioBuffer<float> testBuffer(1, 48000); // 2 canaux, 1 seconde de données à 44100 Hz
+    for (int channel = 0; channel < testBuffer.getNumChannels(); ++channel)
+    {
+        for (int sample = 0; sample < testBuffer.getNumSamples(); ++sample)
+        {
+            float value = std::sin(2.0 * juce::MathConstants<float>::pi * sample / testBuffer.getNumSamples());
+            testBuffer.setSample(channel, sample, value);
+        }
+    }
+    double magni = testBuffer.getMagnitude(0, testBuffer.getNumSamples());
+    double maxim = testBuffer.getSample(0, testBuffer.getNumSamples() / 4.0);
+    double minim = testBuffer.getSample(0, testBuffer.getNumSamples() * 3.0 / 4.0);
+    // Sauvegarder ce buffer en WAV
+    saveBufferAsWav(testBuffer, juce::File("test_wav.wav"));
+    }
+    //----------------------------------------------------------------------------------
+    void saveWaves()
+    {
+        juce::String fileName;
+        juce::AudioBuffer<float> eBuffer;
+
+        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+        {
+            fileName.clear();
+            fileName << "Wave_" << idx << ".wav";
+            juce::File fileToSave(fileName);
+            eBuffer.setSize(1, eScopeBuffer[idx].getNumSamples());
+            eBuffer.copyFrom(0, 0, eScopeBuffer[idx], 0, 0, eScopeBuffer[idx].getNumSamples());
+            unsigned long ptNb = eBuffer.getNumSamples();
+            saveBufferAsWav(eBuffer, fileToSave);
+        }
+    }
+         //----------------------------------------------------------------------------------
         bool WriteThumbnail(void)
         {
             int idx = 0;
