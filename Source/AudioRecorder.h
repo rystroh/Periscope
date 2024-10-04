@@ -473,10 +473,10 @@ public:
     {
         if (buffer.getNumChannels() == 0 || buffer.getNumSamples() == 0)
         {
-            DBG("Le buffer est vide ou non initialisé");
+            DBG("Le buffer est vide ou non initialisÃ©");
             return;
         }        
-        juce::WavAudioFormat wavFormat; // Crée un WavAudioFormat pour gérer le format WAV
+        juce::WavAudioFormat wavFormat; // CrÃ©e un WavAudioFormat pour gÃ©rer le format WAV
         // Ouvre un flux de sortie vers le fichier
         std::unique_ptr<juce::FileOutputStream> fileStream(fileToSave.createOutputStream());
 
@@ -485,13 +485,13 @@ public:
 
         if (fileStream == nullptr || !fileStream->openedOk())
         {
-            DBG("Impossible de créer ou ouvrir le fichier WAV pour l'écriture");
+            DBG("Impossible de crÃ©er ou ouvrir le fichier WAV pour l'Ã©criture");
             return;
         }
 
         if (fileStream != nullptr)
         {
-            // Crée un AudioFormatWriter pour écrire les données du buffer dans le fichier WAV
+            // CrÃ©e un AudioFormatWriter pour Ã©crire les donnÃ©es du buffer dans le fichier WAV
             int bitDepth = 16;
             double sampleRate = 48000.0;
             unsigned int chanNb = 1;
@@ -506,9 +506,9 @@ public:
 
             if (writer != nullptr)
             {
-                // Libère le flux, car l'AudioFormatWriter va maintenant le gérer
+                // LibÃ¨re le flux, car l'AudioFormatWriter va maintenant le gÃ©rer
                 fileStream.release();
-                // Écrit le contenu du buffer dans le fichier WAV
+                // Ã‰crit le contenu du buffer dans le fichier WAV
                 auto buffSize = buffer.getNumSamples();
                 auto chanNb = buffer.getNumChannels();
                 float wavData;
@@ -522,24 +522,24 @@ public:
                 //check if buffer 
                 if (!writer->writeFromAudioSampleBuffer(buffer, 0, buffSize))
                 {
-                    DBG("Erreur lors de l'écriture du buffer dans le fichier WAV");
+                    DBG("Erreur lors de l'Ã©criture du buffer dans le fichier WAV");
                 }
                 else
                 {
-                    DBG("Fichier WAV écrit avec succès !");
+                    DBG("Fichier WAV Ã©crit avec succÃ¨s !");
                 }
                 writer.reset();
             }
             else
             {
-                DBG("Impossible de créer un writer pour le format WAV");
+                DBG("Impossible de crÃ©er un writer pour le format WAV");
             }
 
         }
     }
     //----------------------------------------------------------------------------------
     void testSaveWaves()
-    {   juce::AudioBuffer<float> testBuffer(1, 48000); // 2 canaux, 1 seconde de données à 44100 Hz
+    {   juce::AudioBuffer<float> testBuffer(1, 48000); // 2 canaux, 1 seconde de donnÃ©es Ã  44100 Hz
     for (int channel = 0; channel < testBuffer.getNumChannels(); ++channel)
     {
         for (int sample = 0; sample < testBuffer.getNumSamples(); ++sample)

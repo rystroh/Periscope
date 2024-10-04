@@ -12,7 +12,8 @@
 #include "PopUpMenu.h"
 
 // Now defined in Projucer Project
-#define option 2 //1 2 or 8
+//#define option 2 //1 2 or 8
+/*
 #if option == 1
 const int eScopeChanNb = 1;
 #endif // option = 1
@@ -23,7 +24,9 @@ const int eScopeChanNb = 2;
 
 #if option == 8
 const int eScopeChanNb = 8;
-#endif // option = 1
+#endif // option = 1*/
+
+const int eScopeChanNb = ESCOPE_CHAN_NB;
 
 //enum horizontalScale { Absolute, RelativeToTrigger };
 //enum verticalScale { Linear, dB };

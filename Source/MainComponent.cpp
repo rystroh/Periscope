@@ -83,11 +83,11 @@ usingCustomDeviceManager(false)
 
     
 
-#if option == 1
+#if DRIVER_MODE == 1
     deviceManager.initialise(ESCOPE_CHAN_NB, 2, nullptr, true);
 #endif
 
-#if option == 2 
+#if DRIVER_MODE == 2 
 
     juce::XmlElement xxw("DEVICESETUP");
     xxw.setAttribute("deviceType", "ASIO");
@@ -103,7 +103,7 @@ usingCustomDeviceManager(false)
     deviceManager.initialise(ESCOPE_CHAN_NB, 2, &xxw, true);
 #endif
 
-#if option == 8 
+#if DRIVER_MODE == 8 
     
     juce::XmlElement xxw("DEVICESETUP");
     xxw.setAttribute("deviceType", "ASIO");
@@ -154,13 +154,13 @@ usingCustomDeviceManager(false)
     addCommand(Y_SCALE, "Y Scale");
     addCommand(TRIGG, "Trig Settings");
     // setSize(1800, 1000);
-#if option == 1
+#if ESCOPE_CHAN_NB == 1
     setSize(1200, 400);
 #endif
-#if option == 2
+#if ESCOPE_CHAN_NB == 2
     setSize(1200, 800);
 #endif
-#if option == 8
+#if ESCOPE_CHAN_NB == 8
     setSize(1200, 1000);
 #endif
     initThresholdSettings();
