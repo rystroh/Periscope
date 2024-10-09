@@ -144,6 +144,7 @@ public:
         thumbnailWritten = false;
         bufferWritten = false;
         wfBufferUnderRun = true;
+        absTriggerAddress = 0;
     }
     //----------------------------------------------------------------------------------
     void setViewSize(float dispTime)
@@ -220,7 +221,7 @@ public:
         int idx = 0;
         long longidx = writePosition[currentChan];
         longidx = wavaddr[currentChan];
-        longidx = wavidx[currentChan] = 0;
+        longidx = wavidx[currentChan]; //longidx = wavidx[currentChan] = 0; // Why cancel ???
         switch (RecTrigMode)
         {
         case Clipping: //0: clipping detection
@@ -231,6 +232,7 @@ public:
                 {
                     *trigIndex = idx;
                     triggerConditionFound = true;
+                    absTriggerAddress = wavidx[currentChan] + idx;
                 }
                 previousSampleValue[currentChan] = smpValue;
                 idx++;
@@ -244,6 +246,7 @@ public:
                 {
                     *trigIndex = idx;
                     triggerConditionFound = true;
+                    absTriggerAddress = wavidx[currentChan] + idx;
                 }
                 previousSampleValue[currentChan] = smpValue;
                 idx++;
@@ -257,6 +260,7 @@ public:
                 {
                     *trigIndex = idx;
                     triggerConditionFound = true;
+                    absTriggerAddress = wavidx[currentChan] + idx;
                 }
                 idx++;
                 previousSampleValue[currentChan] = smpValue;
@@ -271,6 +275,7 @@ public:
                 {
                     *trigIndex = idx;
                     triggerConditionFound = true;
+                    absTriggerAddress = wavidx[currentChan] + idx;
                 }
                 idx++;
                 previousSampleValue[currentChan] = smpValue;
@@ -324,7 +329,7 @@ public:
 #endif
                 TestChannelID();
                 // write in circulare buffer for later display
-                if (currentPostTriggerSmpCount + numSamples < halfMaxSmpCount)//recording size limit not reached
+                if (currentPostTriggerSmpCount + numSamples <= halfMaxSmpCount)//recording size limit not reached
                 {
                     eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, numSamples);
                 }
@@ -347,7 +352,7 @@ public:
                         *thumbnailTriggeredPtr = bTriggered;
                         if (bTriggered)
                         {
-                            triggAddress = writePosition[idx] + triggerIndex;
+                            triggAddress = writePosition[idx] + triggerIndex- numSamples;// sub size of block
                             triggAddress %= eScopBufferSize; //wrap if needed
                             currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
                         }
@@ -787,6 +792,8 @@ public:
         juce::int64 currentPostTriggerSmpCount = 0;
         juce::int64 maxSmpCount = 0;
         juce::int64 halfMaxSmpCount = 0;
+        juce::int64 absTriggerAddress = 0;
+        long expectedTrigAddress = 7680; // 7680 for level 0.06 ** 6721 for level 0.0560
         double previousSampleValue[ESCOPE_CHAN_NB]; //stores value(t-1) for trigger detection 
         unsigned long wavaddr[ESCOPE_CHAN_NB];// = 0;
         unsigned long wavidx[ESCOPE_CHAN_NB];// = 0;

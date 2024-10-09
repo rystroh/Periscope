@@ -24,7 +24,7 @@ public:
     //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
-    void SetThresholdValue(float value) { ThresholdSlider.setValue(value); }
+    void SetThresholdValue(double value) { ThresholdSlider.setValue(value); }
 private:
     friend MainComponent;
     //==============================================================================

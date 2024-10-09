@@ -15,7 +15,7 @@ struct triggerDlgData
 {
     bool enable;
     int channel;
-    float threshold;
+    double threshold;
     int direction;
     int pretrigger;
 };
@@ -54,9 +54,9 @@ public:
         addAndMakeVisible(ThresholdLabel);
         ThresholdLabel.setText("Threshold:", juce::dontSendNotification);
         addAndMakeVisible(ThresholdSlider);
-        ThresholdSlider.setRange(-1.0f, 1.0f, 0.01f);
+        ThresholdSlider.setRange(-1.0f, 1.0f, 0.010f);
         ThresholdSlider.setValue(trigDlgData.threshold);//ThresholdSlider.setValue(0.5f);
-        ThresholdSlider.setNumDecimalPlacesToDisplay(2);
+        ThresholdSlider.setNumDecimalPlacesToDisplay(4);
         ThresholdSlider.setSliderSnapsToMousePosition(false); 
 
         addAndMakeVisible(DirectionLabel);

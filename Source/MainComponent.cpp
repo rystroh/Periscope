@@ -325,7 +325,7 @@ void MainComponent::onDialogBoxClosed(int result, triggerDlgData *trigDlgData)
         //bool enab = bufferDlgData->enable;
     int chan = trigDlgData->channel-1;
     int direct = trigDlgData->direction;
-    float thresh = trigDlgData->threshold;
+    double thresh = trigDlgData->threshold;
     header->SetThresholdValue(thresh); //sends ThresholdSlider.setValue(thresh);
     recorder.setThreshold(thresh);
     int pretrigg = trigDlgData->pretrigger;

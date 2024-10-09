@@ -31,8 +31,9 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     addAndMakeVisible(saveWav_button);
 
     addAndMakeVisible(ThresholdSlider);
-    ThresholdSlider.setRange(-1.0f, 1.0f, 0.01f);
-    ThresholdSlider.setValue(0.1f);
+    ThresholdSlider.setRange(-1.00f, 1.00f, 0.001f);
+    ThresholdSlider.setValue(0.10f);
+    ThresholdSlider.setNumDecimalPlacesToDisplay(4);
     addAndMakeVisible(LiveButton);
 
     addAndMakeVisible(yScaleSlider);
