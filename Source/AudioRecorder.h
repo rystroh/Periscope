@@ -4,13 +4,10 @@
 //#include "RampPos48000.h"
 //#include "Ramp48000Skipped2.h"
 //#include "Ramp48000Skipped3.h"
-//#include "Ramp120k.h"
-#include "Ramp120kUpDown.h"
+#include "Ramp120k.h"
+//#include "Ramp120kUpDown.h"
 //#include "Ramp_bleep120k.h"
-//namespace juce
-//{
-//#define audio_source 1 //now defined in Projucer Project
-//#define modify_triggers 1
+
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
                               and writes the incoming audio data to a WAV file.          */
@@ -138,8 +135,8 @@ public:
             //wavptr = &RampPos48000[0];
             //wavptr = &Ramp48000Skipped2[0];
             //wavptr = &Ramp48000Skipped3[0];
-            //wavptr[idx] = &Ramp120k[0];
-            wavptr[idx] = &Ramp120kUpDown[0];
+            wavptr[idx] = &Ramp120k[0];
+            //wavptr[idx] = &Ramp120kUpDown[0];
         }
         thumbnailWritten = false;
         bufferWritten = false;
@@ -792,20 +789,19 @@ public:
         juce::int64 currentPostTriggerSmpCount = 0;
         juce::int64 maxSmpCount = 0;
         juce::int64 halfMaxSmpCount = 0;
-        juce::int64 absTriggerAddress = 0;
-        long expectedTrigAddress = 7680; // 7680 for level 0.06 ** 6721 for level 0.0560
+        juce::int64 absTriggerAddress = 0;// DEBUG ONLY:
+        long expectedTrigAddress = 7680; // DEBUG ONLY: 7680 for level 0.06 ** 6721 for level 0.0560
         double previousSampleValue[ESCOPE_CHAN_NB]; //stores value(t-1) for trigger detection 
         unsigned long wavaddr[ESCOPE_CHAN_NB];// = 0;
         unsigned long wavidx[ESCOPE_CHAN_NB];// = 0;
         //following are shared by pointers between recorder and view
         unsigned long wfStartAddress = 0;
         unsigned long wfTriggAddress = 0;
-        //std::atomic<bool> 
         bool wfBufferReady = false;
         bool wfBufferUnderRun = true;
         //end of shared
 
-        const float* wavptr[ESCOPE_CHAN_NB];// = nullptr;
+        const float* wavptr[ESCOPE_CHAN_NB];// DEBUG ONLY to override input signal by data LUT in .h
         juce::uint16 wavSize = 48000;
         bool thumbnailWritten = false;
         bool bufferWritten = false;
@@ -814,5 +810,5 @@ public:
         int RecTrigChannel;//
 
     };
-//};
+
 

@@ -118,19 +118,10 @@ private:
     std::unique_ptr<juce::FileChooser> chooser;
 
     std::unique_ptr<Header> header;
-    //std::unique_ptr<EScope> eScope[ESCOPE_CHAN_NB]; //[ToBeChanged]
 
-    //RecordingThumbnail recThumbnail[ESCOPE_CHAN_NB];
     std::unique_ptr<RecordingThumbnail> escopeThumbnail[ESCOPE_CHAN_NB];
-
-    //juce::AudioRecorder recorder{ recThumbnail[0].getAudioThumbnail()};
-   //escopeThumbnail[0]->getAudioThumbnail();
-    //juce::AudioThumbnail placeHolderThumbnail;
     juce::AudioThumbnail* ptrToRecThumbnail[ESCOPE_CHAN_NB];
     juce::AudioThumbnail** aptr;
-
-    //RecordingThumbnail* ptrToRecoThumbnail[ESCOPE_CHAN_NB];
-    //RecordingThumbnail** eptr;
 
     std::unique_ptr<RecordingThumbnail>* ptrToRecoThumbnail[ESCOPE_CHAN_NB];
     std::unique_ptr<RecordingThumbnail>** eptr;
@@ -190,21 +181,14 @@ private:
             auto* reader = formatManager.createReaderFor(line);
 
             if (reader != nullptr)
-            {   //[ToBeChanged]
+            {
                 auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                //eScope[idx]->setSource(new juce::FileInputSource(line));
-                //eScope[idx]->setSampleRate(reader->sampleRate);
-                //eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-                //eScope[idx]->setDisplayYZoom(1.0);
-                //eScope[idx]->resized();
-                //[inTheProcess]
-                escopeThumbnail[0]->setSource(new juce::FileInputSource(line));
-                recorder.setSampleRate(reader->sampleRate); //eScope[idx]->setSampleRate(reader->sampleRate);[1]
-                escopeThumbnail[idx]->setSampleRate(reader->sampleRate);//eScope[idx]->setSampleRate(reader->sampleRate);[2]
 
+                escopeThumbnail[0]->setSource(new juce::FileInputSource(line));
+                recorder.setSampleRate(reader->sampleRate);
+                escopeThumbnail[idx]->setSampleRate(reader->sampleRate);
                 escopeThumbnail[idx]->setDisplayThumbnailMode(0);
                 escopeThumbnail[idx]->repaint();
-
                 escopeThumbnail[idx]->setDisplayYZoom(1.0);
 
                 auto area = getLocalBounds();
@@ -265,7 +249,7 @@ private:
         {
             //eScope[idx]->recorder.stop();//[ToBeChanged]
             //[inTheProcess]
-            recorder.stop();
+            recorder.stop(); // to be checked !!
         }
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);
@@ -287,11 +271,7 @@ private:
 #endif
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
-            //[ToBeChanged]
             lastRecording[idx] = juce::File();
-            //eScope[idx]->setDisplayThumbnailMode(0);// request waveform to fill viewing zone
-            //eScope[idx]->setDisplayYZoom(1.0);
-            //[inTheProcess]
             escopeThumbnail[idx]->setDisplayThumbnailMode(0); //eScope[idx]->setDisplayThumbnailMode(0); [1]
             escopeThumbnail[idx]->repaint();                  //eScope[idx]->setDisplayThumbnailMode(0); [2]
             escopeThumbnail[idx]->setDisplayYZoom(1.0);
