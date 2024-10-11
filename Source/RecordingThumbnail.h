@@ -794,6 +794,30 @@ public:
             }
         }
         //----------------------------------------------------------------------------------
+        void drawInfo(juce::Graphics& g, const juce::Rectangle<int>& bounds) // for debug only
+        {
+            g.setColour(gridColour);
+            g.setOpacity(1.0);
+            const int fontHeight = 10;
+            g.setFont(fontHeight);
+            juce::Rectangle<int> wavZone = getWaveZone(bounds);
+            juce::String str;
+            auto totlen = getSampleSize();
+            double SampleSize = totlen * sampleRate; //size  of sample in points
+            str << "SR = " << sampleRate << " Hz";
+            auto txtWidth = g.getCurrentFont().getStringWidth(str);
+            juce::Rectangle<int> rTxt;
+            int left, top, right, butt;
+            auto maxright = wavZone.getRight();
+            butt = wavZone.getBottom() - 20;
+            left = maxright - txtWidth - 10;
+            rTxt.setLeft(left);
+            rTxt.setY(butt);
+            rTxt.setSize(txtWidth, fontHeight);
+            g.drawFittedText(str, rTxt, juce::Justification::centredLeft, 1);
+
+        }
+        //----------------------------------------------------------------------------------
         void drawYLabels(juce::Graphics& g, const juce::Rectangle<int>& bounds, int mode)
         {
             g.setColour(gridColour);
@@ -1342,6 +1366,7 @@ public:
                     paintTimeLines(g, wavZone, thumbArea, xScale);
                     paintHorizontalGrid(g, wavZone, yScale);
                     drawYLabels(g, thumbArea, yScale);
+                    drawInfo(g, wavZone); // for debug only
                     //thumbnail.drawChannels(g, wavZone.reduced(2), visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);
                     drawBuffer(g, wavZone, visibleRange.getStart(), visibleRange.getEnd(), (float)ThumbYZoom);                    
                     

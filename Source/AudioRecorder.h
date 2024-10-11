@@ -561,6 +561,18 @@ public:
     {
         juce::String fileName;
         juce::AudioBuffer<float> eBuffer;
+        double data;
+        long addr;
+        addr = eScopeBuffer[0].getNumSamples()-1;
+        addr-=2;
+        data = eScopeBuffer[0].getSample(0, addr++);
+        data = eScopeBuffer[0].getSample(0, addr++);
+        data = eScopeBuffer[0].getSample(0, addr); 
+        while ((data = eScopeBuffer[0].getSample(0, addr)) == 0)
+        {
+            addr--;
+        }
+            DBG ("Last non zero value = " << data << " at addr " << addr);
 
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
