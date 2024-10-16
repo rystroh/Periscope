@@ -19,6 +19,8 @@ usingCustomDeviceManager(false)
     // Instantiate top level rack elements   
     // - Create header instance
     header = std::make_unique<Header>();
+    // - Create trigger settings instance
+    trigger_settings = std::make_unique<TriggerSettings>();
     // - Create horizontal display rack instance
     display_rack = std::make_unique<grape::Rack>("Display", "", false);
 
@@ -26,7 +28,11 @@ usingCustomDeviceManager(false)
     // - Create channel rack instance
     channel_rack = std::make_unique<grape::Rack>("Channels", true);
 
+    // Instantiate audio recorder
+    recorder = std::make_unique<AudioRecorder>(/*escopeThumbnail[1]->getAudioThumbnail(), */trigger_settings.get());
+
     // Create eScope instances and populate channel rack
+    channel_rack->addPanel(trigger_settings.get(), SWITCHABLE);
     for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
         //channel_rack->addPanel(eScope[idx].get(), NULL);// VSCROLLABLE + HSCROLLABLE); // RESIZER);// +SWITCHABLE);
@@ -36,7 +42,7 @@ usingCustomDeviceManager(false)
         channelControl[idx] = std::make_unique<ChannelControl>("Channel Control" + juce::String(idx));
         thumbnail_rack[idx]->addPanel(channelControl[idx].get(), COLLAPSIBLE);
         //channelControl[idx]->thmbNail = &escopeThumbnail[idx]->getAudioThumbnail();
-        escopeThumbnail[idx] = std::make_unique<RecordingThumbnail>("Channel " + juce::String(idx));
+        escopeThumbnail[idx] = std::make_unique<RecordingThumbnail>("Channel " + juce::String(idx), trigger_settings.get());
         channelControl[idx]->thmbNail = &escopeThumbnail[idx];
         channelControl[idx]->pointeur = escopeThumbnail[idx].get();
         thumbnail_rack[idx]->addPanel(escopeThumbnail[idx].get());
@@ -44,19 +50,19 @@ usingCustomDeviceManager(false)
         thumbnail_rack[idx]->computeSizeFromChildren();
         channel_rack->addPanel(thumbnail_rack[idx].get(), VSCROLLABLE + HSCROLLABLE + RESIZER + SWITCHABLE);
 
-        recorder.setChannelID(idx);
+        recorder->setChannelID(idx);
         escopeThumbnail[idx]->chanID = idx;
         bool* ptr = escopeThumbnail[idx]->getTriggeredPtr();
-        recorder.setTriggerPtr(ptr);
+        recorder->setTriggerPtr(ptr);
         escopeThumbnail[idx]->addChangeListener(this);
         escopeThumbnail[idx]->setDisplayThumbnailMode(recmode);
         escopeThumbnail[idx]->repaint();
     }
     initPtrToRecThumbnailTable(ESCOPE_CHAN_NB);
-    recorder.AttachThumbnail(aptr, ESCOPE_CHAN_NB);
+    recorder->AttachThumbnail(aptr, ESCOPE_CHAN_NB);
 
     initPtrToRecoThumbnailTable(ESCOPE_CHAN_NB);
-    //recorder.AttachListener(juce::ChangeListener& eptr , ESCOPE_CHAN_NB);
+    //recorder->AttachListener(juce::ChangeListener& eptr , ESCOPE_CHAN_NB);
 
     channel_rack->computeSizeFromChildren(true, true);
 
@@ -123,7 +129,7 @@ usingCustomDeviceManager(false)
 /* {
         devManager.addAudioCallback(eScope[idx]->getAudioIODeviceCallBack());        
     }*/
-    devManager.addAudioCallback(&recorder);
+    devManager.addAudioCallback(recorder.get());
     // Build parameter set
     mm->buildParameterSet(this);
     // Add commands
@@ -135,9 +141,7 @@ usingCustomDeviceManager(false)
     addCommand(SAVE_SETTINGS, "Save settings");
     addCommand(SAVE_WAV, "Save Wav");
     addCommand(GO_LIVE,"Go Live");
-    addCommand(THRESHOLD_LEVEL,"Threshold Level");
-    addCommand(Y_SCALE, "Y Scale");
-    addCommand(TRIGG, "Trig Settings");
+    addCommand(TRIGGER_ENABLE, "Trigger enable");
     // setSize(1800, 1000);
 #if ESCOPE_CHAN_NB == 1
     setSize(1200, 400);
@@ -148,7 +152,6 @@ usingCustomDeviceManager(false)
 #if ESCOPE_CHAN_NB == 8
     setSize(1200, 1000);
 #endif
-    initThresholdSettings();
     formatManager.registerBasicFormats();
 }
 
@@ -161,7 +164,7 @@ MainComponent::~MainComponent()
     {
         devManager.removeAudioCallback(eScope[idx]->getAudioIODeviceCallBack());//[ToBeChanged]        
     }*/
-    devManager.removeAudioCallback(&recorder);
+    devManager.removeAudioCallback(recorder.get());
     jassert(audioSourcePlayer.getCurrentSource() == nullptr);
 }
 
@@ -210,7 +213,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     //eScope.audioDeviceAboutToStart(device); //needs refactoring
     for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
     {
-        recorder.prepareToPlay(samplesPerBlockExpected, sampleRate);
+        recorder->prepareToPlay(samplesPerBlockExpected, sampleRate);
         escopeThumbnail[idx]->prepareToPlay(samplesPerBlockExpected, sampleRate);
     }
 }
@@ -282,52 +285,6 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
         }
     }
 }
-//void onDialogBoxClosed(int result);
-
-void MainComponent::onDialogBoxClosed(int result, triggerDlgData *trigDlgData)
-{
-    // Handle the dialog box closure here
-    juce::Logger::writeToLog("Dialog box closed with result: " + juce::String(result));
-    
-    //bufferDlgData.enable = true;
-    //bool enab = bufferDlgData->enable;
-    int chan = trigDlgData->channel-1;
-    int direct = trigDlgData->direction;
-    double thresh = trigDlgData->threshold;
-    header->SetThresholdValue(thresh); //sends ThresholdSlider.setValue(thresh);
-    recorder.setThreshold(thresh);
-    int pretrigg = trigDlgData->pretrigger;
-
-    storeThresholdSettings(trigDlgData->enable, trigDlgData->channel, trigDlgData->threshold, trigDlgData->direction, trigDlgData->pretrigger);
-
-    recorder.setThreshold(thresh);
-    recorder.setTriggerChannel(chan);
-    recorder.setTriggerMode(direct);
-    bool enab = trigDlgData->enable;
-
-    if (enab)
-    {
-        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
-        {
-            escopeThumbnail[idx]->setXScale(RelativeToTrigger);
-            escopeThumbnail[idx]->setThreshold(thresh);
-            escopeThumbnail[idx]->setTriggerMode(direct);
-            escopeThumbnail[idx]->setPreTrigg(pretrigg);
-            if (idx == chan)
-                escopeThumbnail[idx]->setTrigEnabled(true);
-            else
-                escopeThumbnail[idx]->setTrigEnabled(false);
-        }
-    }
-    else
-    {
-        for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
-        {
-            escopeThumbnail[idx]->setXScale(Absolute);
-        }    
-    }
-    // Perform other actions as needed
-}
 
 
 bool MainComponent::executeCommand(int id, grape::Control* source)
@@ -371,16 +328,16 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
     {
         oscilloWinSize = source->getControlValue();
         // update pointers to the buffer and pointers used for display outside of Thumbnail
-        juce::AudioBuffer<float>* recBuffer;// = recorder.getBufferPtr(0);        
-        unsigned long* StartAddr = recorder.getStartAddrPtr();
-        unsigned long* TriggAddr = recorder.getTriggAddrPtr();
-        bool* BufferReady = recorder.getBufferReadyAddrPtr();
-        bool* BufferUnderRun = recorder.getBufferUndeRunAddrPtr();
-        recorder.setViewSize(oscilloWinSize);
+        juce::AudioBuffer<float>* recBuffer;// = recorder->getBufferPtr(0);        
+        unsigned long* StartAddr = recorder->getStartAddrPtr();
+        unsigned long* TriggAddr = recorder->getTriggAddrPtr();
+        bool* BufferReady = recorder->getBufferReadyAddrPtr();
+        bool* BufferUnderRun = recorder->getBufferUndeRunAddrPtr();
+        recorder->setViewSize(oscilloWinSize);
 
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
-            recBuffer = recorder.getBufferPtr(idx);
+            recBuffer = recorder->getBufferPtr(idx);
             escopeThumbnail[idx]->setViewSize(oscilloWinSize);
             escopeThumbnail[idx]->setBufferedToImage(recBuffer);
             escopeThumbnail[idx]->setBufferStartAddress(StartAddr);
@@ -423,7 +380,7 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
     }
     case SAVE_WAV:
     {
-        recorder.saveWaves();
+        recorder->saveWaves();
         return true;
     }
     case GO_LIVE:
@@ -435,69 +392,27 @@ bool MainComponent::executeCommand(int id, grape::Control* source)
         samplesPerBlockExpected = device->getCurrentBufferSizeSamples();
         prepareToPlay(samplesPerBlockExpected, smpRate);
         recmode = 4; // force to oscilloscope mode
-        recorder.setSampleRate(smpRate); 
-        recorder.setViewSize(oscilloWinSize);
+        recorder->setSampleRate(smpRate); 
+        recorder->setViewSize(oscilloWinSize);
         juce::AudioBuffer<float>* recBuffer;
-        unsigned long* StartAddr = recorder.getStartAddrPtr();
-        unsigned long* TriggAddr = recorder.getTriggAddrPtr();
-        bool* BufferReady = recorder.getBufferReadyAddrPtr();
+        unsigned long* StartAddr = recorder->getStartAddrPtr();
+        unsigned long* TriggAddr = recorder->getTriggAddrPtr();
+        bool* BufferReady = recorder->getBufferReadyAddrPtr();
 
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
             lastRecording[idx] = juce::File();
-            recBuffer = recorder.getBufferPtr(idx);
+            recBuffer = recorder->getBufferPtr(idx);
             escopeThumbnail[idx]->setSampleRate(smpRate);          
             escopeThumbnail[idx]->setViewSize(oscilloWinSize); 
             escopeThumbnail[idx]->setBufferedToImage(recBuffer);
             escopeThumbnail[idx]->setBufferStartAddress(StartAddr);
             escopeThumbnail[idx]->setBufferTriggAddress(TriggAddr);
             escopeThumbnail[idx]->setBufferReadyAddress(BufferReady);
-            recorder.startRecording(lastRecording[0]); 
+            recorder->startRecording(lastRecording[0]); 
             escopeThumbnail[idx]->setDisplayThumbnailMode(recmode); 
             escopeThumbnail[idx]->repaint();
         }
-        return true;
-    }
-    case THRESHOLD_LEVEL:
-    {
-        double thresholdValue = source->getControlValue();
-        recorder.setThreshold(thresholdValue); 
-        escopeThumbnail[0]->setThreshold(thresholdValue); 
-        return true;
-    }
-    case Y_SCALE:
-    {
-        int scale = source->getControlValue();
-        escopeThumbnail[0]->setYScale(scale);
-        return true;
-    }
-    case TRIGG:
-    {        
-        /*
-        bufferDlgData.enable = true;
-        bufferDlgData.channel = 2;
-        bufferDlgData.threshold = 0.33f;
-        bufferDlgData.direction = 3;
-        bufferDlgData.pretrigger = 10;*/
-
-        auto* dialogBox = new MyDialogBoxComponent(&bufferDlgData);
-        auto* dialogWindow = new juce::DialogWindow("Dialog Box", juce::Colours::grey, true);
-
-        dialogWindow->setContentOwned(dialogBox, true);
-        dialogWindow->setUsingNativeTitleBar(true);
-        dialogWindow->setResizable(true, true);
-        int width, height;
-        width = dialogBox->getWidth();
-        height = dialogBox->getHeight();
-        dialogWindow->centreWithSize(width, height);
-        dialogWindow->setVisible(true);
-
-        // Set up a callback for when the dialog window is closed
-        dialogWindow->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
-            {
-                bool enab = bufferDlgData.enable;
-                onDialogBoxClosed(result, &bufferDlgData);
-            }), true);
         return true;
     }
     default:
