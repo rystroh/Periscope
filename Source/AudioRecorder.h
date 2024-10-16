@@ -230,6 +230,9 @@ public:
 
         double thresholdTrigger = triggerSettings->getControlValue("Threshold");
         int RecTrigMode = triggerSettings->getControlValue("Condition");
+        thresholdTrigger = 0.500; // DEBUG
+        if (RecTrigMode == 0) // to be removed once GRAPE ComboBox issue solved
+            RecTrigMode = 2;   //workaround to current GRAPE ComboBox issue 
 
         switch (RecTrigMode)
         {

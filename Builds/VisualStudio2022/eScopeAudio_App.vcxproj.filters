@@ -601,6 +601,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\GRAPE\Source\TabElement.cpp">
+      <Filter>eScopeAudio\GRAPE\Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\GRAPE\Source\Label.cpp">
+      <Filter>eScopeAudio\GRAPE\Source</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\GRAPE\Source\Slider.cpp">
       <Filter>eScopeAudio\GRAPE\Source</Filter>
     </ClCompile>
@@ -3138,6 +3144,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\GRAPE\Source\TabElement.h">
+      <Filter>eScopeAudio\GRAPE\Source</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\GRAPE\Source\Label.h">
+      <Filter>eScopeAudio\GRAPE\Source</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\GRAPE\Source\Rack.h">
       <Filter>eScopeAudio\GRAPE\Source</Filter>
     </ClInclude>

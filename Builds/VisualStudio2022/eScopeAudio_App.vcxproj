@@ -141,6 +141,8 @@
     <Lib/>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\GRAPE\Source\TabElement.cpp"/>
+    <ClCompile Include="..\..\GRAPE\Source\Label.cpp"/>
     <ClCompile Include="..\..\GRAPE\Source\Slider.cpp"/>
     <ClCompile Include="..\..\GRAPE\Source\ToggleButton.cpp"/>
     <ClCompile Include="..\..\GRAPE\Source\TextEditor.cpp"/>
@@ -2462,6 +2464,8 @@
     <ClCompile Include="..\..\JuceLibraryCode\include_juce_gui_extra.cpp"/>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\GRAPE\Source\TabElement.h"/>
+    <ClInclude Include="..\..\GRAPE\Source\Label.h"/>
     <ClInclude Include="..\..\GRAPE\Source\Rack.h"/>
     <ClInclude Include="..\..\GRAPE\Source\Slider.h"/>
     <ClInclude Include="..\..\GRAPE\Source\ToggleButton.h"/>
