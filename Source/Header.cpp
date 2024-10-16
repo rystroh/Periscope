@@ -30,10 +30,6 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     addAndMakeVisible(save_button);
     addAndMakeVisible(saveWav_button);
 
-    addAndMakeVisible(ThresholdSlider);
-    ThresholdSlider.setRange(-1.00f, 1.00f, 0.001f);
-    ThresholdSlider.setValue(0.50f);
-    ThresholdSlider.setNumDecimalPlacesToDisplay(4);
     addAndMakeVisible(LiveButton);
 
     addAndMakeVisible(yScaleSlider);
@@ -41,8 +37,7 @@ Header::Header(/*MainComponent* mainComp*/) : Panel("Header") //, main(mainComp)
     yScaleSlider.setValue(0);
 
     setWidth(300, 600, 10000);
-    setHeight(50, 50, 50);
-    addAndMakeVisible(trig_button);
+    setHeight(40, 40, 40);
 }
 
 
@@ -64,13 +59,11 @@ void Header::resized()
     menu.setBounds(openButton.getX() + openButton.getWidth() + menu.getLabel()->getWidth() + 10, recordButton.getY(),(int)width, recordButton.getHeight());
 
     oscWinSizeSlider.setBounds(menu.getX() + menu.getWidth() + oscWinSizeSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
-    ThresholdSlider.setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + ThresholdSlider.getLabel()->getWidth() + 10, recordButton.getY(), 2 * recordButton.getWidth(), recordButton.getHeight());
-    yScaleSlider.setBounds(ThresholdSlider.getX() + ThresholdSlider.getWidth() + yScaleSlider.getLabel()->getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
+    yScaleSlider.setBounds(oscWinSizeSlider.getX() + oscWinSizeSlider.getWidth() + yScaleSlider.getLabel()->getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     
     load_button.setBounds(yScaleSlider.getX() + yScaleSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
     //load_button.setBounds(ThesholdSlider.getX() + ThesholdSlider.getWidth() + 10, recordButton.getY(), recordButton.getWidth(), recordButton.getHeight());
     save_button.setBounds(load_button.getX() + load_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth()-10, recordButton.getHeight());
     
-    trig_button.setBounds(save_button.getX() + save_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth() - 10, recordButton.getHeight());
-    saveWav_button.setBounds(trig_button.getX() + trig_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth() - 10, recordButton.getHeight());
+    saveWav_button.setBounds(save_button.getX() + save_button.getWidth() + 10, recordButton.getY(), recordButton.getWidth() - 10, recordButton.getHeight());
 }

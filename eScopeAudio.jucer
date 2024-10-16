@@ -5,6 +5,10 @@
   <MAINGROUP id="g1UIBm" name="eScopeAudio">
     <GROUP id="{CEA80E9B-E7F6-F846-1E2C-EA2127A808FD}" name="GRAPE">
       <GROUP id="{C0DE8C06-845C-004C-D22F-4DD9536C3D2F}" name="Source">
+        <FILE id="fqzsB6" name="TabElement.cpp" compile="1" resource="0" file="GRAPE/Source/TabElement.cpp"/>
+        <FILE id="hWZ4gR" name="TabElement.h" compile="0" resource="0" file="GRAPE/Source/TabElement.h"/>
+        <FILE id="W7zZBD" name="Label.cpp" compile="1" resource="0" file="GRAPE/Source/Label.cpp"/>
+        <FILE id="kWq6UD" name="Label.h" compile="0" resource="0" file="GRAPE/Source/Label.h"/>
         <FILE id="emwebq" name="Rack.h" compile="0" resource="0" file="GRAPE/Source/Rack.h"/>
         <FILE id="ax7clv" name="Slider.cpp" compile="1" resource="0" file="GRAPE/Source/Slider.cpp"/>
         <FILE id="QdeqsA" name="Slider.h" compile="0" resource="0" file="GRAPE/Source/Slider.h"/>

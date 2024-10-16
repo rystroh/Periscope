@@ -24,7 +24,6 @@ public:
     //==============================================================================
     void paint (juce::Graphics& g) override;
     void resized() override;
-    void SetThresholdValue(double value) { ThresholdSlider.setValue(value); }
 private:
     friend MainComponent;
     //==============================================================================
@@ -39,11 +38,9 @@ private:
     grape::PushButton load_button{ "Load", grape::PushButton::NAME, LOAD_SETTINGS};
     // This button issues a save settings command
     grape::PushButton save_button{ "Save", grape::PushButton::NAME, SAVE_SETTINGS};
-    // This button issues a load settings command
+    // This button issues a go live command
     grape::PushButton LiveButton{ "Live", grape::PushButton::NAME, GO_LIVE };
-
-    grape::PushButton trig_button{ "Trigger Settings", grape::PushButton::NAME, TRIGG };
-
+    // This button issues a save wav command
     grape::PushButton saveWav_button{ "Save Wav", grape::PushButton::NAME, SAVE_WAV };
 
 
@@ -52,11 +49,8 @@ private:
     grape::ComboBox menu{ "Mode", grape::ComboBox::HORIZONTAL, grape::ComboBox::ValueType::ID, "", DISPLAY_MODE};
     // This button issues a window size command
     grape::Slider oscWinSizeSlider{ "Buffer Size in s", grape::Slider::HORIZONTAL2, "", WIN_SIZE };
-    // This button issues a window size command
-    grape::Slider ThresholdSlider{ "Threshold", grape::Slider::HORIZONTAL2, "", THRESHOLD_LEVEL };
-    
+    // This button issues a y scale command
     grape::Slider yScaleSlider{ "Y Scale", grape::Slider::HORIZONTAL2, "", Y_SCALE };
-    grape::PushButton TrigSettings_button{ "Trig Settings", grape::PushButton::NAME, TRIGG };
    
 
  //-------------------------------------------------------------------------------------

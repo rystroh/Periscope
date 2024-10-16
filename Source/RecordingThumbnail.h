@@ -13,17 +13,9 @@ class RecordingThumbnail : public grape::Panel,
     public juce::ChangeBroadcaster
 {
 public:
-    /* RecordingThumbnail()
+     RecordingThumbnail(const juce::String& id, grape::Panel* trigger_settings) : Panel(id)
     {
-        addAndMakeVisible(scrollbar);
-        scrollbar.setRangeLimits(visibleRange);
-        scrollbar.setAutoHide(true);
-        scrollbar.addListener(this);
-        formatManager.registerBasicFormats();
-        thumbnail.addChangeListener(this);
-    }*/
-    RecordingThumbnail(const juce::String& id) : Panel(id)
-    {
+        triggerSettings = trigger_settings;
         addAndMakeVisible(scrollbar);
         scrollbar.setRangeLimits(visibleRange);
         scrollbar.setAutoHide(true);
@@ -69,7 +61,6 @@ public:
     std::vector<float> mMinAudioPoints;
     juce::Point< int > Posi3;
 
-    int RecTrigMode; //
     //-------------------------------------------------------------------
     //following elements are passed between RecTumbnail and AudioRecorder
     bool bTriggered = false;
@@ -99,11 +90,7 @@ public:
         viewSize = dispTime;
     }
     //----------------------------------------------------------------------------------
-    void setXScale(int scale) { xScale = (horizontalScale)scale; }
-    //----------------------------------------------------------------------------------
-    void setYScale(int scale) { yScale = (verticalScale)scale; }
-    //----------------------------------------------------------------------------------
-    void setPreTrigg(int pretrigg) { preTriggerPercent = pretrigg; }
+    void setYScale(verticalScale scale) { yScale = scale; }
     //----------------------------------------------------------------------------------
     bool setSource(juce::InputSource* newSource) { return(thumbnail.setSource(newSource)); }
     //----------------------------------------------------------------------------------
@@ -114,36 +101,6 @@ public:
     }
     //----------------------------------------------------------------------------------
     void setSampleRate(double smpRate) { sampleRate = smpRate; }
-    //----------------------------------------------------------------------------------
-    void setThreshold(double threshold)
-    {
-#if modify_triggers == 1
-        switch ((int)(threshold * 100))
-        {
-        case 0:
-            thresholdTrigger = 0.010;   // addr =    530
-            break;
-        case 1:
-            thresholdTrigger = 0.011;   // addr =  2 829
-            break;
-        case 2:
-            thresholdTrigger = 0.017;   // addr =  5 303
-            break;
-        case 3:
-            thresholdTrigger = 0.037;   // addr = 10 141
-            break;
-        case 4:
-            thresholdTrigger = 0.800;   // addr = 19 556
-            break;
-        default:
-            thresholdTrigger = threshold;
-        }
-#else
-        thresholdTrigger = threshold;
-#endif
-    }
-    //----------------------------------------------------------------------------------
-    void setTrigEnabled(bool enable) { trigEnabled = enable; }        
 
         //----------------------------------------------------------------------------------
         void setDisplayFullThumbnail(bool displayFull)
@@ -246,7 +203,11 @@ public:
             double dTrigTime = visRangeWidth * tRatio;
             double xOffset = width / 2.0;
             xOffset = xOffset * Ratio / curRatio;
-                
+
+            double thresholdTrigger = triggerSettings->getControlValue("Threshold");
+            int RecTrigMode = triggerSettings->getControlValue("Condition");
+            bool trigEnabled = triggerSettings->getControlValue("Enable") && ((int)triggerSettings->getControlValue("Channel") == chanID); // Trigger enabled + matching channel;
+
             // Draw Trigger Vertical and Horizontal
             if((RecTrigMode == Clipping) && (trigEnabled))
                 g.setColour(wavClippingColour);//Trigger on clipping condition is in Red
@@ -1331,6 +1292,7 @@ public:
             case Zooming://3: // zooming mode
                 if (thumbnail.getTotalLength() > 0.0)
                 {
+                    horizontalScale xScale = ((bool) triggerSettings->getControlValue("Enable") == true ? RelativeToTrigger : Absolute);
                     thumbnailsize = thumbnail.getTotalLength();
                     newRange.setStart(0.0);
                     newRange.setEnd(thumbnailsize);
@@ -1349,6 +1311,7 @@ public:
             case Triggerred://4: //oscilloscope with trigger
                 if (*bBufferReady)
                 {
+                    horizontalScale xScale = ((bool)triggerSettings->getControlValue("Enable") == true ? RelativeToTrigger : Absolute);
                     if (bTriggered)
                     {
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
@@ -1381,6 +1344,7 @@ public:
             case TriggeredZoomed://5: //oscilloscope with trigger Zoom
                 if (*bBufferReady)
                 {
+                    horizontalScale xScale = ((bool)triggerSettings->getControlValue("Enable") == true ? RelativeToTrigger : Absolute);
                     if (bTriggered)
                     {
                         //    thumbArea.removeFromBottom(scrollbar.getHeight() + 4);
@@ -1582,7 +1546,7 @@ public:
                          double ZFactor;
                          unsigned long zoomInAddress;
                          xZoom = zoomVector.size();
-                         double pretrigmemratio = (double)preTriggerPercent / (double)100.0;
+                         double pretrigmemratio = (double)triggerSettings->getControlValue("Pre-trigger") / (double)100.0;
                          switch (selectedId)
                          {
                          case Zoom_1_Centered://display values centered on trigger point
@@ -1891,10 +1855,11 @@ public:
         void setYZoomFlag(bool flag) { yZoomFlag = flag; }
         void setXZoomIndex(int zidx) { XZoomIndex = zidx; }
         void setYZoomIndex(int zidx) { YZoomIndex = zidx; }
-        void setTriggerMode(int mode) {RecTrigMode = mode;}// set Trigger directio
 
         //----------------------------------------------------------------------------------
     private:
+        grape::Panel* triggerSettings;  // handle to trigger settings
+
         juce::AudioFormatManager formatManager;
         juce::AudioThumbnailCache thumbnailCache{ 10 };
         juce::AudioThumbnail thumbnail{ 1, formatManager, thumbnailCache };
@@ -1920,42 +1885,18 @@ public:
         juce::Range<double> visibleRange;
         juce::Range<double> visibleRangePrevious;
         
-        /*
-        //juce::Slider xGridModeSlider;
-        juce::Label eScopeChannelLabel;
-        juce::Label xGridModeLabel;
-        //juce::Slider yGridModeSlider;
-        juce::Label yGridModeLabel;
-        juce::Label GroupeLabel;
-
-        juce::ToggleButton chkBoxXLink;
-        juce::ToggleButton chkBoxYLink;
-        juce::ComboBox cmbBoxXMode;
-        juce::ComboBox cmbBoxYMode;
-        juce::ComboBox cmbBoxGroupe;
-
-        juce::Slider sliderOffset;
-        juce::Label sliderLabel;
-
-        juce::Slider sliderXOffset;
-        juce::Label sliderXLabel;
-        */
         int currentOffset = 0;
 
         //int xScale = 0; //0 = linear // 1 = dB
-        horizontalScale xScale = Absolute; //0 = linear // 1 = dB
+        //horizontalScale xScale = Absolute; //0 = linear // 1 = dB
         //int yScale = 0; //0 = linear // 1 = dB
         verticalScale yScale = Linear; //0 = linear // 1 = dB
         
-        int preTriggerPercent = 50; // percentage of buffer allocated to pre trig recording
-
         double ThumbYZoom = 1.0f;
         int YZoomIndex = 8;
         const double AmpZoomGainStepdB = 1.5; //step in dB of each MouseWheel click
         double AmpZoomGainFactor = AmpdBGainToMultFactor(AmpZoomGainStepdB);
         juce::Rectangle<int> wavZone;
-        double thresholdTrigger;
-        bool trigEnabled = false;
         
                 
         //----------------------------------------------------------------------------------

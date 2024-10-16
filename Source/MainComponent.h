@@ -74,35 +74,6 @@ public:
 
 
     juce::AudioDeviceManager& deviceManager;
-    triggerDlgData bufferDlgData;
-    //void initThresholdSettings(void);
-    //void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent);
-    void initThresholdSettings(void)
-    {
-#if AUDIO_SOURCE == 1 //debug mode
-        bufferDlgData.enable = true;
-        bufferDlgData.channel = 1;
-        bufferDlgData.threshold = 0.500;
-        bufferDlgData.direction = ThresholdRising;
-        bufferDlgData.pretrigger = 50;
-#else
-        bufferDlgData.enable = true;
-        bufferDlgData.channel = 1;
-        bufferDlgData.threshold = 0.50f;
-        bufferDlgData.direction = ThresholdRising;
-        bufferDlgData.pretrigger = 50;
-#endif
-    }
-    void storeThresholdSettings(bool triggerEnabled, int triggerChannel, float triggerThreshold, int triggerDirection, int preTriggerPercent)
-    {
-        bufferDlgData.enable = triggerEnabled;
-        bufferDlgData.channel = triggerChannel;
-        bufferDlgData.threshold = triggerThreshold;
-        bufferDlgData.direction = triggerDirection;
-        bufferDlgData.pretrigger = preTriggerPercent;
-    }
-    void MainComponent::onDialogBoxClosed(int result, triggerDlgData* trigDlgData);
-
 private:
     friend Header;    
 
@@ -119,6 +90,8 @@ private:
 
     std::unique_ptr<Header> header;
 
+    std::unique_ptr <TriggerSettings> trigger_settings;
+
     std::unique_ptr<RecordingThumbnail> escopeThumbnail[ESCOPE_CHAN_NB];
     juce::AudioThumbnail* ptrToRecThumbnail[ESCOPE_CHAN_NB];
     juce::AudioThumbnail** aptr;
@@ -126,7 +99,8 @@ private:
     std::unique_ptr<RecordingThumbnail>* ptrToRecoThumbnail[ESCOPE_CHAN_NB];
     std::unique_ptr<RecordingThumbnail>** eptr;
 
-    AudioRecorder recorder{ escopeThumbnail[1]->getAudioThumbnail() };//{ placeHolderThumbnail };
+    //AudioRecorder recorder{ escopeThumbnail[1]->getAudioThumbnail() };
+    std::unique_ptr<AudioRecorder> recorder;
 
     std::unique_ptr<Rack> display_rack; // this is a horizontal rack for placing a vertical panel switch bar
     std::unique_ptr<Rack> channel_rack; // this is for encapsulating eScope channels
@@ -185,7 +159,7 @@ private:
                 auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
 
                 escopeThumbnail[0]->setSource(new juce::FileInputSource(line));
-                recorder.setSampleRate(reader->sampleRate);
+                recorder->setSampleRate(reader->sampleRate);
                 escopeThumbnail[idx]->setSampleRate(reader->sampleRate);
                 escopeThumbnail[idx]->setDisplayThumbnailMode(0);
                 escopeThumbnail[idx]->repaint();
@@ -232,11 +206,11 @@ private:
             //eScope[idx]->startRecording(lastRecording[idx]);
             //eScope[idx]->setDisplayThumbnailMode(recmode);
             //[inTheProcess]
-            recorder.startRecording(lastRecording[idx]); //eScope[idx]->startRecording(lastRecording[idx]);            
+            recorder->startRecording(lastRecording[idx]); //eScope[idx]->startRecording(lastRecording[idx]);            
             escopeThumbnail[idx]->setDisplayThumbnailMode(recmode);//eScope[idx]->setDisplayThumbnailMode(recmode); [1]
             escopeThumbnail[idx]->repaint();                       //eScope[idx]->setDisplayThumbnailMode(recmode); [2]
 
-            //recorder.setSampleRate(smpRate);
+            //recorder->setSampleRate(smpRate);
             //escopeThumbnail[idx]->setSampleRate(smpRate);
 
         }
@@ -247,9 +221,9 @@ private:
     {
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
-            //eScope[idx]->recorder.stop();//[ToBeChanged]
+            //eScope[idx]->recorder->stop();//[ToBeChanged]
             //[inTheProcess]
-            recorder.stop(); // to be checked !!
+            recorder->stop(); // to be checked !!
         }
 #if JUCE_CONTENT_SHARING
         SafePointer<AudioRecordingDemo> safeThis(this);

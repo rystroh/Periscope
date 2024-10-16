@@ -21,20 +21,6 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
     chkBoxYLink.setColour(juce::Label::textColourId, gridColour);
     //chkBoxYLink.setButtonText("y link");
 
-    cmbBoxXMode.setEditableText(false);
-    cmbBoxXMode.setJustificationType(juce::Justification::centredLeft);
-    cmbBoxXMode.setTextWhenNothingSelected(juce::String());
-    cmbBoxXMode.setTextWhenNoChoicesAvailable("(no choices)");
-    cmbBoxXMode.addItem("Absolute", 1);
-    cmbBoxXMode.addItem("Relative to Trigger", 2);
-
-    cmbBoxYMode.setEditableText(false);
-    cmbBoxYMode.setJustificationType(juce::Justification::centredLeft);
-    cmbBoxYMode.setTextWhenNothingSelected(juce::String());
-    cmbBoxYMode.setTextWhenNoChoicesAvailable("(no choices)");
-    cmbBoxYMode.addItem("Linear", 1);
-    cmbBoxYMode.addItem("Log dB", 2);
-
     cmbBoxGroupe.setEditableText(false);
     cmbBoxGroupe.setJustificationType(juce::Justification::centredLeft);
     cmbBoxGroupe.setTextWhenNothingSelected(juce::String());
@@ -82,18 +68,6 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
         auto idx = chkBoxYLink.getToggleState();
         this->pointeur->setYZoomFlag(idx);
     };
-    cmbBoxXMode.onChange = [this]()
-    {
-        auto idx = cmbBoxXMode.getSelectedItemIndex();
-        auto thatTrackGroup = cmbBoxXMode.getItemText(idx);
-        auto thatID = cmbBoxXMode.getItemId(idx);
-    };
-    cmbBoxYMode.onChange = [this]()
-    {
-        auto idx = cmbBoxYMode.getSelectedItemIndex();
-        auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
-        auto thatID = cmbBoxYMode.getItemId(idx);        
-    };
     cmbBoxGroupe.onChange = [this]()
     {
         auto idx = cmbBoxGroupe.getSelectedItemIndex();
@@ -101,30 +75,11 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
         auto thatID = cmbBoxGroupe.getItemId(idx);
     };
 
-    addAndMakeVisible(cmbBoxXMode);
     addAndMakeVisible(cmbBoxYMode);
     addAndMakeVisible(cmbBoxGroupe);
     addAndMakeVisible(chkBoxXLink);
     addAndMakeVisible(chkBoxYLink);
 
-    cmbBoxXMode.onChange = [this]()
-    {
-        auto idx = cmbBoxXMode.getSelectedItemIndex();
-        auto thatTrackGroup = cmbBoxXMode.getItemText(idx);
-        auto thatID = cmbBoxXMode.getItemId(idx);
-        this->pointeur->setXScale(idx);
-        this->pointeur->repaint();
-    };
-    cmbBoxYMode.onChange = [this]()
-    {
-        auto idx = cmbBoxYMode.getSelectedItemIndex();
-        auto thatTrackGroup = cmbBoxYMode.getItemText(idx);
-        auto thatID = cmbBoxYMode.getItemId(idx);
-        this->pointeur->setYScale(idx);
-        this->pointeur->repaint();
-        //escopeThumbnail[0]->setYScale(scale);
-        
-    };
     cmbBoxGroupe.onChange = [this]()
     {
         auto idx = cmbBoxGroupe.getSelectedItemIndex();
@@ -134,7 +89,9 @@ ChannelControl::ChannelControl(const juce::String& name):Panel(name)
         this->pointeur->setZoomGroup(thatID);
     };
 
-    setWidth(70, 200, 200);//min prefered max
+    addCommand(Y_SCALE, "Y scale", "Linear or dB scale");
+
+    setWidth(200, 200, 200);//min prefered max
     setHeight(50, 100, 1000);
 };
 ChannelControl::~ChannelControl() {};
@@ -154,17 +111,30 @@ cmbBoxGroupe.setBounds(xoffset + GroupeLabel.getWidth(), yoffset, 87, 24);
 chkBoxXLink.setBounds(xoffset, yoffset+30, 64, 24);
 chkBoxYLink.setBounds(xoffset + 75, yoffset+30, 64, 24);
 
-xGridModeLabel.setBounds(xoffset, yoffset+60, 50, 20);
-yGridModeLabel.setBounds(xoffset, yoffset+90, 50, 20);
-
-cmbBoxXMode.setBounds(xoffset + xGridModeLabel.getWidth(), yoffset+60, 87, 24);
-cmbBoxYMode.setBounds(xoffset + yGridModeLabel.getWidth(), yoffset+90, 87, 24);
+cmbBoxYMode.setBounds(xoffset + cmbBoxYMode.getLabel()->getWidth(), yoffset+60, 87, 24);
 
 //sliderLabel.setBounds(xoffset, yoffset+120, 50, 20);
-sliderOffset.setBounds(xoffset+30, yoffset + 120, 100, 20);// + sliderLabel.getWidth(), yoffset+120, 100, 20);
+sliderOffset.setBounds(xoffset+30, yoffset + 90, 100, 20);// + sliderLabel.getWidth(), yoffset+120, 100, 20);
 sliderOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderOffset.getTextBoxHeight());
 
 //sliderXLabel.setBounds(xoffset, yoffset+150, 50, 20);
-sliderXOffset.setBounds(xoffset+30, yoffset + 150, 100, 20); //+ sliderXLabel.getWidth(), yoffset+150, 100, 20);
+sliderXOffset.setBounds(xoffset+30, yoffset + 120, 100, 20); //+ sliderXLabel.getWidth(), yoffset+150, 100, 20);
 sliderXOffset.setTextBoxStyle(juce::Slider::TextBoxRight, false, 40, sliderXOffset.getTextBoxHeight());
 }
+
+bool ChannelControl::executeCommand(int id, grape::Control* source)
+{
+    switch (id)
+    {
+    case Y_SCALE:
+    {
+        auto mode = (cmbBoxYMode.getToggleState() ? verticalScale::dB : verticalScale::Linear);
+        this->pointeur->setYScale(mode);
+        this->pointeur->repaint();
+        return true;
+    }
+    default:
+        return false;
+    }
+
+};

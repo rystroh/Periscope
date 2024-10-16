@@ -7,6 +7,7 @@
 #include "Ramp120k.h"
 //#include "Ramp120kUpDown.h"
 //#include "Ramp_bleep120k.h"
+#include "..\GRAPE\Source\GRAPE.h"
 
 /*------- DEBUG defines --------*/
 #define DEBUG_BUFFER = 1  //debug output functions
@@ -19,9 +20,10 @@ class AudioRecorder : public juce::AudioIODeviceCallback,
     public juce::ChangeBroadcaster
 {
 public:
-    AudioRecorder(juce::AudioThumbnail& thumbnailToUpdate)
-        //: thumbnail(thumbnailToUpdate)
+    AudioRecorder(/*juce::AudioThumbnail& thumbnailToUpdate, */grape::Panel* trigger_settings)
     {
+        triggerSettings = trigger_settings;
+        //: thumbnail(thumbnailToUpdate)
         backgroundThread.startThread();
     }
 
@@ -214,6 +216,8 @@ public:
     bool checkForLevelTrigger(int nbSamples, unsigned int* trigIndex, juce::AudioBuffer<float>* buffer, int currentChan)
     {
         // check trigger condition in block of samples
+        int RecTrigChannel = triggerSettings->getControlValue("Channel");
+
         bool triggerConditionFound = false;
         if (currentChan != RecTrigChannel) //screen non triggering channels
             return (triggerConditionFound);
@@ -223,6 +227,10 @@ public:
         long longidx = writePosition[currentChan];
         longidx = wavaddr[currentChan];
         longidx = wavidx[currentChan]; //longidx = wavidx[currentChan] = 0; // Why cancel ???
+
+        double thresholdTrigger = triggerSettings->getControlValue("Threshold");
+        int RecTrigMode = triggerSettings->getControlValue("Condition");
+
         switch (RecTrigMode)
         {
         case Clipping: //0: clipping detection
@@ -763,41 +771,6 @@ public:
         int getChannelID(void)  {  return(chanID);  }
         //----------------------------------------------------------------------------------
         void setChannelID(int setChanID) {  chanID = setChanID; }
-        //----------------------------------------------------------------------------------
-        void setThreshold(double threshold) //set the 
-        {
-#if modify_triggers == 1
-            switch ((int)(threshold*100))
-            {
-            case 0:
-                thresholdTrigger = 0.010;   // addr =    530
-                break;
-            case 1:
-                thresholdTrigger = 0.011;   // addr =  2 829
-                break;
-            case 2:
-                thresholdTrigger = 0.017;   // addr =  5 303
-                break;
-            case 3:
-                thresholdTrigger = 0.037;   // addr = 10 141
-                break;
-            case 4:
-                thresholdTrigger = 0.800;   // addr = 19 556
-                break;
-            default:
-                thresholdTrigger = threshold;
-            }
-#else
-            thresholdTrigger = threshold;
-#endif
-        }
-        //-------------------------------------
-        void setTriggerChannel(int channel)  { RecTrigChannel = channel;}
-        //-------------------------------------
-        void setTriggerMode(int mode)// set Trigger direction
-        {
-            RecTrigMode = mode;
-        }
         //-------------------------------------
         void TestChannelID() // for debugging multiple channel sessions
         {
@@ -860,7 +833,9 @@ public:
         }
 #endif //AUDIO_SOURCE
         //----------------------------------------------------------------------------------
+
     private:
+        grape::Panel* triggerSettings;  // handle to trigger settings
         //AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
         juce::AudioThumbnail* thmbNail[ESCOPE_CHAN_NB]; // pointer to thumbnails associated with the recorder;
         int thumbnailSize = 0;
@@ -880,7 +855,6 @@ public:
         std::atomic<juce::AudioFormatWriter::ThreadedWriter*> activeWriter{ nullptr };
 
         int chanID = 0; // default channel selected in multi channel audio interface is first one
-        double thresholdTrigger = 1.0;
         bool* thumbnailTriggeredPtr; // <- declare ptr to flag accessible by display part
         juce::AudioBuffer<float>eScopeBuffer[ESCOPE_CHAN_NB];
         juce::int64  eScopBufferSize;
@@ -906,9 +880,6 @@ public:
         juce::uint16 wavSize = 48000;
         bool thumbnailWritten = false;
         bool bufferWritten = false;
-
-        int RecTrigMode; //
-        int RecTrigChannel;//
 
     };
 
