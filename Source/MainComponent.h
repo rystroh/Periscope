@@ -82,7 +82,7 @@ public:
 #if AUDIO_SOURCE == 1 //debug mode
         bufferDlgData.enable = true;
         bufferDlgData.channel = 1;
-        bufferDlgData.threshold = 0.10f;
+        bufferDlgData.threshold = 0.500;
         bufferDlgData.direction = ThresholdRising;
         bufferDlgData.pretrigger = 50;
 #else

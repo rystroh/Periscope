@@ -8,6 +8,10 @@
 //#include "Ramp120kUpDown.h"
 //#include "Ramp_bleep120k.h"
 
+/*------- DEBUG defines --------*/
+#define DEBUG_BUFFER = 1  //debug output functions
+#define DEBUG_BUFFER_0 = 1 //level 0 of buffer debug 
+//#define DEBUG_BUFFER_1 = 1 //level 1 of buffer debug 
 //=====================================================================================
     /** A simple class that acts as an AudioIODeviceCallback
                               and writes the incoming audio data to a WAV file.          */
@@ -243,7 +247,11 @@ public:
                 {
                     *trigIndex = idx;
                     triggerConditionFound = true;
-                    absTriggerAddress = wavidx[currentChan] + idx;
+                    absTriggerAddress = wavidx[currentChan]- nbSamples + idx;
+#ifdef DEBUG_BUFFER_0
+                    DBG("Trigger point found at wavidx = " << wavidx[currentChan] << " index = " << idx);
+#endif //DEBUG_BUFFER_0
+                    return (triggerConditionFound);
                 }
                 previousSampleValue[currentChan] = smpValue;
                 idx++;
@@ -282,7 +290,6 @@ public:
             break;
 
         }
-
         return (triggerConditionFound);
     }
     //----------------------------------------------------------------------------------
@@ -314,44 +321,67 @@ public:
             //allocations or copies, it simply references our input data
             //juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
             juce::AudioBuffer<float> bufferz[ESCOPE_CHAN_NB];
+            long addrOfLastWavValueWritten;
+            
             //int idx = 0;
             int eScopChanNb = ESCOPE_CHAN_NB;
             for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
             {
                 bufferz[idx].setDataToReferTo(const_cast<float**> (&inputChannelData[idx]), 1, numSamples);
                 auto* channelData = bufferz[idx].getWritePointer(0);
+                int numberOfSample = bufferz[idx].getNumSamples();
 
 #if AUDIO_SOURCE == 1 //overwrite stream with test wav file
-                overwriteStreamWithTestWav(idx, channelData, bufferz[idx].getNumSamples());
+                overwriteStreamWithTestWav(idx, channelData, numberOfSample);
 #endif
                 TestChannelID();
                 // write in circulare buffer for later display
+#ifdef DEBUG_BUFFER_1
+                addrOfLastWavValueWritten = getAddressOfLastNonZeroWavSample(idx);
+#endif //DEBUG_BUFFER_1
+
+#ifdef DEBUG
+                if (wavidx[idx] == 119520)
+                    DBG(" Almost the last one...");
+#endif // DEBUG
+                //is post trigger memory still not full ?
                 if (currentPostTriggerSmpCount + numSamples <= halfMaxSmpCount)//recording size limit not reached
                 {
                     eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, numSamples);
+#ifdef DEBUG_BUFFER_1
+                    addrOfLastWavValueWritten = getAddressOfLastNonZeroWavSample(idx);
+#endif
                 }
-                else//last partial buffer to copy
+                else//last block received is too bigcopy: copy only partial block to buffer
                 {
                     int nbOfSmpToCopy = halfMaxSmpCount - currentPostTriggerSmpCount;
                     eScopeBuffer[idx].copyFrom(0, writePosition[idx], channelData, nbOfSmpToCopy);
+#ifdef DEBUG_BUFFER_1
+                    addrOfLastWavValueWritten = getAddressOfLastNonZeroWavSample(idx);
+#endif
                 }
 
-
-                // check if any sample in this new block is above threshold -> triggering display
+                // if not arleady triggered, check if any sample in this new block is causing trigger
                 if (currentPostTriggerSmpCount == 0)
                 {
                     unsigned int triggerIndex;
 
                     if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
                         ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
-                    {
+                    {   // check if this block has data meeting trigger condition
                         bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx], idx);
                         *thumbnailTriggeredPtr = bTriggered;
                         if (bTriggered)
                         {
-                            triggAddress = writePosition[idx] + triggerIndex- numSamples;// sub size of block
+                            triggAddress = writePosition[idx] + triggerIndex;// sub size of block
                             triggAddress %= eScopBufferSize; //wrap if needed
                             currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+#ifdef DEBUG_BUFFER_0
+                            DBG("triggAddress = " << triggAddress << " currentPostTriggerSmpCount = " << currentPostTriggerSmpCount);
+#endif
+#ifdef DEBUG_BUFFER_1
+                            addrOfLastWavValueWritten = getAddressOfLastWavSampleAboveValue(thresholdTrigger, triggAddress + 48);
+#endif
                         }
                     }
                 }
@@ -370,7 +400,7 @@ public:
                 //thumbnailWritten = WriteThumbnail(); // using numSamples ?
                 // 
                 //check if we have enough sample if yes, flag display to update
-                if (idx == ESCOPE_CHAN_NB - 1)
+                if (idx == ESCOPE_CHAN_NB - 1) // operate on last channel
                 {
                     bufferWritten = PrepareBufferPointers();
                     if (bufferWritten) // to allow tests / break points ONLY !
@@ -417,6 +447,13 @@ public:
     {
         if ((currentPostTriggerSmpCount >= halfMaxSmpCount) && (bufferWritten == false))
         {
+#ifdef DEBUG_BUFFER
+            DBG("Preparing buffer");
+#endif
+#ifdef DEBUG_BUFFER_1
+            long addrOfLastWavValueWritten;
+            addrOfLastWavValueWritten = getAddressOfLastNonZeroWavSample(0);
+#endif
             bufferWritten = true;
             //copy data that are before the Threshold
             if (triggAddress >= halfMaxSmpCount) //we have enough data before trig 
@@ -557,22 +594,66 @@ public:
     saveBufferAsWav(testBuffer, juce::File("test_wav.wav"));
     }
     //----------------------------------------------------------------------------------
+#ifdef DEBUG_BUFFER
+    long getAddressOfLastNonZeroWavSample(int idx)// for debug only
+    {
+        double data;
+        long addr;
+        addr = eScopeBuffer[idx].getNumSamples() - 1;
+        if (addr < 0)
+        {
+            addr = 0;
+        }
+        else
+        {
+            while ((data = eScopeBuffer[idx].getSample(0, addr)) == 0)
+            {
+                addr--;
+                if (addr < 0)
+                {
+                    DBG("Last non zero value = " << data << " at addr " << addr + 1);
+                    return addr;
+                }
+            }
+        }
+        DBG("Last non zero value = " << data << " at addr " << addr << " on Chan " << idx);
+        return addr;
+    }
+    //----------------------------------------------------------------------------------
+    long getAddressOfLastWavSampleAboveValue(double value, long startAddr)// for debug only
+    {
+        double data;
+        long addr;
+
+        addr = startAddr; // eScopeBuffer[0].getNumSamples() - 1;
+        if (addr < 0)
+        {
+            addr = 0;
+        }
+        else
+        {
+            while (((data = eScopeBuffer[0].getSample(0, addr)) > value) && ((data = eScopeBuffer[0].getSample(0, addr)) != 0))
+            {
+                addr--;
+                if (addr < 0)
+                {
+                    DBG("Last value above " << juce::String(value) << " is " << data << " at addr " << addr + 1);
+                    return addr;
+                }
+            }
+        }
+        DBG("Last value above " << juce::String(value) << " is " << data << " at addr " << addr << " on Chan " << chanID);
+        //DBG("Last non zero value = " << data << " at addr " << addr << " on Chan " << chanID);
+        return addr;
+    }
+#endif
+    //----------------------------------------------------------------------------------
     void saveWaves()
     {
         juce::String fileName;
-        juce::AudioBuffer<float> eBuffer;
-        double data;
-        long addr;
-        addr = eScopeBuffer[0].getNumSamples()-1;
-        addr-=2;
-        data = eScopeBuffer[0].getSample(0, addr++);
-        data = eScopeBuffer[0].getSample(0, addr++);
-        data = eScopeBuffer[0].getSample(0, addr); 
-        while ((data = eScopeBuffer[0].getSample(0, addr)) == 0)
-        {
-            addr--;
-        }
-            DBG ("Last non zero value = " << data << " at addr " << addr);
+        juce::AudioBuffer<float> eBuffer;        
+        long addrOfLastWavValueWritten;
+        addrOfLastWavValueWritten = getAddressOfLastNonZeroWavSample(0);
 
         for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
         {
@@ -585,7 +666,7 @@ public:
             saveBufferAsWav(eBuffer, fileToSave);
         }
     }
-         //----------------------------------------------------------------------------------
+    //----------------------------------------------------------------------------------
         bool WriteThumbnail(void)
         {
             int idx = 0;
@@ -760,7 +841,10 @@ public:
         void overwriteStreamWithTestWav(int index, float* chanDataptr, int numSmp)
         {
             int sample = 0;
-            while((wavidx[index] < BleepSize) && (sample < numSmp)) //only copy at the beginning of the stream (the size of the array) 
+            long startAddr = wavidx[index];
+            long endAddr;
+            //only copy at the beginning of the stream (the size of the array) 
+            while((wavidx[index] < BleepSize) && (sample < numSmp)) 
             {
                     *chanDataptr = *wavptr[index];
                     chanDataptr++;
@@ -768,8 +852,13 @@ public:
                     sample++;
                     wavidx[index]++; //to check that total count doesn't exceed wav size 
             }
+            endAddr = wavidx[index];
+#ifdef DEBUG_BUFFER_0
+            if (index == 0)
+                DBG("overwriteStream from " << startAddr << " to " << endAddr);
+#endif // DEBUG_BUFFER_0            
         }
-#endif
+#endif //AUDIO_SOURCE
         //----------------------------------------------------------------------------------
     private:
         //AudioThumbnail& thumbnail; //pointer to associated audiothumbnail
