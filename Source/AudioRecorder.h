@@ -333,6 +333,7 @@ public:
             //juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
             juce::AudioBuffer<float> bufferz[ESCOPE_CHAN_NB];
             long addrOfLastWavValueWritten;
+            int RecTrigChannel = triggerSettings->getControlValue("Channel");
             
             //int idx = 0;
             int eScopChanNb = ESCOPE_CHAN_NB;
@@ -398,7 +399,7 @@ public:
                 }
                 else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
                 {
-                    if (idx == ESCOPE_CHAN_NB - 1)
+                    if (idx == RecTrigChannel ) //(idx == ESCOPE_CHAN_NB - 1)
                         currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
                 }
                 writePosition[idx] += numSamples;
@@ -411,7 +412,7 @@ public:
                 //thumbnailWritten = WriteThumbnail(); // using numSamples ?
                 // 
                 //check if we have enough sample if yes, flag display to update
-                if (idx == ESCOPE_CHAN_NB - 1) // operate on last channel
+                if (idx == ESCOPE_CHAN_NB - 1) //if (idx == ESCOPE_CHAN_NB - 1) // operate on last channel
                 {
                     bufferWritten = PrepareBufferPointers();
                     if (bufferWritten) // to allow tests / break points ONLY !
@@ -481,7 +482,6 @@ public:
                 }
                 else //tail data wrapped 
                 {
-
                     smpCount = eScopBufferSize - triggAddress + halfMaxSmpCount;
                     unsigned long copyStart = triggAddress - halfMaxSmpCount;
                     smpCount = maxSmpCount - smpCount;
