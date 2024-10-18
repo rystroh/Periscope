@@ -354,7 +354,7 @@ public:
 
 #ifdef DEBUG
                 if (currentPostTriggerSmpCount >= halfMaxSmpCount - 2 * numSamples) //if (wavidx[idx] == 119520)
-                    DBG(" Almost the last one...");                
+                    DBG(" Almost the last one...");
 #endif // DEBUG
                 //is post trigger memory still not full ?
                 if (currentPostTriggerSmpCount + numSamples <= halfMaxSmpCount)//recording size limit not reached
@@ -372,61 +372,63 @@ public:
                     addrOfLastWavValueWritten = getAddressOfLastNonZeroWavSample(idx);
 #endif
                 }
+            }
 
-                // if not arleady triggered, check if any sample in this new block is causing trigger
-                if (currentPostTriggerSmpCount == 0)
-                {
-                    unsigned int triggerIndex;
+            // if not arleady triggered, check if any sample in this new block is causing trigger
+            if (currentPostTriggerSmpCount == 0)
+            {
+                unsigned int triggerIndex;
 
-                    if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
-                        ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
-                    {   // check if this block has data meeting trigger condition
-                        bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[idx], idx);
-                        *thumbnailTriggeredPtr = bTriggered;
-                        if (bTriggered)
-                        {
-                            triggAddress = writePosition[idx] + triggerIndex;// sub size of block
-                            triggAddress %= eScopBufferSize; //wrap if needed
-                            currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
+                if ((*thumbnailTriggeredPtr == false) && (thumbnailWritten == false))
+                    ////if ((*thumbnailTriggeredPtr == false) && (bufferWritten == false))
+                {   // check if this block has data meeting trigger condition
+                    bool bTriggered = checkForLevelTrigger(numSamples, &triggerIndex, &bufferz[RecTrigChannel], RecTrigChannel);
+                    *thumbnailTriggeredPtr = bTriggered;
+                    if (bTriggered)
+                    {
+                        triggAddress = writePosition[RecTrigChannel] + triggerIndex;// sub size of block
+                        triggAddress %= eScopBufferSize; //wrap if needed
+                        currentPostTriggerSmpCount = numSamples - triggerIndex;//nb of samples recorded after trigger condition
 #ifdef DEBUG_BUFFER_0
-                            DBG("triggAddress = " << triggAddress << " currentPostTriggerSmpCount = " << currentPostTriggerSmpCount);
+                        DBG("triggAddress = " << triggAddress << " currentPostTriggerSmpCount = " << currentPostTriggerSmpCount);
 #endif
 #ifdef DEBUG_BUFFER_1
-                            addrOfLastWavValueWritten = getAddressOfLastWavSampleAboveValue(thresholdTrigger, triggAddress + 48);
+                        addrOfLastWavValueWritten = getAddressOfLastWavSampleAboveValue(thresholdTrigger, triggAddress + 48);
 #endif
-                        }
                     }
                 }
-                else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
-                {
-                    if (idx == RecTrigChannel ) //(idx == ESCOPE_CHAN_NB - 1)
-                        currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
-                }
+            }
+            else if (currentPostTriggerSmpCount > 0) //if triggered condition has been met and samples have started to be recorded
+            {
+                    currentPostTriggerSmpCount += numSamples;//keep count of samples recorded
+            }
+ 
+            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+            {
                 writePosition[idx] += numSamples;
 
                 if (writePosition[idx] >= eScopBufferSize) //check if buff limit reached
                     wfBufferUnderRun = false;//will grant all data in buffer are valid
                 writePosition[idx] %= eScopBufferSize;
+            }
 
                 //now if we have enough samples, pass them to the Thumbnail for display
                 //thumbnailWritten = WriteThumbnail(); // using numSamples ?
                 // 
                 //check if we have enough sample if yes, flag display to update
-                if (idx == ESCOPE_CHAN_NB - 1) //if (idx == ESCOPE_CHAN_NB - 1) // operate on last channel
-                {
 #ifdef DEBUG_BUFFER
-                    checkLastValuesOfBuffer(wavidx[1]); //debug function
+            checkLastValuesOfBuffer(wavidx[1]); //debug function
 #endif
-                    bufferWritten = PrepareBufferPointers();
-                    if (bufferWritten) // to allow tests / break points ONLY !
-                    {
-                        wfBufferReady = true;
-                        sendChangeMessage();
-                    }
-                    else
-                        wfBufferReady = false;
-                }
+            bufferWritten = PrepareBufferPointers();
+            if (bufferWritten) // to allow tests / break points ONLY !
+            {
+                wfBufferReady = true;
+                sendChangeMessage();
             }
+            else
+                wfBufferReady = false;
+
+         
             /*
                                 if (bufferWritten) // to allow tests / break points ONLY !
                                 {
