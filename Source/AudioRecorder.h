@@ -353,8 +353,8 @@ public:
 #endif //DEBUG_BUFFER_1
 
 #ifdef DEBUG
-                if (wavidx[idx] == 119520)
-                    DBG(" Almost the last one...");
+                if (currentPostTriggerSmpCount >= halfMaxSmpCount - 2 * numSamples) //if (wavidx[idx] == 119520)
+                    DBG(" Almost the last one...");                
 #endif // DEBUG
                 //is post trigger memory still not full ?
                 if (currentPostTriggerSmpCount + numSamples <= halfMaxSmpCount)//recording size limit not reached
@@ -414,6 +414,9 @@ public:
                 //check if we have enough sample if yes, flag display to update
                 if (idx == ESCOPE_CHAN_NB - 1) //if (idx == ESCOPE_CHAN_NB - 1) // operate on last channel
                 {
+#ifdef DEBUG_BUFFER
+                    checkLastValuesOfBuffer(wavidx[1]); //debug function
+#endif
                     bufferWritten = PrepareBufferPointers();
                     if (bufferWritten) // to allow tests / break points ONLY !
                     {
@@ -657,6 +660,20 @@ public:
         //DBG("Last non zero value = " << data << " at addr " << addr << " on Chan " << chanID);
         return addr;
     }
+    //----------------------------------------------------------------------------------
+    void checkLastValuesOfBuffer(long addr) //debug function to check the end of each buffer 
+    {
+        /* made global so values are shown it the watch anywhere
+        double lastThreeBuff0[3];
+        double lastThreeBuff1[3];*/
+        if (addr > eScopBufferSize) //only do modulo if >, otherwise will not see the end
+            addr %= eScopBufferSize; //pointer modulo buffersize
+        for (long idx = 1; idx < 4; idx++)
+        {
+            lastThreeBuff0[idx - 1] = eScopeBuffer[0].getSample(0, addr - idx);
+            lastThreeBuff1[idx - 1] = eScopeBuffer[1].getSample(0, addr - idx);
+        }
+    }
 #endif
     //----------------------------------------------------------------------------------
     void saveWaves()
@@ -822,7 +839,10 @@ public:
             //only copy at the beginning of the stream (the size of the array) 
             while((wavidx[index] < BleepSize) && (sample < numSmp)) 
             {
-                    *chanDataptr = *wavptr[index];
+                    if(index==0)
+                        *chanDataptr = *wavptr[index];
+                    else
+                        *chanDataptr = - *wavptr[index];
                     chanDataptr++;
                     wavptr[index]++;
                     sample++;
@@ -883,7 +903,11 @@ public:
         juce::uint16 wavSize = 48000;
         bool thumbnailWritten = false;
         bool bufferWritten = false;
-
+#ifdef DEBUG_BUFFER
+        /* made global so values are shown it the watch anywhere*/
+        double lastThreeBuff0[3];
+        double lastThreeBuff1[3];
+#endif
     };
 
 
