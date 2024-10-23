@@ -324,6 +324,7 @@ public:
                         thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
                         nextSampleNum += numSamples;
                     }*/
+        //---------------- One shot Recording -----------------
         if (activeWriter.load() == nullptr && chanID < numInputChannels && eScopBufferSize>0)
         {
             //activeWriter.load()->write(&inputChannelData[chanID], numSamples);
@@ -427,30 +428,20 @@ public:
             }
             else
                 wfBufferReady = false;
-
-         
-            /*
-                                if (bufferWritten) // to allow tests / break points ONLY !
-                                {
-                                    wfBufferReady = true;
-                                    sendChangeMessage();
-                                }
-                                else if (wfBufferReady)
-                                    wfBufferReady = true; //for debug
-                                else
-                                    wfBufferReady = false;
-                            }
-                            wfBufferReady = false;*/
         }
-        //Mode "Recording continuously" 
+        //-------------------  Mode "Recording continuously" ---------------------------
         if (activeWriter.load() != nullptr && chanID < numInputChannels)
         {
-            activeWriter.load()->write(&inputChannelData[chanID], numSamples);
-            // Create an AudioBuffer to wrap our incoming data, note that this does no 
-            //allocations or copies, it simply references our input data
-            juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[chanID]), 1, numSamples);// one stream per buffer
-            //thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
-            thmbNail[0]->addBlock(nextSampleNum, buffer, 0, numSamples);
+            int eScopChanNb = ESCOPE_CHAN_NB;
+            for (int idx = 0; idx < ESCOPE_CHAN_NB; idx++)
+            {
+                activeWriter.load()->write(&inputChannelData[idx], numSamples);
+                // Create an AudioBuffer to wrap our incoming data, note that this does no 
+                //allocations or copies, it simply references our input data
+                juce::AudioBuffer<float> buffer(const_cast<float**> (&inputChannelData[idx]), 1, numSamples);// one stream per buffer
+                //thumbnail.addBlock(nextSampleNum, buffer, 0, numSamples);
+                thmbNail[idx]->addBlock(nextSampleNum, buffer, 0, numSamples);                
+            }
             nextSampleNum += numSamples;
         }
 
@@ -668,6 +659,10 @@ public:
         /* made global so values are shown it the watch anywhere
         double lastThreeBuff0[3];
         double lastThreeBuff1[3];*/
+        long address;
+        address = addr;
+        if (addr < 4)
+            return;
         if (addr > eScopBufferSize) //only do modulo if >, otherwise will not see the end
             addr %= eScopBufferSize; //pointer modulo buffersize
         for (long idx = 1; idx < 4; idx++)
